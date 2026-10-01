@@ -1,0 +1,28 @@
+# ---------------------------------------------------------------------
+#  QUICK profile - a smoke test that runs the whole pipeline in minutes.
+#  Numbers are NOT meaningful; use it to check that everything works.
+#      python run_all.py --profile quick
+# ---------------------------------------------------------------------
+data:
+  subsample_every: 30          # one window every 5 minutes
+split:
+  seeds: [0]
+  fewshot_steps: 10
+centralized:
+  epochs: 2
+  patience: 2
+fl:
+  rounds: 4
+  eval_every: 2
+  max_local_steps: 3
+halo_ssl:
+  epochs: 1
+  subsample_every: 30
+ablation:
+  ranks: [4, 8]
+encoders:
+  unimts:
+    budget:
+      centralized: {epochs: 1, max_train_windows: 500}
+      fl: {rounds: 2, max_local_steps: 2, eval_every: 1}
+      split: {fewshot_steps: 5}

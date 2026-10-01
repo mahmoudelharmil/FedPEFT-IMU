@@ -1,0 +1,31 @@
+# ---------------------------------------------------------------------
+#  BASELINE profile - the FIRST pipeline, kept for before/after comparison.
+#  Same data, rounds and budgets as "standard", but WITHOUT the fixes for
+#  class imbalance: plain cross-entropy, arg-max decisions, no HMM smoothing,
+#  no V5 personalisation pass, default norm for new V5 users.
+#  results/baseline/ holds the original run made with these settings.
+# ---------------------------------------------------------------------
+data:
+  subsample_every: 6
+split:
+  seeds: [0]
+  adabn_new_users: false
+centralized:
+  epochs: 10
+  patience: 3
+fl:
+  rounds: 40
+  clients_per_round_frac: 0.20
+  local_epochs: 1
+  max_local_steps: 8
+  batch_size: 64
+  eval_every: 4
+  final_personalization_steps: 0
+  classwise_head_aggregation: false
+  lr_head: null                     # first pipeline: one learning rate for the whole model
+  local_ft_steps: 0
+imbalance:
+  tau_train: 0.0
+  tau_inf: 0.0
+decoding:
+  hmm: false

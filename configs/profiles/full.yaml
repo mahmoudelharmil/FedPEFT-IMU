@@ -1,0 +1,29 @@
+# ---------------------------------------------------------------------
+#  FULL profile - paper-grade protocol from the PDF (page 12, Figure 8):
+#  3 held-out lists (seeds), 200 rounds, 20 % participation, denser data.
+#  Expect several days of compute on a single 6 GB GPU.
+#      python run_all.py --profile full
+# ---------------------------------------------------------------------
+data:
+  subsample_every: 3           # one 10-s window every 30 s
+split:
+  seeds: [0, 1, 2]
+  fewshot_steps: 80
+centralized:
+  epochs: 30
+  patience: 6
+fl:
+  rounds: 200
+  clients_per_round_frac: 0.20
+  local_epochs: 2
+  max_local_steps: 40
+  eval_every: 5
+halo_ssl:
+  epochs: 20
+  subsample_every: 1
+encoders:
+  unimts:
+    budget:                    # UniMTS stays ~17x more expensive per window; still reduced
+      centralized: {epochs: 10, max_train_windows: 40000}
+      fl: {rounds: 100, max_local_steps: 16, eval_every: 10}
+      split: {fewshot_steps: 40}

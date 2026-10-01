@@ -1,0 +1,22 @@
+# ---------------------------------------------------------------------
+#  STANDARD profile - the configuration used for the delivered report.
+#  Sized so that the complete grid (4 encoders x 2 centralized modes,
+#  4 encoders x 7 FL methods, rank ablation) finishes in about 4-5 hours
+#  on a 6 GB GTX 1660 Ti.  Same protocol as "full", less data and rounds.
+#      python run_all.py --profile standard
+# ---------------------------------------------------------------------
+data:
+  subsample_every: 6           # one 10-s window per minute of recording (~1,000 windows per user)
+split:
+  seeds: [0]
+centralized:
+  epochs: 10
+  patience: 3
+fl:
+  rounds: 40
+  clients_per_round_frac: 0.20 # 21 of 106 clients per round
+  local_epochs: 1
+  max_local_steps: 8           # 8 x 64 = 512 windows per client update (~0.6 local epoch)
+  batch_size: 64               # GTX 1660 Ti: batch 64 is ~2x faster per window than 32
+  eval_every: 4
+# UniMTS keeps the budget defined in default.yaml (25 rounds, 8 x 16 windows per update).

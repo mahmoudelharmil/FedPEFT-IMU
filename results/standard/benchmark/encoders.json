@@ -1,0 +1,130 @@
+{
+  "limu_bert": {
+    "display_name": "LIMU-BERT",
+    "architecture": "Transformer, 4 shared layers, d=72, 4 heads",
+    "pretrained_source": "Official LIMU-BERT weights pretrained on HHAR (phones + smartwatches)",
+    "input": {
+      "rate_hz": 20,
+      "n_samples": 120,
+      "n_channels": 6,
+      "seconds": 6.0,
+      "unit": "g"
+    },
+    "feat_dim": 72,
+    "encoder_params": 51552,
+    "lora_params_r8": 2304,
+    "lora_layers": 2,
+    "param_counts_r8": {
+      "encoder": 51120,
+      "lora": 2304,
+      "norm": 432,
+      "norm_stats": 0,
+      "adapter": 24,
+      "shared_head": 4816,
+      "head": 390,
+      "const": 0
+    },
+    "train_full_win_per_s": 1670.4103000636358,
+    "train_full_peak_mb": 223.5392,
+    "train_lora_win_per_s": 2000.5526521039667,
+    "train_lora_peak_mb": 172.229632,
+    "inference_win_per_s": 12593.696363777462,
+    "batch_size": 64
+  },
+  "ssl_wearables": {
+    "display_name": "ssl-wearables",
+    "architecture": "ResNet-V2 1-D (harnet10), 5 stages, 64-1024 channels",
+    "pretrained_source": "Official Oxford harnet10 weights, self-supervised on UK-Biobank wrist data",
+    "input": {
+      "rate_hz": 30,
+      "n_samples": 300,
+      "n_channels": 3,
+      "seconds": 10.0,
+      "unit": "g"
+    },
+    "feat_dim": 1024,
+    "encoder_params": 10457408,
+    "lora_params_r8": 238712,
+    "lora_layers": 21,
+    "param_counts_r8": {
+      "encoder": 10445760,
+      "lora": 238712,
+      "norm": 11648,
+      "norm_stats": 11648,
+      "adapter": 12,
+      "shared_head": 67648,
+      "head": 390,
+      "const": 12800
+    },
+    "train_full_win_per_s": 1201.917885450183,
+    "train_full_peak_mb": 449.5616,
+    "train_lora_win_per_s": 1226.3473054439341,
+    "train_lora_peak_mb": 416.54272,
+    "inference_win_per_s": 5723.486730711089,
+    "batch_size": 64
+  },
+  "unimts": {
+    "display_name": "UniMTS",
+    "architecture": "ST-GCN, 10 graph blocks over a 22-joint skeleton, 64-512 channels",
+    "pretrained_source": "Official UniMTS weights (motion-capture-synthesised IMU aligned with text)",
+    "input": {
+      "rate_hz": 20,
+      "n_samples": 200,
+      "n_channels": 3,
+      "seconds": 10.0,
+      "unit": "m/s2"
+    },
+    "feat_dim": 512,
+    "encoder_params": 5179900,
+    "lora_params_r8": 182296,
+    "lora_layers": 20,
+    "param_counts_r8": {
+      "encoder": 5171320,
+      "lora": 182296,
+      "norm": 8580,
+      "norm_stats": 8580,
+      "adapter": 12,
+      "shared_head": 33856,
+      "head": 390,
+      "const": 1452
+    },
+    "train_full_win_per_s": 66.78573171151668,
+    "train_full_peak_mb": 1910.036992,
+    "train_lora_win_per_s": 73.80859548892568,
+    "train_lora_peak_mb": 1193.094144,
+    "inference_win_per_s": 236.47585355436917,
+    "batch_size": 16
+  },
+  "halo": {
+    "display_name": "HALO",
+    "architecture": "Patch-channel Transformer, 8 alternating temporal/channel layers, d=192",
+    "pretrained_source": "Our re-implementation, self-supervised (MAE + patch contrastive) on the Capture-24 pool users",
+    "input": {
+      "rate_hz": 30,
+      "n_samples": 300,
+      "n_channels": 3,
+      "seconds": 10.0,
+      "unit": "g"
+    },
+    "feat_dim": 256,
+    "encoder_params": 4608194,
+    "lora_params_r8": 55296,
+    "lora_layers": 18,
+    "param_counts_r8": {
+      "encoder": 4598978,
+      "lora": 55296,
+      "norm": 9216,
+      "norm_stats": 0,
+      "adapter": 12,
+      "shared_head": 16960,
+      "head": 390,
+      "const": 12288
+    },
+    "train_full_win_per_s": 1085.7951194065229,
+    "train_full_peak_mb": 419.47904,
+    "train_lora_win_per_s": 1350.313525909425,
+    "train_lora_peak_mb": 281.829376,
+    "inference_win_per_s": 4519.348726004761,
+    "batch_size": 64
+  }
+}

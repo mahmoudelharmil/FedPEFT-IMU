@@ -1,0 +1,172 @@
+# =====================================================================
+#  FedPEFT-IMU  ·  default configuration
+# ---------------------------------------------------------------------
+#  Every experiment reads this file first.  A "profile" file from
+#  configs/profiles/ is then deep-merged on top of it (quick / standard /
+#  full), and finally any "key.sub=value" command-line overrides.
+#
+#  All paths are relative to the project root.
+# =====================================================================
+
+paths:
+  raw_dir: data/raw                 # capture24.zip and the unzipped CSV files
+  processed_dir: data/processed     # one .npz per participant (10-s windows @ 30 Hz)
+  weights_dir: weights              # official pretrained checkpoints + our HALO SSL checkpoint
+  results_dir: results              # one JSON file per experiment run
+  reports_dir: reports              # the final HTML report
+
+# ---------------------------------------------------------------------
+#  Dataset: Capture-24 (151 participants, wrist Axivity AX3, 100 Hz,
+#  free-living, ~24 h each).  Paper: Chan et al., Sci Data 11, 1135 (2024)
+# ---------------------------------------------------------------------
+data:
+  dataset: capture24
+  label_scheme: Willetts2018        # 6 classes: sleep, sit-stand, mixed-activity, walking, vehicle, bicycling
+  raw_rate_hz: 100                  # native rate of the Axivity recordings
+  base_rate_hz: 30                  # canonical storage rate (encoders resample from here)
+  window_s: 10                      # every sample the models see is a 10-second window
+  subsample_every: 6                # keep 1 of every N consecutive windows (6 -> one 10-s window per minute)
+  prepare_workers: 3                # parallel processes used when converting CSV -> npz
+
+# ---------------------------------------------------------------------
+#  Evaluation protocol (PDF page 10 + appendix)
+#    Step 1: split by USER  -> FL clients / held-out users / pretraining pool
+#    Step 2: inside each FL client, split by TIME (first 80 % train, last 20 % test)
+# ---------------------------------------------------------------------
+split:
+  seeds: [0]                        # one user split per seed (paper-grade runs use 3-5)
+  heldout_frac: 0.20                # 20 % of users never take part in training
+  pool_frac: 0.10                   # 10 % of users: unlabelled SSL pretraining pool + validation users
+  train_time_frac: 0.80             # chronological train/test split inside each FL client
+  heldout_adapt_frac: 0.50          # held-out users: first 50 % may be used for few-shot labels, last 50 % is tested
+  fewshot_minutes: [1, 5]           # "1-5 min of labels" per activity for few-shot adaptation
+  fewshot_steps: 60                 # optimisation steps used for few-shot adaptation
+  fewshot_batch: 64                 # batch size of few-shot adaptation through the encoder (V5)
+  max_heldout_test_windows: null    # optional cap on test windows per held-out user (null = all)
+  adabn_new_users: true             # V5 zero-shot: estimate BatchNorm statistics from the new user's UNLABELLED data
+
+# ---------------------------------------------------------------------
+#  Class imbalance and decoding (fedpeft/training/imbalance.py, hmm.py)
+#  Sleep + sitting are 76 % of the windows, bicycling 1 %.  Without these
+#  settings rare classes vanish in federated training (per-class F1 = 0).
+# ---------------------------------------------------------------------
+imbalance:
+  tau_train: 1.0                    # balanced-softmax strength in the loss (0 = plain cross-entropy);
+                                    # centrally the global prior, in FL each client's OWN prior
+  tau_inf: 0.5                      # strength of the global prior added at prediction time
+                                    # (0 = balanced decisions, 1 = accuracy-optimal); chosen on validation users
+  tau_inf_prototype: 0.0            # same for V5's nearest-prototype zero-shot rule (validated: 0 is best)
+decoding:
+  hmm: true                         # also report HMM-smoothed results (standard for Capture-24)
+
+# ---------------------------------------------------------------------
+#  Encoders.  "pretrained" says where the frozen weights W0 come from.
+# ---------------------------------------------------------------------
+encoders:
+  names: [limu_bert, ssl_wearables, unimts, halo]
+  limu_bert:
+    checkpoint: limu_bert/pretrain_base_hhar_20_120.pt   # official LIMU-BERT, pretrained on HHAR (phones + watches)
+    seq_len: 120                                         # samples at 20 Hz the model sees (120 = official 6 s, 200 = 10 s)
+  ssl_wearables:
+    checkpoint: ssl_wearables/mtl_best.mdl               # official Oxford harnet10, pretrained on UK-Biobank (700k person-days)
+  unimts:
+    checkpoint: unimts/unimts_stgcn.pt                   # ST-GCN part of the official UniMTS checkpoint
+    wrist_joint: 21                                      # HumanML3D joint index of the right wrist
+    # UniMTS runs a graph network over all 22 skeleton joints (~7 GMAC per window):
+    # ~70 windows/s for training on a GTX 1660 Ti versus ~1,200 for ssl-wearables.
+    # This budget is merged over the settings below for UniMTS ONLY, so all its
+    # methods share one (smaller) budget and remain comparable with each other.
+    # Each profile (configs/profiles/*.yaml) may redefine this budget.
+    budget:
+      centralized: {epochs: 5, patience: 2, batch_size: 16, max_train_windows: 16000, max_val_windows: 2000}
+      fl: {rounds: 25, max_local_steps: 8, batch_size: 16, eval_every: 5, max_eval_windows_per_client: 60}
+      split: {fewshot_steps: 20, fewshot_batch: 16, max_heldout_test_windows: 200}
+      # Batch 16 keeps UniMTS under ~2 GB: above the 6 GB card, Windows silently spills
+      # GPU memory into system RAM and training becomes >10x slower.
+      runtime: {eval_batch_size: 64}
+  halo:
+    checkpoint: halo/halo_ssl_pool_seed{seed}.pt         # we pretrain HALO ourselves (no public weights yet)
+
+# ---------------------------------------------------------------------
+#  Model parts shared by all encoders (PDF Part 2, components 1-8)
+# ---------------------------------------------------------------------
+model:
+  embed_dim: 64                     # shared head g: feat_dim -> 64
+  lora:
+    rank: 8                         # default LoRA rank r
+    alpha_over_r: 2.0               # alpha = 2r  ->  scaling alpha/r = 2 for every rank (PDF default r=8, alpha=16)
+    dropout: 0.0                    # LoRA dropout. PDF suggests 0.05-0.1; 0 lets the merged-weight kernel be used
+                                    # during training (1.4x faster on conv encoders). Set 0.1 to use the two-branch form.
+    tiers: [2, 4, 8]                # heterogeneous device tiers (V4 / V5): low, mid, high
+  proto_weight: 0.5                 # lambda of the prototype loss (V5)
+  proto_max_windows: 512            # windows used to compute a client's local prototypes after training
+
+# ---------------------------------------------------------------------
+#  Centralized training (phase 1)
+# ---------------------------------------------------------------------
+centralized:
+  modes: [scratch, pretrained_ft]   # scratch = random init (the POC asked for); pretrained_ft = reference
+  epochs: 12
+  batch_size: 128
+  lr_scratch: 1.0e-3
+  lr_finetune: 3.0e-4
+  weight_decay: 1.0e-4
+  patience: 4                       # early stopping on validation (pool) users
+  max_val_windows: 6000             # validation subset size (pool users)
+  max_train_windows: null           # optional cap on windows per epoch (null = all)
+
+# ---------------------------------------------------------------------
+#  Federated learning (phase 2) — custom, fully transparent simulator
+# ---------------------------------------------------------------------
+fl:
+  methods: [fedavg_scratch, v0_full_ft, v1_head_only, v2_lora_naive, v3_lora_exact, v4_hetero_rank, v5_proposed]
+  rounds: 60
+  clients_per_round_frac: 0.20      # 20 % participation per round
+  local_epochs: 1
+  max_local_steps: 20               # cap on local optimiser steps per round (keeps rounds comparable)
+  batch_size: 64
+  eval_every: 3                     # evaluate all clients every N rounds
+  max_eval_windows_per_client: null # optional test subset for intermediate evaluations (final = all)
+  lr_scratch: 1.0e-3                # FedAvg from scratch (random init)
+  lr_full: 3.0e-4                   # V0 full fine-tuning of the pretrained model
+  lr_peft: 2.0e-3                   # heads, LoRA, local norm (V1-V5)
+  lr_head: 2.0e-3                   # heads of the full-model methods (FedAvg, V0): discriminative learning rates
+  weight_decay: 1.0e-4
+  target_f1_fraction: 0.90          # target F1 = 90 % of the centralized from-scratch macro-F1 (same encoder)
+  final_personalization_steps: 8    # V5: one last update of every client's personal parts before testing
+  classwise_head_aggregation: true  # average each class row of the shared classifier only over clients with that class
+  local_ft_steps: 8                 # "+FT" score: each client fine-tunes the shared classifier on its own data (0 = off)
+
+# ---------------------------------------------------------------------
+#  HALO self-supervised pretraining on the pool users (stage 1 of HALO)
+# ---------------------------------------------------------------------
+halo_ssl:
+  epochs: 6
+  batch_size: 128
+  lr: 3.0e-4
+  subsample_every: 2                # pool users are unlabelled, so we can use more of their windows
+  mask_ratio: 0.5                   # MAE mask ratio (HALO paper)
+  temperature: 0.2                  # InfoNCE temperature (HALO paper)
+
+# ---------------------------------------------------------------------
+#  Ablations (run with scripts/07_run_ablations.py)
+# ---------------------------------------------------------------------
+ablation:
+  encoder: ssl_wearables
+  ranks: [2, 4, 8, 16]
+
+# ---------------------------------------------------------------------
+#  Report: earlier pipelines shown for comparison (oldest first)
+# ---------------------------------------------------------------------
+report:
+  compare_profiles: [baseline, standard]
+  stage_labels:
+    baseline: "First run"
+    standard: "+ class-imbalance fixes"
+    enhanced: "+ longer training, stronger HALO"
+
+runtime:
+  device: cuda                      # falls back to cpu automatically
+  amp: false                        # fp16 autocast; OFF because GTX 16xx (no tensor cores) is 2.5x faster in fp32
+  num_threads: 6
+  eval_batch_size: 512              # inference batch size (per-encoder budgets may lower it)

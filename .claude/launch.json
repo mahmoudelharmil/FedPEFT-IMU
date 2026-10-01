@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "report",
+      "runtimeExecutable": "E:\\Masters\\Thesis2\\idea1\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "8766", "--bind", "127.0.0.1", "--directory", "E:\\Masters\\Thesis2\\idea1\\reports"],
+      "port": 8766
+    }
+  ]
+}

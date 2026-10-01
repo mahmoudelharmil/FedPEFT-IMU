@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------
+#  ENHANCED profile - "standard" (with the class-imbalance fixes) plus the
+#  levers that the standard learning curves showed were still binding:
+#    * federated training as long as the centralized reference
+#      (80 rounds = ~10 passes over the clients' data; UniMTS 40 rounds)
+#    * every method also scored after local fine-tuning of its classifier
+#    (LIMU-BERT with the whole 10-s window, i.e. position embeddings 120 -> 200,
+#     was tried and is WORSE for the pretrained model in FL - results kept in
+#     results/enhanced_limu10s; the official 6-s window is kept here)
+#    * HALO pretrained on all pool windows (8 epochs x 2x data = 2.7x the steps)
+#  About 10 hours on a GTX 1660 Ti with two parallel queues.
+#      python run_all.py --profile enhanced
+# ---------------------------------------------------------------------
+data:
+  subsample_every: 6
+split:
+  seeds: [0]
+centralized:
+  epochs: 10
+  patience: 3
+fl:
+  rounds: 80
+  clients_per_round_frac: 0.20
+  local_epochs: 1
+  max_local_steps: 8
+  batch_size: 64
+  eval_every: 8
+  local_ft_steps: 8
+report:
+  window_ablation_profile: enhanced_limu10s
+halo_ssl:
+  epochs: 8
+  subsample_every: 1
+encoders:
+  halo:
+    checkpoint: halo/halo_ssl_pool_seed{seed}_e8full.pt
+  unimts:
+    budget:
+      fl: {rounds: 40, eval_every: 8}

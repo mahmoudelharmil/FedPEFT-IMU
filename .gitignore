@@ -1,0 +1,16 @@
+# Environment
+.venv/
+__pycache__/
+*.pyc
+
+# Large, re-creatable inputs (scripts/01 and 02 download them again)
+data/raw/
+data/processed/
+weights/
+
+# Run logs
+logs/
+
+# Results and reports ARE small and worth keeping under version control:
+#   results/   one JSON per experiment + the published user splits
+#   reports/   the HTML report and the numbers behind it
