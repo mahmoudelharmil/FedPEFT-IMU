@@ -43,12 +43,12 @@ FIG = ROOT / "paper" / "figures"
 CLASS_IDS = ["sleep", "sit-stand", "mixed", "walking", "vehicle", "bicycling"]
 DISPLAY = {"sleep": "Sleep", "sit-stand": "Sit/stand", "mixed": "Mixed activity",
            "walking": "Walking", "vehicle": "Vehicle", "bicycling": "Bicycling"}
-DESCRIPTION = {
-    "sleep": "Sleep periods from the sleep diary",
-    "sit-stand": "Sedentary sitting or standing (desk work, TV, eating)",
-    "mixed": "Light activity: household chores, manual work, sports",
-    "walking": "Walking, incl.\\ stairs and walking while carrying loads",
-    "vehicle": "Riding in or driving a car, bus or train",
+DESCRIPTION = {   # what each Willetts2018 class contains (its WillettsSpecific2018 sub-labels)
+    "sleep": "Sleep (sleep diary)",
+    "sit-stand": "Sitting, standing",
+    "mixed": "Household chores, manual work, sports, other",
+    "walking": "Walking",
+    "vehicle": "Travelling in a vehicle",
     "bicycling": "Cycling",
 }
 # Colour per class (Okabe-Ito, colour-blind safe), used by the figure.
@@ -146,7 +146,10 @@ def main() -> None:
     group_of = {u: g for g in ("clients", "heldout", "pool") for u in split[g]}
     demo = pd.DataFrame(meta["participant_info"]).set_index("pid")
 
-    stats: dict = {"classes": [DISPLAY[c] for c in CLASS_IDS], "window_s": window_s,
+    # Number of distinct Compendium (CPA) annotations that the label scheme maps to each class.
+    label_dict = pd.read_csv(ROOT / cfg.paths.raw_dir / "capture24" / "annotation-label-dictionary.csv", dtype=str)
+    n_codes = [int((label_dict[f"label:{scheme}"] == c).sum()) for c in CLASS_IDS]
+    stats: dict = {"classes": [DISPLAY[c] for c in CLASS_IDS], "window_s": window_s, "cpa_codes": n_codes,
                    "subsample_every": sub, "n_participants": len(meta["participants"])}
 
     # ------------------------------------------------------------------ full
@@ -243,6 +246,11 @@ def main() -> None:
                                "gini": gini(n_k)},
         "equivalent_dirichlet_alpha": alpha,
         "dominant_class_share_mean": float((tr_counts.max(1) / n_k).mean()),
+        # The chronological split separates parts of the day: share of sleep per client
+        # in the training part versus the test part (class 0 = sleep).
+        "sleep_share_train_mean": float((tr_counts[:, 0] / n_k).mean()),
+        "sleep_share_test_mean": float((te_counts[:, 0] / te_counts.sum(1).clip(min=1)).mean()),
+        "clients_test_mostly_sleep_pct": float(100 * (te_counts[:, 0] / te_counts.sum(1).clip(min=1) > 0.5).mean()),
     }
 
     # Transition statistics at the experiment resolution (1 window per minute), as the
@@ -279,19 +287,19 @@ def write_tables(s: dict) -> None:
     # --- class distribution ---
     rows = []
     for i, c in enumerate(CLASS_IDS):
-        rows.append(f"{DISPLAY[c]} & {DESCRIPTION[c]} & {fmt_int(f['class_windows'][i])} & "
+        rows.append(f"{DISPLAY[c]} & {DESCRIPTION[c]} & {s['cpa_codes'][i]} & {fmt_int(f['class_windows'][i])} & "
                     f"{f['class_pct'][i]:.1f} & {f['users_with_class'][i]} & "
                     f"{h['clients_with_class_train_pct'][i]:.0f} & {f['bout_minutes_median'][i]:.1f} \\\\")
     rows.append("\\midrule")
-    rows.append(f"Total & & {fmt_int(f['windows'])} & 100.0 & {s['n_participants']} & -- & -- \\\\")
+    rows.append(f"Total & & {sum(s['cpa_codes'])} & {fmt_int(f['windows'])} & 100.0 & {s['n_participants']} & -- & -- \\\\")
     (OUT / "tab_classes.tex").write_text("\n".join(rows) + "\n", encoding="utf-8")
 
     # --- partition ---
     p = s["partition"]
-    lab = {"clients": "FL clients", "heldout": "Held-out users", "pool": "Pool (SSL + validation)"}
-    use = {"clients": "first 80\\,\\% train / last 20\\,\\% test",
-           "heldout": "first 50\\,\\% adaptation / last 50\\,\\% test",
-           "pool": "unlabelled SSL (HALO), model selection"}
+    lab = {"clients": "FL clients", "heldout": "Held-out", "pool": "Pool"}
+    use = {"clients": "80/20 train/test",
+           "heldout": "50/50 adapt/test",
+           "pool": "SSL, validation"}
     rows = []
     for g in ("clients", "heldout", "pool"):
         r = p[g]
@@ -345,6 +353,7 @@ def write_tables(s: dict) -> None:
         "AllSixPct": f"{h['all_six_classes_pct']:.0f}",
         "JSDMean": f"{h['jsd_to_global']['mean']:.3f}",
         "JSDMax": f"{h['jsd_to_global']['max']:.3f}",
+        "JSDTrainTest": f"{h['jsd_train_test']['mean']:.3f}",
         "DirAlpha": f"{h['equivalent_dirichlet_alpha']:.2f}",
         "UnseenClientsPct": f"{h['clients_with_unseen_test_class_pct']:.0f}",
         "UnseenWindowsPct": f"{h['unseen_test_windows_pct']:.1f}",
@@ -354,6 +363,9 @@ def write_tables(s: dict) -> None:
         "GiniClients": f"{h['windows_per_client']['gini']:.2f}",
         "SelfTransMin": f"{min(s['hmm']['self_transition']):.2f}",
         "SelfTransMax": f"{max(s['hmm']['self_transition']):.2f}",
+        "SleepTrainPct": f"{100 * h['sleep_share_train_mean']:.0f}",
+        "SleepTestPct": f"{100 * h['sleep_share_test_mean']:.0f}",
+        "TestMostlySleepPct": f"{h['clients_test_mostly_sleep_pct']:.0f}",
     }
     (OUT / "macros.tex").write_text(
         "% Generated by scripts/tools/paper_dataset_stats.py - do not edit by hand.\n"

@@ -1,0 +1,124 @@
+% =====================================================================
+%  Fig. 1 - FedPEFT-IMU system architecture (TikZ, vector).
+%  Colour code (same as the project report):
+%    grey   = frozen pretrained weights        blue   = federated (shared) parameters
+%    green  = local / private parameters       amber  = statistics sent to the server
+%    dashed = fixed operation without parameters
+%  Included by main.tex inside a figure* environment.
+% =====================================================================
+\begin{tikzpicture}[
+    font=\scriptsize, >={Stealth[length=2.0mm]},
+    blk/.style={rounded corners=2pt, align=center, inner sep=2.5pt, minimum height=0.95cm, line width=0.6pt},
+    frozen/.style={blk, fill=cFrozen!22, draw=cFrozen!85!black},
+    fed/.style={blk, fill=cFed!13, draw=cFed},
+    loc/.style={blk, fill=cLoc!14, draw=cLoc!85!black},
+    stat/.style={blk, fill=cStat!20, draw=cStat!85!black},
+    fixed/.style={blk, fill=white, draw=black!55, dashed},
+    flow/.style={->, line width=0.7pt, draw=black!75},
+    lbl/.style={font=\tiny, text=black!70, inner sep=1pt},
+    panel/.style={rounded corners=5pt, line width=0.8pt},
+  ]
+
+  % ------------------------------------------------------------------ client panel
+  % (on the background layer, so that the encoder box drawn later sits on top of it)
+  \begin{scope}[on background layer]
+    \fill[panel, fill=black!3, draw=black!45, double copy shadow={shadow xshift=0.7mm, shadow yshift=-0.7mm, draw=black!35, fill=black!2}]
+         (0,4.55) rectangle (18.2,9.05);
+  \end{scope}
+  \node[anchor=north west, font=\footnotesize\bfseries] at (0.15,8.98)
+       {Client $k\in\mathcal{S}_t$ \textnormal{(device tier $r_k\in\{2,4,8\}$; raw IMU data never leave the device)}};
+
+  % -- data: one 10-s window of the local stream (never leaves the device)
+  \node[align=center, font=\scriptsize] (data) at (0.72,7.05)
+        {window\\[1pt] $\mathbf{x}\!\in\!\mathbb{R}^{3\times300}$\\[1pt] from $\mathcal{D}_k$};
+  % -- (1) preprocessor
+  \node[fixed, minimum width=1.85cm] (pre) at (2.72,7.05)
+        {\ding{172} Preprocess $\Pi_E$\\ resample $\cdot$ crop\\ unit conversion};
+  % -- (2) input adapter
+  \node[loc, minimum width=1.45cm] (adp) at (4.78,7.05) {\ding{173} Input\\ adapter $a_k$\\ ($1{\times}1$ conv)};
+
+  % -- (3) encoder: frozen base + LoRA + local norms
+  \node[frozen, minimum width=1.35cm, minimum height=0.78cm] (wbar) at (6.82,7.42) {$\bar{W}_\ell$\\[-1pt] frozen base};
+  \node[font=\normalsize] (plus) at (7.74,7.42) {$\oplus$};
+  \node[fed, minimum width=1.6cm, minimum height=0.78cm] (lora) at (8.8,7.42) {$s\,B_\ell A_\ell$\\[-1pt] LoRA, rank $r_k$};
+  \node[loc, minimum width=3.47cm, minimum height=0.5cm] (norm) at (7.81,6.5)
+        {Norms $\psi_k$: $\gamma,\beta$ (+ BN $\mu,\sigma^2$)};
+  \begin{scope}[on background layer]
+    \node[rounded corners=3pt, draw=cFrozen!85!black, fill=cFrozen!7, line width=0.6pt, inner sep=5pt,
+          fit=(wbar)(lora)(norm), label={[font=\scriptsize\bfseries, yshift=-1pt]above:\ding{174} Pretrained encoder $E$ (every adapted layer $\ell\in\mathcal{L}$)}] (enc) {};
+  \end{scope}
+
+  % -- (4) shared head, (5) personal head, (7) decoder (+ output)
+  \node[fed, minimum width=1.75cm] (g) at (11.9,7.05) {\ding{175} Shared head\\ $g_\theta$: LN--FC--ReLU};
+  \node[loc, minimum width=1.3cm] (h) at (14.4,7.05) {\ding{176} Personal\\ head $h_k$};
+  \node[stat, minimum width=2.15cm] (dec) at (17.0,7.05) {\ding{178} Decoder\\ calibration + HMM\\ $\rightarrow\hat{y}_{k,1:T}$};
+
+  \draw[flow] (data) -- (pre);
+  \draw[flow] (pre) -- (adp);
+  \draw[flow] (adp) -- (enc.west |- adp);
+  \draw[flow] (enc.east |- g) -- node[lbl, above, font=\scriptsize]{$\mathbf{z}\!\in\!\mathbb{R}^{d_z}$} (g);
+  \draw[flow] (g) -- node[lbl, above, font=\scriptsize](emb){$\mathbf{e}\!\in\!\mathbb{R}^{64}$} (h);
+  \draw[flow] (h) -- node[lbl, above, font=\scriptsize]{logits} (dec);
+
+  % -- (6) prototypes and local objective
+  \node[stat, minimum width=2.3cm, minimum height=0.8cm] (proto) at (13.14,5.3)
+        {\ding{177} Local prototypes\\ $\mathbf{p}_{k,c}$, counts $n_{k,c}$};
+  \draw[flow] ($(g.east)!0.5!(h.west)$) -- (proto.north -| {$(g.east)!0.5!(h.west)$});
+  \node[blk, draw=black!55, fill=white, minimum width=8.3cm, minimum height=0.8cm] (loss) at (5.55,5.3)
+        {Local objective: \ $\mathcal{L}_k=\mathrm{CE}\big(h_k(\mathbf{e}),y\big)+\lambda\,\big\lVert\bar{\mathbf{e}}-\bar{\mathbf{P}}_{y}\big\rVert_2^2$
+         \quad trainable: $\{A_\ell,B_\ell\},\ \theta,\ \psi_k,\ a_k,\ h_k$};
+  \node[anchor=west, align=left, font=\scriptsize, text=black!70] at (14.45,5.3)
+        {global $\mathbf{P}_c$ (downloaded)\\ pulls $\mathbf{e}$ towards $\mathbf{P}_y$};
+  \draw[->, dashed, draw=black!55, line width=0.6pt] (proto.west) -- (loss.east);
+
+  % ------------------------------------------------------------------ server panel
+  \fill[panel, fill=cFed!4, draw=cFed!70!black] (0,0) rectangle (12.75,3.3);
+  \node[anchor=north west, font=\footnotesize\bfseries] at (0.15,3.24) {Server (round $t\rightarrow t{+}1$)};
+
+  \node[fed, minimum width=4.25cm, minimum height=2.15cm] (s1) at (2.42,1.3)
+        {\textbf{Exact rank-heterogeneous LoRA}\\[1pt]
+         $M_\ell=B_\ell^{t}A_\ell^{t}+\sum_{k}\tilde{p}_k\,\Delta_{k,\ell}$\\[1pt]
+         $\Delta_{k,\ell}=B_{k,\ell}A_{k,\ell}-B^{t}_{\ell,[r_k]}A^{t}_{\ell,[r_k]}$\\[1pt]
+         $(B^{t+1}_\ell,A^{t+1}_\ell)=\mathrm{SVD}_{r_{\max}}(M_\ell)$\\[1pt]
+         $\bar{W}_\ell\leftarrow\bar{W}_\ell+s\,(M_\ell-B^{t+1}_\ell A^{t+1}_\ell)$};
+  \node[fed, minimum width=2.25cm, minimum height=2.15cm] (s2) at (5.95,1.3)
+        {\textbf{Shared head}\\[2pt] $\theta\leftarrow\sum_{k}\tilde{p}_k\,\theta_k$\\[2pt] $\tilde{p}_k=\dfrac{n_k}{\sum_{j\in\mathcal{S}_t}n_j}$};
+  \node[stat, minimum width=2.45cm, minimum height=2.15cm] (s3) at (8.43,1.3)
+        {\textbf{Prototypes}\\[2pt] $\mathbf{P}_c=\dfrac{\sum_k n_{k,c}\,\mathbf{p}_{k,c}}{\sum_k n_{k,c}}$\\[2pt] absent class: keep $\mathbf{P}_c$};
+  \node[stat, minimum width=2.15cm, minimum height=2.15cm] (s4) at (11.2,1.3)
+        {\textbf{One-shot stats}\\[2pt] prior $\boldsymbol{\pi}$ from $\sum_k n_{k,c}$\\[2pt] HMM transitions\\ from $\sum_k N_k$};
+
+  % ------------------------------------------------------------------ new-user panel
+  \draw[panel, dashed, draw=cLoc!80!black, fill=cLoc!4] (13.05,0) rectangle (18.2,3.3);
+  \node[anchor=north west, font=\footnotesize\bfseries] at (13.15,3.24) {New user $u$ (never trained)};
+  \node[anchor=north west, align=left, text width=4.85cm, font=\scriptsize] at (13.15,2.72)
+        {\textbf{Zero-shot} (no labels): re-estimate BN statistics on unlabelled windows (AdaBN);
+         $\hat{y}=\arg\max_c\cos(\mathbf{e},\mathbf{P}_c)$.\\[3pt]
+         \textbf{Few-shot} ($m$ min/class): $h_u\leftarrow\{\mathbf{P}_c/\lVert\mathbf{P}_c\rVert\}$,
+         then adapt $h_u,\psi_u,a_u$ on the shots.};
+
+  % ------------------------------------------------------------------ communication
+  \draw[->, line width=1.3pt, draw=cFed!85!black] (1.2,4.55) -- (1.2,3.3)
+       node[midway, right, align=left, font=\scriptsize, text=black!85, xshift=2pt]
+       {\textbf{uplink} per round: $\{A_{k,\ell},B_{k,\ell}\}_\ell$ (rank $r_k$), $\theta_k$, $\{\mathbf{p}_{k,c},n_{k,c}\}_c$\\[2pt]
+        once: class counts $n_{k,c}$, transition counts $N_k\!\in\!\mathbb{N}^{C\times C}$};
+  \draw[<-, line width=1.3pt, draw=cFed!85!black] (9.3,4.55) -- (9.3,3.3)
+       node[midway, right, align=left, font=\scriptsize, text=black!85, xshift=2pt]
+       {\textbf{downlink}: $\bar{W}_\ell$, $B^{t}_{\ell,[r_k]}$, $A^{t}_{\ell,[r_k]}$ (top-$r_k$ directions),\\
+        $\theta$, $\{\mathbf{P}_c\}$; new users: global state at rank $r_{\max}$};
+  \draw[->, line width=1.0pt, draw=cLoc!80!black, dashed] (12.75,1.75) -- (13.05,1.75);
+
+  % ------------------------------------------------------------------ legend
+  \begin{scope}[shift={(0.2,9.55)}, every node/.style={font=\scriptsize}]
+    \node[frozen, minimum height=0.28cm, minimum width=0.45cm] at (0,0) {};
+    \node[anchor=west] at (0.3,0) {frozen};
+    \node[fed, minimum height=0.28cm, minimum width=0.45cm] at (1.6,0) {};
+    \node[anchor=west] at (1.9,0) {federated (shared, uploaded)};
+    \node[loc, minimum height=0.28cm, minimum width=0.45cm] at (5.55,0) {};
+    \node[anchor=west] at (5.85,0) {local / private (never uploaded)};
+    \node[stat, minimum height=0.28cm, minimum width=0.45cm] at (9.75,0) {};
+    \node[anchor=west] at (10.05,0) {statistics (counts, prototypes, transitions)};
+    \node[fixed, minimum height=0.28cm, minimum width=0.45cm] at (14.85,0) {};
+    \node[anchor=west] at (15.15,0) {fixed, no parameters};
+  \end{scope}
+\end{tikzpicture}

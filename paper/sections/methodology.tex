@@ -1,0 +1,594 @@
+% =====================================================================
+%  Section III - Proposed method: FedPEFT-IMU
+%  Every equation below corresponds one-to-one to the released code:
+%    client model ........ fedpeft/models/{client_model,components,lora}.py
+%    aggregation ......... fedpeft/federated/{aggregation,server}.py
+%    round loop .......... fedpeft/federated/simulation.py
+%    decoding / new users  fedpeft/training/{imbalance,hmm,decoding,heldout}.py
+% =====================================================================
+\section{Proposed Method: \method}\label{sec:method}
+
+This section formalizes the learning problem (\cref{sec:method:problem}), presents the
+architecture and the role assigned to every parameter (\cref{sec:method:arch,sec:method:client}),
+derives the client objective (\cref{sec:method:objective}) and the server aggregation rules
+together with their exactness guarantees (\cref{sec:method:agg,sec:method:stats}), explains how
+label skew is handled (\cref{sec:method:skew}), and describes inference for enrolled and new
+users (\cref{sec:method:inference}). The complete procedure is summarized in \cref{alg:fedpeft},
+and its cost is analyzed in \cref{sec:method:cost}. \Cref{tab:notation} lists the main notation.
+
+\begin{table}[!t]
+\centering
+\caption{Main notation.}
+\label{tab:notation}
+\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\columnwidth}{@{}l Y@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$K$, $\St$, $\rho$ & number of clients, clients selected in round $t$, participation rate \\
+$\Dk^{\mathrm{tr}}$, $\Dk^{\mathrm{te}}$ & chronological training / test part of client $k$ \\
+$n_k$, $n_{k,c}$ & training windows of client $k$ (in total / of class $c$) \\
+$C$, $\boldsymbol{\pi}_k$, $\boldsymbol{\pi}$ & classes, label prior of client $k$, global label prior \\
+$\Pi_E$, $a_k$ & fixed preprocessor of encoder $E$, local input adapter \\
+$\Wbar_\ell$, $\Lset$ & frozen base weight of adapted layer $\ell$, set of adapted layers \\
+$B_\ell$, $A_\ell$, $r_k$, $s$ & LoRA factors, LoRA rank of client $k$, scaling $s=\alpha/r$ \\
+$\psi_k$ & local normalization parameters and statistics \\
+$g_\theta$, $h_k$ & shared projection head, personal classifier \\
+$\mathbf{z}$, $\mathbf{e}$, $\nrm{\mathbf{e}}$ & encoder feature, embedding ($D=64$), $\mathbf{e}/\norm{\mathbf{e}}_2$ \\
+$\mathbf{p}_{k,c}$, $\mathbf{P}_c$ & local and global prototype of class $c$ \\
+$\ptil_k$ & aggregation weight $n_k/\sum_{j\in\St}n_j$ \\
+$\trunc{B}{r}$, $\trunc{A}{r}$ & first $r$ columns of $B$ / first $r$ rows of $A$ \\
+$\Delta_{k,\ell}$ & change of client $k$'s LoRA product in one round \\
+$N_k$, $\Gamma$ & $C\times C$ transition counts of client $k$, HMM transition matrix \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Problem Setting and Design Goals}\label{sec:method:problem}
+
+We consider $K$ users, each holding one wrist-worn inertial measurement unit (IMU) that
+records a continuous stream of tri-axial acceleration. The stream of user $k$ is segmented into
+non-overlapping windows $\mathbf{x}\in\R^{3\times L}$ (here $10$\,s at $30$\,Hz, $L=300$) with
+activity labels $y\in\{1,\dots,C\}$, giving a chronologically ordered dataset
+$\Dk=\{(\mathbf{x}_{k,i},y_{k,i})\}_{i=1}^{|\Dk|}$. Raw windows never leave the device. A
+server orchestrates training over rounds $t=0,\dots,T-1$ in which a random subset
+$\St$ of $\lceil\rho K\rfloor$ clients participates.
+
+The setting combines four kinds of heterogeneity that, together, distinguish federated human
+activity recognition (HAR) from the image and text benchmarks on which most federated
+parameter-efficient fine-tuning (PEFT) methods were developed:
+\begin{enumerate}[label=(H\arabic*)]
+  \item \emph{Label skew}: $\boldsymbol{\pi}_k\neq\boldsymbol{\pi}$; rare activities (e.g.,
+        bicycling) are absent from most clients (\cref{sec:data:hetero}).
+  \item \emph{Feature shift}: $p_k(\mathbf{x}\mid y)$ differs across users because of body
+        size, gait, device orientation and wear habits.
+  \item \emph{System heterogeneity}: devices differ in memory and compute; we model this by a
+        per-device budget expressed as a LoRA rank $r_k\in\mathcal{R}=\{2,4,8\}$.
+  \item \emph{Temporal dependence}: labels form long bouts, so consecutive windows are strongly
+        correlated (\cref{sec:data:hetero}).
+\end{enumerate}
+A pretrained IMU encoder $E$ with weights $\Omega_0$, obtained from data outside the
+federation, is available to every participant. The design goals are
+(G1)~high macro-F1 for \emph{enrolled} users on their \emph{future} data;
+(G2)~useful predictions for \emph{new} users with zero or a few minutes of labels;
+(G3)~low uplink traffic;
+(G4)~training within each device's budget $r_k$; and
+(G5)~fairness, i.e., a high F1 for the worst-served users.
+
+We cast the problem as personalized federated learning with shared parameters $\Theta$ and
+client-specific parameters $\phi_k$:
+\begin{equation}\label{eq:global}
+  \min_{\Theta}\ \sum_{k=1}^{K} p_k\,\min_{\phi_k}\,F_k(\Theta,\phi_k),\qquad
+  p_k=\frac{n_k}{\sum_{j}n_j},
+\end{equation}
+where $F_k$ is the local objective defined in \cref{sec:method:objective} and $n_k=|\Dk^{\mathrm{tr}}|$.
+
+% ---------------------------------------------------------------------
+\subsection{Architecture Overview and Parameter Roles}\label{sec:method:arch}
+
+\begin{figure*}[!t]
+  \centering
+  \resizebox{\textwidth}{!}{\input{figures/fig_architecture.tex}}
+  \caption{\method{} architecture. Each client runs the same seven-component model
+  \ding{172}--\ding{178} on top of a frozen pretrained IMU encoder. Parameters are partitioned by
+  role: the base weights are frozen (grey); the low-rank adapters and the projection head are
+  federated (blue) and trained at a device-specific rank $r_k$; the input adapter, the
+  normalization layers and the classifier stay on the device (green); class prototypes and
+  one-shot label statistics are the only additional information that is shared (amber). The
+  server aggregates LoRA updates exactly in delta form, re-factorizes them by a truncated SVD
+  and folds the remainder into the frozen weights (\cref{fig:aggregation}). New users are served
+  without any training through the global prototypes.}
+  \label{fig:architecture}
+\end{figure*}
+
+\Cref{fig:architecture} shows the complete system. Its central design decision is to give every
+tensor of the client model exactly one of four \emph{roles}, chosen according to what the
+tensor is expected to capture (\cref{tab:roles}):
+\begin{itemize}
+  \item \emph{Frozen}: the pretrained weights $\Omega_0$. They encode generic motion features
+        learned from large external corpora and are never transmitted after deployment.
+  \item \emph{Federated} ($\Theta$): the LoRA factors $\{A_\ell,B_\ell\}_{\ell\in\Lset}$ and the
+        projection head $g_\theta$. They adapt the representation to the target population and
+        benefit from all users' data.
+  \item \emph{Local} ($\phi_k=\{a_k,\psi_k,h_k\}$): the input adapter, the normalization layers and
+        the classifier. Following the evidence that feature shift is largely captured by
+        normalization statistics~\cite{li2021fedbn} and label skew by the classifier
+        layer~\cite{collins2021fedrep,arivazhagan2019fedper}, these parts absorb (H1)--(H2) and are
+        never uploaded, which also reduces what a server can infer about an individual.
+  \item \emph{Statistics}: per-class prototypes $\mathbf{p}_{k,c}$ and counts $n_{k,c}$, sent every
+        round, and transition counts $N_k$, sent once. They are small ($C\times D$, $C$ and
+        $C^2$ numbers) and align the users' embedding spaces (\cref{sec:method:stats}).
+\end{itemize}
+Because each method studied in this paper is defined solely by which roles are trained, uploaded
+or kept local (\cref{tab:methods}), all methods share one implementation, and differences in the
+results can be attributed to the role assignment rather than to engineering details.
+
+\begin{table}[!t]
+\centering
+\caption{Components of the \method{} client model and their roles.}
+\label{tab:roles}
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\columnwidth}{@{}l l l Y@{}}
+\toprule
+\# & Component & Role & Purpose \\
+\midrule
+\ding{172} & Preprocessor $\Pi_E$ & fixed & match the encoder's rate, length and units \\
+\ding{173} & Input adapter $a_k$ & local & device axes / channel mapping \\
+\ding{174} & Base weights $\Wbar_\ell$ & frozen & generic motion representation \\
+           & LoRA $B_\ell A_\ell$ (rank $r_k$) & federated & population-level adaptation \\
+           & Norms $\psi_k$ & local & per-user feature statistics (H2) \\
+\ding{175} & Shared head $g_\theta$ & federated & common 64-d embedding space \\
+\ding{176} & Personal head $h_k$ & local & per-user decision rule (H1) \\
+\ding{177} & Prototypes $\mathbf{p}_{k,c}$, $n_{k,c}$ & statistics & cross-user alignment, zero-shot \\
+\ding{178} & Decoder (prior, HMM) & statistics & calibration, temporal context (H4) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Client Model}\label{sec:method:client}
+
+\subsubsection{Encoder-agnostic preprocessing \ding{172}}
+Windows are stored once in a canonical format ($3\times300$, $30$\,Hz, units of $g$). For each
+encoder $E$, a fixed operator $\Pi_E$ maps them to the format used during pretraining:
+anti-aliased linear resampling to the encoder rate $f_E$, a centered crop to the encoder length
+$L_E$ (e.g., $6$\,s for LIMU-BERT), and conversion to m\,s$^{-2}$ where required. $\Pi_E$ has no
+parameters and is identical on all devices.
+
+\subsubsection{Input adapter \ding{173}}
+A $1{\times}1$ convolution $a_k:\R^{3\times L_E}\to\R^{c_E\times L_E}$ maps the device channels to
+the $c_E$ input channels of the encoder. It is initialized to the identity on the accelerometer
+channels and to zero elsewhere (e.g., on the gyroscope channels expected by LIMU-BERT), so
+training starts exactly from the pretrained model. With $3c_E+c_E$ parameters, it can learn
+device-specific axis permutations, sign flips and gains, and it is therefore kept local.
+
+\subsubsection{Frozen encoder with low-rank adapters \ding{174}}
+For every adapted layer $\ell\in\Lset$ with frozen weight $\Wbar_\ell\in\R^{d^{\mathrm{out}}_\ell\times
+d^{\mathrm{in}}_\ell}$, LoRA~\cite{hu2022lora} learns $B_\ell\in\R^{d^{\mathrm{out}}_\ell\times r}$ and
+$A_\ell\in\R^{r\times d^{\mathrm{in}}_\ell}$ and uses the effective weight
+\begin{equation}\label{eq:lora}
+  W_\ell=\Wbar_\ell+s\,B_\ell A_\ell,\qquad s=\alpha/r .
+\end{equation}
+$B_\ell$ is initialized to zero and $A_\ell$ with Kaiming-uniform values, so $W_\ell=\Wbar_\ell$ at the
+start. We set $\alpha=2r$, which gives the same scaling $s=2$ for every rank; products trained at
+different ranks are therefore directly comparable, a prerequisite for aggregating them. IMU
+encoders are largely convolutional, so LoRA is defined for convolutions as well: a kernel
+$\mathcal{K}\in\R^{C_{\mathrm{out}}\times C_{\mathrm{in}}\times k_1\times\cdots}$ is treated as the matrix
+$\R^{C_{\mathrm{out}}\times(C_{\mathrm{in}}k_1\cdots)}$. The low-rank branch is computed as a
+convolution with $r$ output channels and the original kernel geometry (stride, dilation and
+padding mode), followed by a $1{\times}1$ convolution back to $C_{\mathrm{out}}$ channels. All
+factors are stored as two-dimensional matrices irrespective of the layer type, which makes the
+server-side aggregation independent of the encoder architecture. Without LoRA dropout, the
+forward pass uses the merged kernel of \cref{eq:lora}; this is mathematically identical, autograd
+still only updates $A_\ell$ and $B_\ell$, and it avoids two extra convolutions per layer.
+
+\subsubsection{Local normalization \ding{174}}
+The affine parameters $(\gamma,\beta)$ of every LayerNorm and BatchNorm layer, and the running
+statistics $(\mu,\sigma^2)$ of BatchNorm layers, form $\psi_k$. They are trained and kept on the
+device, in the spirit of FedBN~\cite{li2021fedbn}. When the normalization parameters are not
+trained (methods V1--V4 in \cref{tab:methods}), BatchNorm layers are kept in inference mode so that
+their pretrained statistics do not drift.
+
+\subsubsection{Shared projection head \ding{175}}
+$g_\theta(\mathbf{z})=\mathrm{ReLU}\big(W_g\,\mathrm{Dropout}(\mathrm{LN}(\mathbf{z}))+\mathbf{b}_g\big)$
+maps the encoder feature $\mathbf{z}\in\R^{d_z}$ to an embedding $\mathbf{e}\in\R^{D}$ with $D=64$.
+The leading LayerNorm puts the very different feature scales of the four encoders
+($d_z\in\{72,256,512,1024\}$) on a common footing. Because $g_\theta$ is federated, all users embed
+activities into the same space, which is what makes prototypes comparable across users.
+
+\subsubsection{Personal classifier \ding{176}}
+$h_k(\mathbf{e})=W_k\mathbf{e}+\mathbf{b}_k$ with $W_k\in\R^{C\times D}$ is kept local. A personal
+classifier may legitimately encode the user's own label distribution (a person who never cycles
+should rarely predict cycling), which a shared classifier cannot do.
+
+\subsubsection{Class prototypes \ding{177}}
+After local training, client $k$ computes the mean embedding of each class it observes,
+\begin{equation}\label{eq:local-proto}
+  \mathbf{p}_{k,c}=\frac{1}{|\mathcal{I}_{k,c}|}\sum_{i\in\mathcal{I}_{k,c}}\mathbf{e}_{k,i},
+\end{equation}
+on a random subset $\mathcal{I}_{k,c}$ of at most $512$ of its training windows, and reports
+$\mathbf{p}_{k,c}$ together with its true class count $n_{k,c}$.
+
+The full forward pass of client $k$ is
+\begin{equation}\label{eq:forward}
+\begin{aligned}
+  \mathbf{e}&=g_\theta\Big(E\big(a_k(\Pi_E(\mathbf{x}));\ \{\Wbar_\ell+s\,B_\ell A_\ell\}_{\ell\in\Lset},\ \psi_k\big)\Big),\\
+  \hat{\mathbf{y}}&=h_k(\mathbf{e}).
+\end{aligned}
+\end{equation}
+
+% ---------------------------------------------------------------------
+\subsection{Local Objective}\label{sec:method:objective}
+
+Given the global prototypes $\{\mathbf{P}_c\}_{c\in\mathcal{C}_P}$ of the previous round
+($\mathcal{C}_P$ is the set of classes that already have one), client $k$ minimizes
+\begin{equation}\label{eq:local-obj}
+\begin{aligned}
+  F_k(\Theta,\phi_k)=\frac{1}{n_k}\sum_{(\mathbf{x},y)\in\Dk^{\mathrm{tr}}}\Big[&\CE\big(h_k(\mathbf{e}),y\big)\\
+  &+\lambda\,\mathbf{1}[y\in\mathcal{C}_P]\,\big\lVert\nrm{\mathbf{e}}-\nrm{\mathbf{P}}_y\big\rVert_2^2\Big],
+\end{aligned}
+\end{equation}
+over the trainable set $\{A_\ell,B_\ell\}_{\ell\in\Lset}\cup\{\theta\}\cup\phi_k$, where bars denote
+$\ell_2$-normalized vectors and $\lambda=0.5$. The prototype term pulls each embedding towards the
+population-level center of its class and thereby counteracts the drift of the shared
+representation towards the local label distribution~\cite{tan2022fedproto}. We compute it on the unit
+sphere, where
+\begin{equation}\label{eq:cosine}
+  \big\lVert\nrm{\mathbf{u}}-\nrm{\mathbf{v}}\big\rVert_2^2=2-2\cos(\mathbf{u},\mathbf{v})\in[0,4].
+\end{equation}
+Unlike the unnormalized distance, \cref{eq:cosine} cannot be decreased by shrinking all embeddings,
+and its magnitude does not depend on the feature scale of the encoder, so a single $\lambda$
+serves all four encoders. The classifier is trained with plain cross-entropy: $h_k$ is personal,
+so the Bayes-optimal rule \emph{for client $k$} includes its own prior $\boldsymbol{\pi}_k$ and no
+re-balancing is needed (\cref{sec:method:skew} discusses the shared-classifier case).
+
+% ---------------------------------------------------------------------
+\subsection{Exact Rank-Heterogeneous LoRA Aggregation}\label{sec:method:agg}
+
+\begin{figure}[!t]
+  \centering
+  \resizebox{\columnwidth}{!}{\input{figures/fig_aggregation.tex}}
+  \caption{Exact rank-heterogeneous aggregation for one adapted layer (glyph widths are
+  proportional to the rank). (a)~Each client uploads factors of its own rank $r_k$; the server
+  forms the change $\Delta_k$ of the client's product relative to what the client received.
+  (b)~The weighted mean change is added to the current global product; the result $M$ is
+  re-factorized by a truncated SVD at rank $r_{\max}$, and the remainder $R$ is folded into the frozen
+  weight, so the effective model equals the aggregate of \cref{prop:exact}. (c)~A device of
+  rank $r_k$ receives the leading $r_k$ singular directions.}
+  \label{fig:aggregation}
+\end{figure}
+
+\subsubsection{Why naive averaging fails}
+Averaging the factors separately (FedAvg on $A$ and $B$) does not average the models, because
+the product of averages differs from the average of products.
+
+\begin{lemma}[Bias of factor averaging]\label{lem:naive}
+Let $\bar{B}=\sum_k\ptil_kB_k$ and $\bar{A}=\sum_k\ptil_kA_k$ with $\sum_k\ptil_k=1$. Then
+\begin{equation}\label{eq:naive-bias}
+  \bar{B}\bar{A}-\sum_k\ptil_k B_kA_k=-\sum_k\ptil_k\,(B_k-\bar{B})(A_k-\bar{A}).
+\end{equation}
+\end{lemma}
+\begin{IEEEproof}
+Expanding the right-hand side gives
+$-\sum_k\ptil_kB_kA_k+\bar{B}\bar{A}+\bar{B}\bar{A}-\bar{B}\bar{A}$.
+\end{IEEEproof}
+The error is a weighted cross-covariance of the client factors. It vanishes only if the clients'
+factors do not vary, and it grows precisely when the clients' data differ, i.e., under (H1)--(H2).
+FedEx-LoRA~\cite{singhal2025fedex} removes it for equal ranks by adding the residual
+$s(\sum_k\ptil_kB_kA_k-\bar{B}\bar{A})$ to the frozen weight. With heterogeneous ranks, however,
+two further problems appear: the factors have different shapes, and a low-rank device cannot
+represent, and therefore cannot update, the trailing directions of the global adapter.
+
+\subsubsection{Delta-form aggregation}
+The server keeps, for every $\ell\in\Lset$, the base $\Wbar^t_\ell$ (initially $\Omega_0$) and
+global factors $(B^t_\ell,A^t_\ell)$ at rank $\rmax=\max\mathcal{R}$. We drop the layer index
+when no confusion arises. Client $k$ receives the truncated factors
+$(\trunc{B^t}{r_k},\trunc{A^t}{r_k})$, trains them, and uploads $(B_k,A_k)$ of rank $r_k$. The server
+computes the change of each client's product relative to what that client received,
+\begin{equation}\label{eq:delta}
+  \Delta_k=B_kA_k-\trunc{B^t}{r_k}\,\trunc{A^t}{r_k},
+\end{equation}
+adds the weighted mean change to the current global product, re-factorizes the result at rank
+$\rmax$ and folds the remainder into the frozen weight:
+\begin{align}
+  M&=B^tA^t+\sum_{k\in\St}\ptil_k\,\Delta_k, \label{eq:M}\\
+  U\Sigma V^{\top}&=\mathrm{SVD}_{\rmax}(M), \nonumber\\
+  (B^{t+1},A^{t+1})&=\big(U\Sigma^{1/2},\ \Sigma^{1/2}V^{\top}\big), \label{eq:svd}\\
+  \Wbar^{t+1}&=\Wbar^{t}+s\,\big(M-B^{t+1}A^{t+1}\big). \label{eq:residual}
+\end{align}
+Here $\ptil_k=n_k/\sum_{j\in\St}n_j$ and $\mathrm{SVD}_{\rmax}$ returns the leading $\rmax$ singular
+triplets. Directions whose singular value is numerically zero ($\sigma_j<10^{-6}\sigma_1$) would
+leave both factors at zero and block their gradients; for these we re-initialize the rows of
+$A^{t+1}$ randomly and keep the columns of $B^{t+1}$ at zero, which leaves the product
+unchanged. For large matrices ($\min(d^{\mathrm{out}},d^{\mathrm{in}})>4\rmax$) a randomized
+SVD~\cite{halko2011finding} with $8$ oversampling vectors and $4$ power iterations is used; as shown
+next, this does not affect exactness, because whatever the factors miss is kept in the residual.
+
+\begin{proposition}[Exactness]\label{prop:exact}
+Let $W^t=\Wbar^t+sB^tA^t$ be the effective global weight, and let
+$W_k^{\mathrm{start}}=\Wbar^t+s\,\trunc{B^t}{r_k}\trunc{A^t}{r_k}$ and
+$W_k^{\mathrm{end}}=\Wbar^t+sB_kA_k$ be client $k$'s effective weight before and after local training.
+For any ranks $\{r_k\}$ and any factorization returned in \cref{eq:svd},
+\begin{equation}\label{eq:exact}
+  W^{t+1}=W^t+\sum_{k\in\St}\ptil_k\big(W_k^{\mathrm{end}}-W_k^{\mathrm{start}}\big).
+\end{equation}
+\end{proposition}
+\begin{IEEEproof}
+By \cref{eq:residual}, $W^{t+1}=\Wbar^{t+1}+sB^{t+1}A^{t+1}=\Wbar^t+sM$. Substituting \cref{eq:M}
+gives $W^{t+1}=\Wbar^t+sB^tA^t+\sum_k\ptil_k\,s\Delta_k=W^t+\sum_k\ptil_k\,s\Delta_k$, and
+$s\Delta_k=W_k^{\mathrm{end}}-W_k^{\mathrm{start}}$ by \cref{eq:delta}.
+\end{IEEEproof}
+
+\begin{corollary}[Reduction to FedAvg]\label{cor:fedavg}
+If all clients use $r_k=\rmax$, then $W_k^{\mathrm{start}}=W^t$ for every $k$, and \cref{eq:exact}
+becomes $W^{t+1}=\sum_k\ptil_kW_k^{\mathrm{end}}$: the effective models are averaged exactly as
+FedAvg~\cite{mcmahan2017fedavg} would average fully fine-tuned layers, and the rule coincides with
+FedEx-LoRA~\cite{singhal2025fedex}.
+\end{corollary}
+
+In other words, the server performs FedAvg on the \emph{effective-weight updates} of the clients,
+regardless of their ranks and of how the update is factorized. Over rounds, the accumulated
+residual lets the global update grow beyond rank $\rmax$, while every device trains only
+$r_k(d^{\mathrm{in}}+d^{\mathrm{out}})$ parameters per layer.
+
+\subsubsection{Why the delta form matters}
+A natural alternative, used in spirit by product-space methods such as
+FlexLoRA~\cite{bai2024flexlora}, averages the zero-padded products,
+$M'=\sum_k\ptil_kB_kA_k$. The following property shows that this alternative is biased under rank
+heterogeneity, whereas the delta form is not.
+
+\begin{proposition}[Consistency]\label{prop:consistency}
+Suppose that, after an aggregation, $B^tA^t=\sum_{j=1}^{\rmax}\sigma_j\mathbf{u}_j\mathbf{v}_j^\top$
+is in the balanced SVD form of \cref{eq:svd}, and that no client changes its factors
+($B_k=\trunc{B^t}{r_k}$, $A_k=\trunc{A^t}{r_k}$). Then the delta-form rule returns
+$W^{t+1}=W^t$, whereas product averaging returns
+\begin{equation}\label{eq:shrink}
+  M'=\sum_{j=1}^{\rmax}\varrho_j\,\sigma_j\mathbf{u}_j\mathbf{v}_j^\top,\qquad
+  \varrho_j=\sum_{k\in\St:\ r_k\ge j}\ptil_k\ \le 1 .
+\end{equation}
+\end{proposition}
+\begin{IEEEproof}
+With unchanged factors, $\Delta_k=0$ for all $k$, so $M=B^tA^t$ and $W^{t+1}=W^t$ by
+\cref{prop:exact}. For product averaging, the balanced form gives
+$\trunc{B^t}{r}\trunc{A^t}{r}=\sum_{j\le r}\sigma_j\mathbf{u}_j\mathbf{v}_j^\top$; summing over clients
+with weights $\ptil_k$ and exchanging the sums yields \cref{eq:shrink}.
+\end{IEEEproof}
+Under product averaging, the $j$-th direction of the global adapter is therefore multiplied by
+$\varrho_j$ in every round, independently of the data. With tiers drawn uniformly from $\{2,4,8\}$,
+$\E[\varrho_j]=1,\ \tfrac{2}{3},\ \tfrac{1}{3}$ for $j\in\{1,2\}$, $\{3,4\}$ and $\{5,\dots,8\}$: what the
+high-tier devices learn is diluted geometrically by the low-tier devices that never hold those
+directions. In the delta form, a client that does not hold a direction contributes a zero
+\emph{change} to it rather than a zero \emph{value}. Finally, because $(B^t,A^t)$ is in balanced SVD
+form, the truncation sent to a rank-$r_k$ device is the best rank-$r_k$ approximation of the global
+adapter in the Frobenius and spectral norms (Eckart--Young--Mirsky~\cite{eckart1936approximation}):
+weak devices receive the most informative part of the global update.
+
+% ---------------------------------------------------------------------
+\subsection{Aggregation of the Head, Prototypes and Statistics}\label{sec:method:stats}
+
+The projection head is averaged as $\theta^{t+1}=\sum_{k\in\St}\ptil_k\theta_k$. Prototypes are
+aggregated with the class counts as weights,
+\begin{equation}\label{eq:global-proto}
+  \mathbf{P}_c=\frac{\sum_{k\in\St}n_{k,c}\,\mathbf{p}_{k,c}}{\sum_{k\in\St}n_{k,c}},
+\end{equation}
+so a client contributes to a class only if it observes that class; a class that no participant
+observes in a round keeps its previous prototype. In addition, every client uploads two
+statistics once, before training: its class counts $\{n_{k,c}\}_c$ and its activity-transition
+counts $N_k\in\mathbb{N}^{C\times C}$, computed from its chronologically ordered training labels.
+The server forms the global prior $\pi_c\propto\sum_kn_{k,c}$ and the transition matrix of the
+temporal decoder (\cref{sec:method:inference}). Together these statistics cost
+$C^2+C=42$ integers per client.
+
+% ---------------------------------------------------------------------
+\subsection{Learning under Label Skew}\label{sec:method:skew}
+
+\subsubsection{Why rare classes vanish with a shared classifier}
+With a shared classifier $f$ and plain cross-entropy, the gradient with respect to the logit of
+class $c$ is $q_c-\mathbf{1}[y=c]$, where $q=\mathrm{softmax}(f(\mathbf{x}))$. On a client that
+never observes $c$, every sample therefore lowers the logit of $c$. In Capture-24, $74\,\%$ of the
+clients never cycle (\cref{sec:data:hetero}); averaging their updates erases the class from the
+global model. In a preliminary configuration without the remedies described below, $35$ of the
+$168$ per-class F1 scores of the federated models ($4$ encoders $\times$ $7$ methods $\times$ $6$
+classes) were zero: $17$ for bicycling, $13$ for vehicle and $5$ for walking.
+
+\subsubsection{\method}
+The proposed design avoids this structurally: the classifier is personal (\ding{176}), so no
+client's decision rule is pulled towards other clients' priors. The only shared class-specific
+quantities are the prototypes, and \cref{eq:global-proto} averages each prototype only over the
+clients that have the class.
+
+\subsubsection{Shared-classifier methods}
+So that the comparison with methods that share the classifier (V0--V4 in \cref{tab:methods}) is
+not dominated by the class-imbalance problem, those methods are equipped with three standard
+remedies. First, every client trains with a logit-adjusted (balanced-softmax)
+loss~\cite{menon2021logit,ren2020balanced,zhang2022fedlc} that uses its \emph{own} prior,
+\begin{equation}\label{eq:la}
+  \ell(\mathbf{x},y)=\CE\big(f(\mathbf{x})+\tau\log\boldsymbol{\pi}_k,\ y\big),\qquad\tau=1,
+\end{equation}
+where $\boldsymbol{\pi}_k$ is floored at $10^{-4}$. The gradient for an absent class becomes
+$q'_c\propto\pi_{k,c}^{\tau}e^{f_c}\approx 10^{-4}e^{f_c}$, so absent classes are no longer pushed
+down, and $f$ learns class-balanced scores. Second, the rows of the shared classifier are
+aggregated class-wise~\cite{li2021fedrs,shang2022creff},
+\begin{equation}\label{eq:classwise}
+  [W]_c^{t+1}=\frac{\sum_{k\in\St}n_{k,c}[W_k]_c}{\sum_{k\in\St}n_{k,c}}\quad\text{(the same for $b_c$)},
+\end{equation}
+and a row that no participant observes keeps its value. Third, decisions are calibrated with
+the global prior (\cref{eq:calibrated}). Full-model methods (FedAvg and V0) also use a larger
+learning rate for the heads than for the body (discriminative learning rates), without which
+the rows of rare classes barely move within the training budget.
+
+% ---------------------------------------------------------------------
+\subsection{Inference}\label{sec:method:inference}
+
+\subsubsection{Enrolled users}
+\method{} predicts $\hat{y}=\arg\max_c[h_k(\mathbf{e})]_c$ with the user's rank, local parts and
+personal head. A shared classifier trained with \cref{eq:la} outputs class-balanced scores, which
+we convert into decisions with a tunable prior strength,
+\begin{equation}\label{eq:calibrated}
+  \hat{y}=\arg\max_c\ f_c(\mathbf{x})+\tau_{\mathrm{inf}}\log\pi_c .
+\end{equation}
+$\tau_{\mathrm{inf}}=0$ gives balanced decisions and $\tau_{\mathrm{inf}}=1$ the accuracy-optimal
+decisions under $\boldsymbol{\pi}$; macro-F1 is best in between. We select
+$\tau_{\mathrm{inf}}=0.5$ from $\{0,0.25,0.5,0.75,1\}$ on the validation users and keep it fixed for all
+methods and encoders.
+
+\subsubsection{Federated temporal decoding}
+Activities last minutes to hours, whereas the classifier sees a single window. Following
+the Capture-24 benchmark~\cite{chan2024capture24,walmsley2022reallocation}, we optionally decode each
+user's chronological sequence with a hidden Markov model (HMM) whose hidden states are the
+activities. The transition matrix is estimated from the aggregated counts with add-one smoothing,
+$\Gamma_{ij}=(1+\sum_kN_{k,ij})/\sum_{j'}(1+\sum_kN_{k,ij'})$, so it is learned federatedly from
+$C^2$ integers per client without sharing any label sequence. The emission score of window
+$\mathbf{x}$ for state $c$ is the class-balanced score,
+\begin{equation}\label{eq:emission}
+  \log p(\mathbf{x}\mid c)\simeq\log\mathrm{softmax}\big(f(\mathbf{x})-(1-\tau)\log\tilde{\boldsymbol{\pi}}\big)_c,
+\end{equation}
+with $\tau=1$ and $\tilde{\boldsymbol{\pi}}=\boldsymbol{\pi}$ for a logit-adjusted shared classifier. For a
+personal classifier ($\tau=0$) we divide by the client's prior shrunk halfway towards the global
+one, $\tilde{\boldsymbol{\pi}}=\tfrac12\boldsymbol{\pi}_k+\tfrac12\boldsymbol{\pi}$; dividing by
+$\boldsymbol{\pi}_k$ alone would boost classes that the client has never observed by up to
+$-\log10^{-4}\approx9$\,nats. The Viterbi algorithm~\cite{viterbi1967error} returns the most likely
+activity sequence in $\mathcal{O}(|\Dk^{\mathrm{te}}|\,C^2)$ time. Sequences are split wherever two
+consecutive windows are more than three nominal spacings apart, so the decoder never smooths across
+recording gaps. Decoding runs on the device; it uses only the shared $\Gamma$ and $\boldsymbol{\pi}$.
+
+\subsubsection{New users}
+A user $u$ who never participated downloads the global state (rank $\rmax$) and the prototypes.
+\emph{Zero-shot}: encoders with BatchNorm first re-estimate their normalization statistics on the
+user's \emph{unlabelled} windows (AdaBN~\cite{li2018adabn}), since the global model has no
+population-level statistics after training with local norms; the user is then served by the
+nearest-prototype rule
+\begin{equation}\label{eq:zeroshot}
+  \hat{y}=\arg\max_{c\in\mathcal{C}_P}\ \cos\big(\mathbf{e},\mathbf{P}_c\big).
+\end{equation}
+\emph{Few-shot}: with $m$ minutes of labels per activity, a new personal head is initialized at the
+zero-shot solution, $[W_u]_c=\mathbf{P}_c/\norm{\mathbf{P}_c}$ and $b_{u,c}=0$, since
+$\arg\max_c\cos(\mathbf{e},\mathbf{P}_c)=\arg\max_c\mathbf{P}_c^\top\mathbf{e}/\norm{\mathbf{P}_c}$. The head, the
+norms and the input adapter $\{h_u,\psi_u,a_u\}$ are then fine-tuned on the shots. Because the
+shots are roughly class-balanced, unlike a real day, this fit uses \cref{eq:la} with the prior of
+the shots, and decisions use \cref{eq:calibrated}.
+
+% ---------------------------------------------------------------------
+\subsection{Training Procedure}\label{sec:method:algorithm}
+
+\Cref{alg:fedpeft} summarizes training. Each device is assigned a rank tier once, and each round
+consists of download, local training of the trainable roles, prototype computation, upload of
+the federated roles and statistics, and server aggregation. Because only a fraction $\rho$ of the
+clients participates in a round, the personal parts of a client may lag behind the latest global
+representation. After the last round, every client therefore performs a short personalization
+pass ($8$ steps) that updates only $\phi_k$ against the final global model, without any
+communication.
+
+\begin{algorithm}[!t]
+\caption{\method{} training}
+\label{alg:fedpeft}
+\footnotesize
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+\SetKwFor{ForPar}{for}{in parallel do}{end}
+\SetCommentSty{textit}
+\Input{clients $k=1..K$ with $\Dk^{\mathrm{tr}}$; tiers $\mathcal{R}$; rounds $T$; rate $\rho$; local steps $S$; weight $\lambda$; pretrained $\Omega_0$}
+\Output{global state $(\{\Wbar_\ell,B_\ell,A_\ell\}_\ell,\theta,\{\mathbf{P}_c\},\boldsymbol{\pi},\Gamma)$; local parts $\{\phi_k\}$}
+\textbf{Server:} $\Wbar_\ell\gets\Omega_{0,\ell}$, $B_\ell\gets0$, $A_\ell\gets\mathrm{Kaiming}(\rmax)$, $\theta\gets$ init, $\mathcal{C}_P\gets\emptyset$\;
+\For{each client $k$}{
+  $r_k\sim\mathrm{Uniform}(\mathcal{R})$;\ \ $\phi_k\gets(\text{identity }a_k,\ \text{pretrained }\psi_k,\ \text{random }h_k)$\;
+  send $\{n_{k,c}\}_c$ and $N_k$ to the server \tcp*{once}
+}
+\textbf{Server:} build the prior $\boldsymbol{\pi}$ and the HMM transitions $\Gamma$\;
+\For{$t=0,\dots,T-1$}{
+  $\St\gets$ random subset of $\lceil\rho K\rfloor$ clients\;
+  \ForPar{$k\in\St$}{
+    receive $\{\Wbar_\ell,B_{\ell,[r_k]},A_{\ell,[r_k]}\}_{\ell}$, $\theta$, $\{\mathbf{P}_c\}_{c\in\mathcal{C}_P}$\;
+    $S$ AdamW steps on $F_k$ (\cref{eq:local-obj}) w.r.t.\ $\{A_\ell,B_\ell\},\theta,\phi_k$\;
+    compute $\mathbf{p}_{k,c}$ by \cref{eq:local-proto}; keep $\phi_k$ on the device\;
+    upload $\{A_{k,\ell},B_{k,\ell}\}_\ell$, $\theta_k$, $\{\mathbf{p}_{k,c},n_{k,c}\}_c$, $n_k$\;
+  }
+  \textbf{Server:} for every $\ell\in\Lset$ apply \cref{eq:delta,eq:M,eq:svd,eq:residual}\;
+  \textbf{Server:} $\theta\gets\sum_k\ptil_k\theta_k$; prototypes by \cref{eq:global-proto}\;
+}
+\For(\tcp*[f]{final personalization, no communication}){each client $k$}{
+  $8$ steps on $F_k$ w.r.t.\ $\phi_k$ only, at the final global state\;
+}
+\end{algorithm}
+
+% ---------------------------------------------------------------------
+\subsection{Communication, Memory and Computation}\label{sec:method:cost}
+
+\subsubsection{Uplink}
+Per round, client $k$ uploads
+\begin{equation}\label{eq:uplink}
+  U_k=\underbrace{r_k\textstyle\sum_{\ell\in\Lset}\big(d^{\mathrm{in}}_\ell+d^{\mathrm{out}}_\ell\big)}_{\text{LoRA}}
+  +\underbrace{|\theta|}_{\text{head}}+\underbrace{C(D+1)}_{\text{prototypes, counts}}
+\end{equation}
+values, which is linear in the rank and independent of the size of the frozen encoder. Full
+fine-tuning uploads $|\Omega_0|+|\theta|+|h|$ values. \Cref{tab:budget} lists the resulting budgets
+for the four encoders together with the measured uplink, which ranges from $0.03$\,MB to
+$1.2$\,MB per update for \method{} versus $0.23$--$42$\,MB for full fine-tuning.
+
+\subsubsection{Downlink}
+In addition to the truncated factors, the head and the prototypes, exact aggregation changes the
+frozen weights $\Wbar_\ell$, which a client must receive before it trains again. In our accounting we
+conservatively charge the full dense $\Wbar_\ell$ of every adapted layer at each download. This term
+can be reduced substantially: if the truncated SVD in \cref{eq:svd} is exact, the per-round residual
+in \cref{eq:residual} has rank at most $\sum_{k\in\St}r_k$, because
+$\mathrm{rank}(M)\le\rmax+\sum_{k\in\St}r_k$, and it can therefore be transmitted in factored form.
+We report the conservative figure and return to this point in the discussion.
+
+\subsubsection{Client memory and computation}
+Only LoRA factors, the heads and $\phi_k$ require gradients and optimizer states, i.e., three
+additional floating-point values per trainable parameter for AdamW~\cite{loshchilov2019adamw}.
+Activation memory still scales with the encoder, so the memory saving is largest when the
+optimizer state dominates (large convolutional encoders) and modest for small Transformers.
+Prototype computation needs one extra forward pass over at most $512$ windows per round.
+
+\subsubsection{Server computation}
+Forming $M_\ell$ costs $\mathcal{O}\big(d^{\mathrm{out}}_\ell d^{\mathrm{in}}_\ell\sum_{k\in\St}r_k\big)$, and the
+randomized SVD costs $\mathcal{O}\big(d^{\mathrm{out}}_\ell d^{\mathrm{in}}_\ell(\rmax+8)\big)$ per layer and
+round. The server streams the uploads into running sums, so its memory does not grow with the
+number of participating clients.
+
+\begin{table*}[!t]
+\centering
+\caption{Parameter budget per encoder and measured communication per client update
+(fp32 serialization, no compression). $|\Omega_0|$: frozen encoder weights; LoRA: trainable
+adapter parameters at rank $r=2/4/8$; $|\theta|$: shared head; $|\phi_k|$: local parameters
+(norm affine, adapter, classifier).}
+\label{tab:budget}
+\footnotesize
+\setlength{\tabcolsep}{4.2pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}l l r r r r c c r@{}}
+\toprule
+Encoder & LoRA targets & $|\Omega_0|$ & LoRA ($r{=}2/4/8$) & $|\theta|$ & $|\phi_k|$
+  & \makecell{Uplink \method\\ $r{=}2/4/8$ (MB)} & \makecell{Uplink full FT\\ (MB)} & \makecell{Ratio$^{\dagger}$} \\
+\midrule
+LIMU-BERT~\cite{xu2021limubert}      & $W_q$, $W_v$ (shared layers)  & 51.1\,k  & 0.6/1.2/2.3\,k   & 4.8\,k  & 0.8\,k  & 0.023/0.025/0.030 & 0.227 & 8.6$\times$ \\
+ssl-wearables~\cite{yuan2024selfsupervised} & all Conv1d kernels      & 10.4\,M  & 60/119/239\,k   & 67.6\,k & 12.1\,k & 0.511/0.750/1.227 & 42.15 & 49.8$\times$ \\
+UniMTS~\cite{zhang2024unimts}        & graph + temporal convs      & 5.17\,M  & 46/91/182\,k    & 33.9\,k & 9.0\,k  & 0.319/0.502/0.866 & 20.89 & 36.4$\times$ \\
+HALO~\cite{ding2026halo}$^{\ddagger}$ & $W_q$, $W_v$ (all blocks)  & 4.60\,M  & 14/28/55\,k     & 17.0\,k & 9.6\,k  & 0.125/0.180/0.291 & 18.50 & 91.3$\times$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+\begin{minipage}{\textwidth}\footnotesize
+$^{\dagger}$Mean uplink of full fine-tuning divided by the mean uplink of \method{} over all client updates
+(tiers drawn uniformly). $^{\ddagger}$Our re-implementation of the HALO encoder, pretrained
+self-supervised on the pool users (\cref{sec:data:encoders}).
+\end{minipage}
+\end{table*}
+
+% ---------------------------------------------------------------------
+\subsection{Privacy Considerations}\label{sec:method:privacy}
+
+Raw windows, labels, label sequences, local normalization statistics, input adapters and personal
+classifiers never leave the device. The uploads are the LoRA factors and the projection head (as
+in any PEFT-based federated method), $C$ class-mean embeddings in a $64$-dimensional space and
+their counts, and, once, $C+C^2$ label statistics. Prototypes and counts reveal which activities
+a user performed, so they are as sensitive as a coarse activity diary; they can be protected by
+adding calibrated Gaussian noise to $\mathbf{p}_{k,c}$ and $n_{k,c}$ or by aggregating them with secure
+aggregation~\cite{bonawitz2017practical}, because \cref{eq:global-proto} is a ratio of two sums.
+The products $B_kA_k$ in \cref{eq:M} are also sums over clients, but secure aggregation of their dense
+form would forgo the uplink savings. A formal privacy analysis is beyond the scope of this work.

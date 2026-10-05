@@ -171,6 +171,9 @@ idea1/
 │   │   └── simulation.py       the FL round loop and all KPIs
 │   └── report/                 collect.py (KPIs) -> build.py -> template.html (Plotly)
 ├── scripts/                    numbered entry points (see table above)
+│   └── tools/paper_dataset_stats.py   every dataset number / table / figure used in the paper
+├── paper/                      journal manuscript (IEEEtran): methodology + dataset sections,
+│                               TikZ architecture figures; build with python paper/build.py
 ├── tests/test_core.py          LoRA and aggregation maths (python -m pytest tests)
 ├── data/  weights/  results/  reports/  logs/     created by the pipeline
 └── run_all.py

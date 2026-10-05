@@ -1,0 +1,54 @@
+% =====================================================================
+%  Fig. 2 - Exact rank-heterogeneous LoRA aggregation in delta form (one layer).
+%  Single-column figure.  Matrix glyphs are drawn to scale in the rank:
+%  B is d_out x r (tall), A is r x d_in (wide).
+%  (a) client uploads   (b) server aggregation   (c) download per tier
+% =====================================================================
+\begin{tikzpicture}[
+    font=\scriptsize, >={Stealth[length=1.8mm]},
+    flow/.style={->, line width=0.7pt, draw=black!75},
+    box/.style={rounded corners=2pt, align=center, inner sep=3pt, line width=0.6pt},
+    tag/.style={font=\footnotesize\bfseries, anchor=west},
+    pics/lora/.style args={#1/#2}{code={%
+        \fill[#2!38, draw=#2!80!black, line width=0.4pt] (0,0) rectangle ++(#1*0.06,-0.66);
+        \fill[#2!20, draw=#2!80!black, line width=0.4pt] (#1*0.06+0.07,0) rectangle ++(0.66,-#1*0.06);
+    }},
+  ]
+
+  % ---------------------------------------------------------------- (a) uploads
+  \node[tag] at (-0.55,6.45) {(a)};
+  \foreach \rk/\y/\col in {2/7.2/cLoc, 4/6.45/cStat, 8/5.7/cFed} {
+    \node[anchor=east] at (0.75,\y-0.33) {$r_k{=}\rk$};
+    \pic at (0.85,\y) {lora=\rk/\col};
+    \node[anchor=west] at (2.35,\y-0.33) {$\Delta_k=B_kA_k-B^{t}_{[\rk]}A^{t}_{[\rk]}$};
+  }
+  \node[anchor=west, text=black!65] at (5.85,6.45) {\begin{tabular}{@{}l@{}}change of each\\ client's product\end{tabular}};
+
+  % ---------------------------------------------------------------- (b) server
+  \node[tag] at (-0.55,3.6) {(b)};
+  \node[box, draw=black!60, fill=white] (sum) at (1.25,3.6) {$B^{t}A^{t}$\\ $+\sum_k\tilde{p}_k\,\Delta_k$};
+  \draw[flow] (1.25,4.98) -- node[right, text=black!65]{uplink} (sum.north);
+  % dense aggregate M
+  \shade[left color=cFed!45, right color=cFed!12, draw=cFed!80!black, line width=0.4pt] (2.75,3.96) rectangle (3.47,3.24);
+  \node at (3.11,3.05) {$M$};
+  \draw[flow] (sum.east) -- (2.72,3.6);
+  \node[box, draw=cFed!80!black, fill=cFed!10] (svd) at (4.55,3.6) {top-$r_{\max}$\\ SVD};
+  \draw[flow] (3.5,3.6) -- (svd.west);
+  % refactored factors (upper branch) and residual (lower branch)
+  \pic at (6.0,4.38) {lora=8/cFed};
+  \node[anchor=west] at (7.3,4.05) {\begin{tabular}{@{}l@{}}$B^{t+1}{=}U\Sigma^{1/2}$\\ $A^{t+1}{=}\Sigma^{1/2}V^{\!\top}$\end{tabular}};
+  \fill[cFrozen!30, draw=cFrozen!85!black, line width=0.4pt] (6.0,3.12) rectangle (6.72,2.4);
+  \node[anchor=west] at (6.85,2.76) {\begin{tabular}{@{}l@{}}$R=s\,(M-B^{t+1}A^{t+1})$\\ $\bar{W}\leftarrow\bar{W}+R$\end{tabular}};
+  \draw[flow] (svd.east) -- ++(0.2,0) |- (5.95,4.05);
+  \draw[flow] (svd.east) -- ++(0.2,0) |- (5.95,2.76);
+
+  % ---------------------------------------------------------------- (c) download
+  \draw[flow] (svd.south) -- node[left, text=black!65]{top-$r_k$ directions} (4.55,1.55);
+  \node[tag] at (-0.55,1.1) {(c)};
+  \foreach \rk/\x/\col in {2/0.85/cLoc, 4/3.95/cStat, 8/6.9/cFed} {
+    \pic at (\x,1.45) {lora=\rk/\col};
+    \node[anchor=north] at (\x+0.55,0.72) {tier $r_k{=}\rk$};
+  }
+  \node[anchor=north, text=black!65] at (4.5,0.32)
+       {each tier receives the best rank-$r_k$ approximation of $B^{t+1}A^{t+1}$ (Eckart--Young)};
+\end{tikzpicture}

@@ -8,6 +8,14 @@
     "Bicycling"
   ],
   "window_s": 10,
+  "cpa_codes": [
+    1,
+    97,
+    84,
+    18,
+    5,
+    1
+  ],
   "subsample_every": 6,
   "n_participants": 151,
   "full": {
@@ -151,7 +159,10 @@
       "gini": 0.0938536326434121
     },
     "equivalent_dirichlet_alpha": 1.789372837302125,
-    "dominant_class_share_mean": 0.48924388570679683
+    "dominant_class_share_mean": 0.48924388570679683,
+    "sleep_share_train_mean": 0.3034002760787605,
+    "sleep_share_test_mean": 0.5972005186564301,
+    "clients_test_mostly_sleep_pct": 56.60377358490566
   },
   "hmm": {
     "self_transition": [

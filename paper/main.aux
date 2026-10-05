@@ -1,0 +1,273 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\providecommand \oddpage@label [2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{I}{1}{Introduction}{section.1}{}}
+\newlabel{sec:intro@cref}{{[section][1][]I}{[1][1][]1}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{1}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{II}{1}{Related Work}{section.2}{}}
+\newlabel{sec:related@cref}{{[section][2][]II}{[1][1][]1}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {III}Proposed Method: FedPEFT-IMU}{1}{section.3}\protected@file@percent }
+\newlabel{sec:method}{{III}{1}{Proposed Method: \method }{section.3}{}}
+\newlabel{sec:method@cref}{{[section][3][]III}{[1][1][]1}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Problem Setting and Design Goals}{1}{subsection.3.1}\protected@file@percent }
+\newlabel{sec:method:problem}{{\mbox  {III-A}}{1}{Problem Setting and Design Goals}{subsection.3.1}{}}
+\newlabel{sec:method:problem@cref}{{[subsection][1][3]\mbox  {III-A}}{[1][1][]1}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Main notation.}}{1}{table.1}\protected@file@percent }
+\newlabel{tab:notation}{{I}{1}{Main notation}{table.1}{}}
+\newlabel{tab:notation@cref}{{[table][1][]I}{[1][1][]1}{}{}{}}
+\newlabel{eq:global}{{1}{1}{Problem Setting and Design Goals}{equation.1}{}}
+\newlabel{eq:global@cref}{{[equation][1][]1}{[1][1][]1}{}{}{}}
+\citation{li2021fedbn}
+\citation{collins2021fedrep,arivazhagan2019fedper}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces FedPEFT-IMU{} architecture. Each client runs the same seven-component model {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 172}--{\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 178} on top of a frozen pretrained IMU encoder. Parameters are partitioned by role: the base weights are frozen (grey); the low-rank adapters and the projection head are federated (blue) and trained at a device-specific rank $r_k$; the input adapter, the normalization layers and the classifier stay on the device (green); class prototypes and one-shot label statistics are the only additional information that is shared (amber). The server aggregates LoRA updates exactly in delta form, re-factorizes them by a truncated SVD and folds the remainder into the frozen weights (\cref  {fig:aggregation}). New users are served without any training through the global prototypes.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{2}{\method {} architecture. Each client runs the same seven-component model \ding {172}--\ding {178} on top of a frozen pretrained IMU encoder. Parameters are partitioned by role: the base weights are frozen (grey); the low-rank adapters and the projection head are federated (blue) and trained at a device-specific rank $r_k$; the input adapter, the normalization layers and the classifier stay on the device (green); class prototypes and one-shot label statistics are the only additional information that is shared (amber). The server aggregates LoRA updates exactly in delta form, re-factorizes them by a truncated SVD and folds the remainder into the frozen weights (\cref {fig:aggregation}). New users are served without any training through the global prototypes}{figure.1}{}}
+\newlabel{fig:architecture@cref}{{[figure][1][]1}{[1][1][]2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Architecture Overview and Parameter Roles}{2}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:method:arch}{{\mbox  {III-B}}{2}{Architecture Overview and Parameter Roles}{subsection.3.2}{}}
+\newlabel{sec:method:arch@cref}{{[subsection][2][3]\mbox  {III-B}}{[1][1][]2}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Components of the FedPEFT-IMU{} client model and their roles.}}{2}{table.2}\protected@file@percent }
+\newlabel{tab:roles}{{II}{2}{Components of the \method {} client model and their roles}{table.2}{}}
+\newlabel{tab:roles@cref}{{[table][2][]II}{[1][2][]2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Client Model}{2}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:method:client}{{\mbox  {III-C}}{2}{Client Model}{subsection.3.3}{}}
+\newlabel{sec:method:client@cref}{{[subsection][3][3]\mbox  {III-C}}{[1][2][]2}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}1}Encoder-agnostic preprocessing {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 172}}{2}{subsubsection.3.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}2}Input adapter {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 173}}{2}{subsubsection.3.3.2}\protected@file@percent }
+\citation{hu2022lora}
+\citation{li2021fedbn}
+\citation{tan2022fedproto}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}3}Frozen encoder with low-rank adapters {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 174}}{3}{subsubsection.3.3.3}\protected@file@percent }
+\newlabel{eq:lora}{{2}{3}{Frozen encoder with low-rank adapters \ding {174}}{equation.2}{}}
+\newlabel{eq:lora@cref}{{[equation][2][]2}{[1][3][]3}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}4}Local normalization {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 174}}{3}{subsubsection.3.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}5}Shared projection head {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 175}}{3}{subsubsection.3.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}6}Personal classifier {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 176}}{3}{subsubsection.3.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}7}Class prototypes {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 177}}{3}{subsubsection.3.3.7}\protected@file@percent }
+\newlabel{eq:local-proto}{{3}{3}{Class prototypes \ding {177}}{equation.3}{}}
+\newlabel{eq:local-proto@cref}{{[equation][3][]3}{[1][3][]3}{}{}{}}
+\newlabel{eq:forward}{{4}{3}{Class prototypes \ding {177}}{equation.4}{}}
+\newlabel{eq:forward@cref}{{[equation][4][]4}{[1][3][]3}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Exact rank-heterogeneous aggregation for one adapted layer (glyph widths are proportional to the rank). (a)~Each client uploads factors of its own rank $r_k$; the server forms the change $\Delta _k$ of the client's product relative to what the client received. (b)~The weighted mean change is added to the current global product; the result $M$ is re-factorized by a truncated SVD at rank $r_{\max }$, and the remainder $R$ is folded into the frozen weight, so the effective model equals the aggregate of \cref  {prop:exact}. (c)~A device of rank $r_k$ receives the leading $r_k$ singular directions.}}{3}{figure.2}\protected@file@percent }
+\newlabel{fig:aggregation}{{2}{3}{Exact rank-heterogeneous aggregation for one adapted layer (glyph widths are proportional to the rank). (a)~Each client uploads factors of its own rank $r_k$; the server forms the change $\Delta _k$ of the client's product relative to what the client received. (b)~The weighted mean change is added to the current global product; the result $M$ is re-factorized by a truncated SVD at rank $r_{\max }$, and the remainder $R$ is folded into the frozen weight, so the effective model equals the aggregate of \cref {prop:exact}. (c)~A device of rank $r_k$ receives the leading $r_k$ singular directions}{figure.2}{}}
+\newlabel{fig:aggregation@cref}{{[figure][2][]2}{[1][3][]3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Local Objective}{3}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:method:objective}{{\mbox  {III-D}}{3}{Local Objective}{subsection.3.4}{}}
+\newlabel{sec:method:objective@cref}{{[subsection][4][3]\mbox  {III-D}}{[1][3][]3}{}{}{}}
+\newlabel{eq:local-obj}{{5}{3}{Local Objective}{equation.5}{}}
+\newlabel{eq:local-obj@cref}{{[equation][5][]5}{[1][3][]3}{}{}{}}
+\newlabel{eq:cosine}{{6}{3}{Local Objective}{equation.6}{}}
+\newlabel{eq:cosine@cref}{{[equation][6][]6}{[1][3][]3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Exact Rank-Heterogeneous LoRA Aggregation}{3}{subsection.3.5}\protected@file@percent }
+\newlabel{sec:method:agg}{{\mbox  {III-E}}{3}{Exact Rank-Heterogeneous LoRA Aggregation}{subsection.3.5}{}}
+\newlabel{sec:method:agg@cref}{{[subsection][5][3]\mbox  {III-E}}{[1][3][]3}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-E}1}Why naive averaging fails}{3}{subsubsection.3.5.1}\protected@file@percent }
+\newlabel{lem:naive}{{1}{3}{Bias of factor averaging}{subsubsection.3.5.1}{}}
+\newlabel{lem:naive@cref}{{[lemma][1][]1}{[1][3][]3}{}{}{}}
+\newlabel{eq:naive-bias}{{7}{3}{Bias of factor averaging}{equation.7}{}}
+\newlabel{eq:naive-bias@cref}{{[equation][7][]7}{[1][3][]3}{}{}{}}
+\citation{singhal2025fedex}
+\citation{halko2011finding}
+\citation{mcmahan2017fedavg}
+\citation{singhal2025fedex}
+\citation{bai2024flexlora}
+\citation{eckart1936approximation}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-E}2}Delta-form aggregation}{4}{subsubsection.3.5.2}\protected@file@percent }
+\newlabel{eq:delta}{{8}{4}{Delta-form aggregation}{equation.8}{}}
+\newlabel{eq:delta@cref}{{[equation][8][]8}{[1][4][]4}{}{}{}}
+\newlabel{eq:M}{{9}{4}{Delta-form aggregation}{equation.9}{}}
+\newlabel{eq:M@cref}{{[equation][9][]9}{[1][4][]4}{}{}{}}
+\newlabel{eq:svd}{{10}{4}{Delta-form aggregation}{equation.10}{}}
+\newlabel{eq:svd@cref}{{[equation][10][]10}{[1][4][]4}{}{}{}}
+\newlabel{eq:residual}{{11}{4}{Delta-form aggregation}{equation.11}{}}
+\newlabel{eq:residual@cref}{{[equation][11][]11}{[1][4][]4}{}{}{}}
+\newlabel{prop:exact}{{1}{4}{Exactness}{equation.11}{}}
+\newlabel{prop:exact@cref}{{[proposition][1][]1}{[1][4][]4}{}{}{}}
+\newlabel{eq:exact}{{12}{4}{Exactness}{equation.12}{}}
+\newlabel{eq:exact@cref}{{[equation][12][]12}{[1][4][]4}{}{}{}}
+\newlabel{cor:fedavg}{{1}{4}{Reduction to FedAvg}{equation.12}{}}
+\newlabel{cor:fedavg@cref}{{[corollary][1][]1}{[1][4][]4}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-E}3}Why the delta form matters}{4}{subsubsection.3.5.3}\protected@file@percent }
+\newlabel{prop:consistency}{{2}{4}{Consistency}{subsubsection.3.5.3}{}}
+\newlabel{prop:consistency@cref}{{[proposition][2][]2}{[1][4][]4}{}{}{}}
+\newlabel{eq:shrink}{{13}{4}{Consistency}{equation.13}{}}
+\newlabel{eq:shrink@cref}{{[equation][13][]13}{[1][4][]4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Aggregation of the Head, Prototypes and Statistics}{4}{subsection.3.6}\protected@file@percent }
+\newlabel{sec:method:stats}{{\mbox  {III-F}}{4}{Aggregation of the Head, Prototypes and Statistics}{subsection.3.6}{}}
+\newlabel{sec:method:stats@cref}{{[subsection][6][3]\mbox  {III-F}}{[1][4][]4}{}{}{}}
+\newlabel{eq:global-proto}{{14}{4}{Aggregation of the Head, Prototypes and Statistics}{equation.14}{}}
+\newlabel{eq:global-proto@cref}{{[equation][14][]14}{[1][4][]4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-G}}Learning under Label Skew}{4}{subsection.3.7}\protected@file@percent }
+\newlabel{sec:method:skew}{{\mbox  {III-G}}{4}{Learning under Label Skew}{subsection.3.7}{}}
+\newlabel{sec:method:skew@cref}{{[subsection][7][3]\mbox  {III-G}}{[1][4][]4}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-G}1}Why rare classes vanish with a shared classifier}{4}{subsubsection.3.7.1}\protected@file@percent }
+\citation{menon2021logit,ren2020balanced,zhang2022fedlc}
+\citation{li2021fedrs,shang2022creff}
+\citation{chan2024capture24,walmsley2022reallocation}
+\citation{viterbi1967error}
+\citation{li2018adabn}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-G}2}FedPEFT-IMU}{5}{subsubsection.3.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-G}3}Shared-classifier methods}{5}{subsubsection.3.7.3}\protected@file@percent }
+\newlabel{eq:la}{{15}{5}{Shared-classifier methods}{equation.15}{}}
+\newlabel{eq:la@cref}{{[equation][15][]15}{[1][5][]5}{}{}{}}
+\newlabel{eq:classwise}{{16}{5}{Shared-classifier methods}{equation.16}{}}
+\newlabel{eq:classwise@cref}{{[equation][16][]16}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-H}}Inference}{5}{subsection.3.8}\protected@file@percent }
+\newlabel{sec:method:inference}{{\mbox  {III-H}}{5}{Inference}{subsection.3.8}{}}
+\newlabel{sec:method:inference@cref}{{[subsection][8][3]\mbox  {III-H}}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-H}1}Enrolled users}{5}{subsubsection.3.8.1}\protected@file@percent }
+\newlabel{eq:calibrated}{{17}{5}{Enrolled users}{equation.17}{}}
+\newlabel{eq:calibrated@cref}{{[equation][17][]17}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-H}2}Federated temporal decoding}{5}{subsubsection.3.8.2}\protected@file@percent }
+\newlabel{eq:emission}{{18}{5}{Federated temporal decoding}{equation.18}{}}
+\newlabel{eq:emission@cref}{{[equation][18][]18}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-H}3}New users}{5}{subsubsection.3.8.3}\protected@file@percent }
+\newlabel{eq:zeroshot}{{19}{5}{New users}{equation.19}{}}
+\newlabel{eq:zeroshot@cref}{{[equation][19][]19}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-I}}Training Procedure}{5}{subsection.3.9}\protected@file@percent }
+\newlabel{sec:method:algorithm}{{\mbox  {III-I}}{5}{Training Procedure}{subsection.3.9}{}}
+\newlabel{sec:method:algorithm@cref}{{[subsection][9][3]\mbox  {III-I}}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-J}}Communication, Memory and Computation}{5}{subsection.3.10}\protected@file@percent }
+\newlabel{sec:method:cost}{{\mbox  {III-J}}{5}{Communication, Memory and Computation}{subsection.3.10}{}}
+\newlabel{sec:method:cost@cref}{{[subsection][10][3]\mbox  {III-J}}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}1}Uplink}{5}{subsubsection.3.10.1}\protected@file@percent }
+\newlabel{eq:uplink}{{20}{5}{Uplink}{equation.20}{}}
+\newlabel{eq:uplink@cref}{{[equation][20][]20}{[1][5][]5}{}{}{}}
+\citation{loshchilov2019adamw}
+\citation{xu2021limubert}
+\citation{yuan2024selfsupervised}
+\citation{zhang2024unimts}
+\citation{ding2026halo}
+\citation{bonawitz2017practical}
+\citation{chan2024capture24}
+\citation{gershuny2020testing}
+\citation{ainsworth2011compendium}
+\citation{kelly2013ethical}
+\citation{willetts2018statistical}
+\citation{chan2024capture24}
+\citation{chan2024capture24}
+\@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces FedPEFT-IMU{} training}}{6}{algocf.1}\protected@file@percent }
+\newlabel{alg:fedpeft}{{1}{6}{Training Procedure}{algocf.1}{}}
+\newlabel{alg:fedpeft@cref}{{[algorithm][1][]1}{[1][5][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}2}Downlink}{6}{subsubsection.3.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}3}Client memory and computation}{6}{subsubsection.3.10.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}4}Server computation}{6}{subsubsection.3.10.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-K}}Privacy Considerations}{6}{subsection.3.11}\protected@file@percent }
+\newlabel{sec:method:privacy}{{\mbox  {III-K}}{6}{Privacy Considerations}{subsection.3.11}{}}
+\newlabel{sec:method:privacy@cref}{{[subsection][11][3]\mbox  {III-K}}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Dataset and Experimental Protocol}{6}{section.4}\protected@file@percent }
+\newlabel{sec:data}{{IV}{6}{Dataset and Experimental Protocol}{section.4}{}}
+\newlabel{sec:data@cref}{{[section][4][]IV}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}The Capture-24 Dataset}{6}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:data:capture24}{{\mbox  {IV-A}}{6}{The Capture-24 Dataset}{subsection.4.1}{}}
+\newlabel{sec:data:capture24@cref}{{[subsection][1][4]\mbox  {IV-A}}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Preprocessing}{6}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:data:preprocessing}{{\mbox  {IV-B}}{6}{Preprocessing}{subsection.4.2}{}}
+\newlabel{sec:data:preprocessing@cref}{{[subsection][2][4]\mbox  {IV-B}}{[1][6][]6}{}{}{}}
+\citation{hsu2019measuring}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Parameter budget per encoder and measured communication per client update (fp32 serialization, no compression). $|\Omega _0|$: frozen encoder weights; LoRA: trainable adapter parameters at rank $r=2/4/8$; $|\theta |$: shared head; $|\phi _k|$: local parameters (norm affine, adapter, classifier).}}{7}{table.3}\protected@file@percent }
+\newlabel{tab:budget}{{III}{7}{Parameter budget per encoder and measured communication per client update (fp32 serialization, no compression). $|\Omega _0|$: frozen encoder weights; LoRA: trainable adapter parameters at rank $r=2/4/8$; $|\theta |$: shared head; $|\phi _k|$: local parameters (norm affine, adapter, classifier)}{table.3}{}}
+\newlabel{tab:budget@cref}{{[table][3][]III}{[1][6][]7}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Capture-24 classes (Willetts 2018 scheme) after windowing, over all $151$ participants. Codes: distinct Compendium annotations mapped to the class. Users: participants with at least one window of the class. Clients: share of the 106{} FL clients that have the class in their training part. Bout: median length of uninterrupted bouts.}}{7}{table.4}\protected@file@percent }
+\newlabel{tab:classes}{{IV}{7}{Capture-24 classes (Willetts 2018 scheme) after windowing, over all $151$ participants. Codes: distinct Compendium annotations mapped to the class. Users: participants with at least one window of the class. Clients: share of the \NumClients {} FL clients that have the class in their training part. Bout: median length of uninterrupted bouts}{table.4}{}}
+\newlabel{tab:classes@cref}{{[table][4][]IV}{[1][6][]7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Federated Partition and Data Splits}{7}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:data:splits}{{\mbox  {IV-C}}{7}{Federated Partition and Data Splits}{subsection.4.3}{}}
+\newlabel{sec:data:splits@cref}{{[subsection][3][4]\mbox  {IV-C}}{[1][7][]7}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces User-level partition (seed $0$), experiment windows (one per minute) and demographics. F/M: female/male. Age groups: 18--29 / 30--37 / 38--52 / $\geq $53 years. Use: chronological split of each user's windows (percent), or role of the pool users.}}{7}{table.5}\protected@file@percent }
+\newlabel{tab:partition}{{V}{7}{User-level partition (seed $0$), experiment windows (one per minute) and demographics. F/M: female/male. Age groups: 18--29 / 30--37 / 38--52 / $\geq $53 years. Use: chronological split of each user's windows (percent), or role of the pool users}{table.5}{}}
+\newlabel{tab:partition@cref}{{[table][5][]V}{[1][7][]7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Statistical Heterogeneity of the Natural Partition}{7}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:data:hetero}{{\mbox  {IV-D}}{7}{Statistical Heterogeneity of the Natural Partition}{subsection.4.4}{}}
+\newlabel{sec:data:hetero@cref}{{[subsection][4][4]\mbox  {IV-D}}{[1][7][]7}{}{}{}}
+\citation{ding2026halo}
+\citation{he2022masked}
+\citation{oord2018representation}
+\citation{zhang2024unimts}
+\citation{xu2021limubert}
+\citation{stisen2015smart}
+\citation{yuan2024selfsupervised}
+\citation{zhang2024unimts}
+\citation{yan2018spatial}
+\citation{guo2022generating}
+\citation{ding2026halo}
+\citation{singhal2025fedex}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Natural heterogeneity of the 106{} Capture-24 clients (training parts, one window per minute). (a)~Label distribution of every client. (b)~Share of clients that observe each class (global share in parentheses); bicycling and vehicle are absent from most clients. (c)~Jensen--Shannon divergence of each client's label distribution from the global one, and between the same client's training and test parts. The temporal shift within a client exceeds the shift between clients.}}{8}{figure.3}\protected@file@percent }
+\newlabel{fig:labelskew}{{3}{8}{Natural heterogeneity of the \NumClients {} Capture-24 clients (training parts, one window per minute). (a)~Label distribution of every client. (b)~Share of clients that observe each class (global share in parentheses); bicycling and vehicle are absent from most clients. (c)~Jensen--Shannon divergence of each client's label distribution from the global one, and between the same client's training and test parts. The temporal shift within a client exceeds the shift between clients}{figure.3}{}}
+\newlabel{fig:labelskew@cref}{{[figure][3][]3}{[1][7][]8}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Statistical heterogeneity of the FL clients (training parts unless stated). JSD: Jensen--Shannon divergence in bits. Equivalent $\alpha $: concentration of a $\mathrm  {Dir}(\alpha C\bm  {\pi })$ label-skew model with the same client sizes and the same mean JSD.}}{8}{table.6}\protected@file@percent }
+\newlabel{tab:hetero}{{VI}{8}{Statistical heterogeneity of the FL clients (training parts unless stated). JSD: Jensen--Shannon divergence in bits. Equivalent $\alpha $: concentration of a $\mathrm {Dir}(\alpha C\boldsymbol {\pi })$ label-skew model with the same client sizes and the same mean JSD}{table.6}{}}
+\newlabel{tab:hetero@cref}{{[table][6][]VI}{[1][7][]8}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Pretrained Encoders}{8}{subsection.4.5}\protected@file@percent }
+\newlabel{sec:data:encoders}{{\mbox  {IV-E}}{8}{Pretrained Encoders}{subsection.4.5}{}}
+\newlabel{sec:data:encoders@cref}{{[subsection][5][4]\mbox  {IV-E}}{[1][8][]8}{}{}{}}
+\citation{mcmahan2017fedavg}
+\citation{singhal2025fedex}
+\citation{beutel2020flower}
+\citation{loshchilov2019adamw}
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Pretrained IMU encoders. Input: channels after the input adapter, sampling rate, samples per window (duration) and units, produced from the canonical $3\times 300$ window by $\Pi _E$.}}{9}{table.7}\protected@file@percent }
+\newlabel{tab:encoders}{{VII}{9}{Pretrained IMU encoders. Input: channels after the input adapter, sampling rate, samples per window (duration) and units, produced from the canonical $3\times 300$ window by $\Pi _E$}{table.7}{}}
+\newlabel{tab:encoders@cref}{{[table][7][]VII}{[1][8][]9}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Compared Methods}{9}{subsection.4.6}\protected@file@percent }
+\newlabel{sec:data:methods}{{\mbox  {IV-F}}{9}{Compared Methods}{subsection.4.6}{}}
+\newlabel{sec:data:methods@cref}{{[subsection][6][4]\mbox  {IV-F}}{[1][8][]9}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Evaluation Metrics}{9}{subsection.4.7}\protected@file@percent }
+\newlabel{sec:data:metrics}{{\mbox  {IV-G}}{9}{Evaluation Metrics}{subsection.4.7}{}}
+\newlabel{sec:data:metrics@cref}{{[subsection][7][4]\mbox  {IV-G}}{[1][9][]9}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-H}}Implementation Details}{9}{subsection.4.8}\protected@file@percent }
+\newlabel{sec:data:impl}{{\mbox  {IV-H}}{9}{Implementation Details}{subsection.4.8}{}}
+\newlabel{sec:data:impl@cref}{{[subsection][8][4]\mbox  {IV-H}}{[1][9][]9}{}{}{}}
+\bibstyle{IEEEtran}
+\bibdata{references}
+\bibcite{li2021fedbn}{1}
+\bibcite{collins2021fedrep}{2}
+\bibcite{arivazhagan2019fedper}{3}
+\bibcite{hu2022lora}{4}
+\bibcite{tan2022fedproto}{5}
+\bibcite{singhal2025fedex}{6}
+\bibcite{halko2011finding}{7}
+\bibcite{mcmahan2017fedavg}{8}
+\bibcite{bai2024flexlora}{9}
+\bibcite{eckart1936approximation}{10}
+\bibcite{menon2021logit}{11}
+\bibcite{ren2020balanced}{12}
+\bibcite{zhang2022fedlc}{13}
+\bibcite{li2021fedrs}{14}
+\bibcite{shang2022creff}{15}
+\bibcite{chan2024capture24}{16}
+\bibcite{walmsley2022reallocation}{17}
+\bibcite{viterbi1967error}{18}
+\bibcite{li2018adabn}{19}
+\bibcite{loshchilov2019adamw}{20}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Federated methods. $\Omega $: encoder weights; $g$, $h$: shared and classifier heads; $\psi $: normalization; $a$: input adapter; P: prototypes.}}{10}{table.8}\protected@file@percent }
+\newlabel{tab:methods}{{VIII}{10}{Federated methods. $\Omega $: encoder weights; $g$, $h$: shared and classifier heads; $\psi $: normalization; $a$: input adapter; P: prototypes}{table.8}{}}
+\newlabel{tab:methods@cref}{{[table][8][]VIII}{[1][9][]10}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Hyperparameters (UniMTS budget in parentheses where it differs).}}{10}{table.9}\protected@file@percent }
+\newlabel{tab:hparams}{{IX}{10}{Hyperparameters (UniMTS budget in parentheses where it differs)}{table.9}{}}
+\newlabel{tab:hparams@cref}{{[table][9][]IX}{[1][10][]10}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Results}{10}{section.5}\protected@file@percent }
+\newlabel{sec:results}{{V}{10}{Results}{section.5}{}}
+\newlabel{sec:results@cref}{{[section][5][]V}{[1][10][]10}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{10}{section.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{VI}{10}{Conclusion}{section.6}{}}
+\newlabel{sec:conclusion@cref}{{[section][6][]VI}{[1][10][]10}{}{}{}}
+\@writefile{toc}{\contentsline {section}{References}{10}{section*.1}\protected@file@percent }
+\bibcite{xu2021limubert}{21}
+\bibcite{yuan2024selfsupervised}{22}
+\bibcite{zhang2024unimts}{23}
+\bibcite{ding2026halo}{24}
+\bibcite{bonawitz2017practical}{25}
+\bibcite{gershuny2020testing}{26}
+\bibcite{ainsworth2011compendium}{27}
+\bibcite{kelly2013ethical}{28}
+\bibcite{willetts2018statistical}{29}
+\bibcite{hsu2019measuring}{30}
+\bibcite{he2022masked}{31}
+\bibcite{oord2018representation}{32}
+\bibcite{stisen2015smart}{33}
+\bibcite{yan2018spatial}{34}
+\bibcite{guo2022generating}{35}
+\bibcite{beutel2020flower}{36}
+\gdef \@abspage@last{11}
