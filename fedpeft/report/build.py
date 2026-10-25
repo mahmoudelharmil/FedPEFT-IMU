@@ -29,7 +29,7 @@ def _plotly_js() -> str:
     return get_plotlyjs().replace("\ufffd", "\\uFFFD")
 
 
-DATASET_NAMES = {"capture24": "Capture-24", "harbox": "HARBox", "wisdm": "WISDM"}
+DATASET_NAMES = {"capture24": "Capture-24", "harbox": "HARBox", "wisdm": "WISDM", "ucihar": "UCI HAR"}
 
 
 def _clean(obj):

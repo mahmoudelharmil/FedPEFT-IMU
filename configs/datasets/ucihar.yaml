@@ -1,0 +1,108 @@
+# =====================================================================
+#  UCI HAR dataset settings (merged right after default.yaml when
+#  data.dataset = ucihar; profiles may still override anything here).
+#
+#  Human Activity Recognition Using Smartphones (Anguita et al., 2013; UCI #240):
+#  30 subjects, a smartphone on the waist, 6 activities (walking, upstairs, downstairs,
+#  sitting, standing, lying), accelerometer + gyroscope at 50 Hz, released as 2.56-s
+#  windows (128 samples) with 50 % overlap.  Prepare it with
+#      python scripts/01_prepare_data.py --profile ucihar
+# =====================================================================
+
+paths:
+  processed_dir: data/processed_ucihar   # one npz per subject (2.56-s windows, 6 channels, raw units)
+
+data:
+  dataset: ucihar
+  label_scheme: UCIHAR
+  raw_rate_hz: 50
+  base_rate_hz: 50
+  window_s: 2.56
+  subsample_every: 1
+
+# Leakage-free protocol (our default), as for HARBox and WISDM: every activity of a user is
+# split in time, 80 % train / 20 % test, one window dropped in between (windows overlap 50 %).
+split:
+  mode: per_class_chronological
+  gap_windows: 1
+  train_time_frac: 0.80
+  heldout_frac: 0.20                    # 6 new users (zero-/few-shot)
+  pool_frac: 0.10                       # 3 validation users (model selection, HALO SSL)
+  heldout_adapt_frac: 0.50
+  fewshot_shots: [1, 5, 10]             # labelled 2.56-s windows per activity
+  fewshot_steps: 60
+  transductive_report: true             # V5 runs also report the transductive zero-shot rule
+
+decoding:
+  hmm: false                            # activities are short separate sessions
+
+fl:
+  new_user_local_init: average
+
+augment:                                # the same augmentation as for HARBox and WISDM
+  enabled: true
+  rotation_deg: 30
+  scale_std: 0.10
+  jitter_std: 0.0
+  p: 0.8
+
+encoders:
+  names: [limu_bert, ssl_wearables, unimts, halo, convgru]
+  limu_bert:
+    seq_len: 51                         # 2.56 s at LIMU-BERT's 20 Hz (first 51 position embeddings)
+    lora_scope: all                     # LoRA on every linear layer of the shared block (HARBox placement result)
+  ssl_wearables:
+    fit: tile                           # harnet10 needs 300 samples (10 s at 30 Hz): repeat the 2.56-s window
+    budget:
+      centralized: {epochs: 20, patience: 5}
+      fl: {rounds: 60, max_local_steps: 6}
+  unimts:
+    n_samples: 51                       # 2.56 s at 20 Hz
+    budget:
+      _replace: true
+      centralized: {epochs: 15, patience: 4, batch_size: 64, max_train_windows: 8000}
+      fl: {rounds: 40, max_local_steps: 4}
+      split: {fewshot_steps: 30}
+      runtime: {eval_batch_size: 128}
+  halo:
+    rate_hz: 50
+    n_samples: 128
+    patch_s: 0.32                       # 8 patches of 0.32 s (16 samples) per window
+    in_channels: all                    # accelerometer + gyroscope
+    checkpoint: halo/ucihar_halo_ssl_seed{seed}.pt
+    budget:
+      centralized: {epochs: 20, patience: 5}
+      fl: {rounds: 60, max_local_steps: 6}
+  convgru:
+    hidden: 128                         # the FedMultimodal-style model: per-sensor conv + GRU(128)
+    modes: [scratch]
+    methods: [fedavg_scratch, local_scratch, ditto_scratch]
+
+halo_ssl:
+  epochs: 80                            # only 3 pool users: more passes over their unlabelled windows
+  subsample_every: 1
+  batch_size: 128
+
+# ---------------------------------------------------------------------
+#  Report: published UCI HAR results and the profiles that reproduce their protocol
+#  (configs/profiles/ucihar_fedmm*.yaml) for a like-for-like table.
+# ---------------------------------------------------------------------
+report:
+  dataset_description: "waist smartphone accelerometer + gyroscope (50 Hz), 6 activities"
+  sota_profiles: [ucihar_fedmm, ucihar_fedmm5]   # the published protocol with alpha = 0.1 and 5.0
+  sota_metric: heldout_macro_f1         # FedMultimodal scores the global model's F1 on the 9 test subjects
+  published:
+    # FedMultimodal (Feng et al., KDD 2023), Table 4, UCI-HAR (synthetic Dirichlet partition of the 21
+    # training subjects into 105 clients, official 9 test subjects, F1 in %), Conv+GRU model per sensor.
+    - {method: "FedAvg, concatenation fusion (alpha = 0.1)", short: "FedAvg", model: "Conv-GRU", accuracy: 0.7750,
+       source: "FedMultimodal, Tab. 4"}
+    - {method: "FedAvg, attention fusion (alpha = 0.1)", short: "FedAvg", model: "Conv-GRU", accuracy: 0.7666,
+       source: "FedMultimodal, Tab. 4"}
+    - {method: "FedOpt, attention fusion (alpha = 0.1)", short: "FedOpt", model: "Conv-GRU", accuracy: 0.7980,
+       source: "FedMultimodal, Tab. 4"}
+    - {method: "FedAvg, concatenation fusion (alpha = 5.0)", short: "FedAvg", model: "Conv-GRU", accuracy: 0.7878,
+       source: "FedMultimodal, Tab. 4"}
+    - {method: "FedAvg, attention fusion (alpha = 5.0)", short: "FedAvg", model: "Conv-GRU", accuracy: 0.7775,
+       source: "FedMultimodal, Tab. 4"}
+    - {method: "FedOpt, attention fusion (alpha = 5.0)", short: "FedOpt", model: "Conv-GRU", accuracy: 0.8517,
+       source: "FedMultimodal, Tab. 4"}

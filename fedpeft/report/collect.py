@@ -209,6 +209,8 @@ def collect_sota(cfg) -> dict | None:
         client_accuracy    mean test accuracy per user (HARBox / FedCHAR)
         heldout_accuracy   accuracy of the global model on all windows of unseen test
                            subjects (WISDM / FedAIoT), mean over the seeds (test-subject draws)
+        heldout_macro_f1   macro-F1 of the global model on all windows of the unseen test
+                           subjects (UCI HAR / FedMultimodal)
     """
     rcfg = cfg.get("report", {})
     profiles = list(rcfg.get("sota_profiles") or ([rcfg["sota_profile"]] if rcfg.get("sota_profile") else []))
@@ -219,17 +221,20 @@ def collect_sota(cfg) -> dict | None:
     rows = [dict(p.to_dict() if hasattr(p, "to_dict") else p, kind="published") for p in published]
     sota_tags = {f"__{k}": v for k, v in (rcfg.get("sota_tags") or {}).items()}
 
+    held_metric = metric.startswith("heldout_")
+    held_key = "pooled_macro_f1" if metric == "heldout_macro_f1" else "accuracy"
+
     def heldout_acc(run: dict) -> float | None:
-        return ((run.get("heldout") or {}).get("zero_shot") or {}).get("accuracy")
+        return ((run.get("heldout") or {}).get("zero_shot") or {}).get(held_key)
 
     def acc(run: dict, central: bool = False) -> float | None:
-        if metric == "heldout_accuracy":
+        if held_metric:
             return heldout_acc(run)
         return (run["test"] if central else run["final"]).get("client_acc_mean")
 
     def spread(runs: list, central: bool = False) -> float | None:
         vals = [v for v in (acc(r, central) for r in runs) if v is not None]
-        if metric == "heldout_accuracy":
+        if held_metric:
             return float(np.std(vals)) if len(vals) > 1 else None
         return (runs[0]["test"] if central else runs[0]["final"]).get("client_acc_std")
 
@@ -255,6 +260,10 @@ def collect_sota(cfg) -> dict | None:
             tag = run.get("tag") or ""
             if not tag or tag in sota_tags:
                 groups[(run["encoder"], run["method"], tag)].append(run)
+        if groups:                        # the actual numbers of clients and test subjects of this protocol
+            first = next(iter(groups.values()))[0]
+            protocols[-1]["n_clients"] = first["config"].get("clients")
+            protocols[-1]["n_test"] = len((((first.get("heldout") or {}).get("zero_shot") or {}).get("user_f1") or {})) or None
         for (_, _, tag), runs in groups.items():
             run = runs[0]
             ft = run.get("final_ft") or {}
@@ -264,7 +273,7 @@ def collect_sota(cfg) -> dict | None:
                          "accuracy": _mean([acc(r) for r in runs]), "accuracy_std": spread(runs),
                          "n_seeds": len(runs),
                          "worst10_acc": run["final"].get("worst10_acc"), "macro_f1": run["final"]["macro_f1"],
-                         "accuracy_ft": None if metric == "heldout_accuracy" else ft.get("client_acc_mean"),
+                         "accuracy_ft": None if held_metric else ft.get("client_acc_mean"),
                          "personal": bool(run["config"].get("personal_head_plain_ce")),
                          "uplink_mb_client_round": run["comm"]["uplink_mb_per_client_round"],
                          "source": f"ours ({prof})"})
@@ -758,8 +767,9 @@ def findings(rep: dict) -> list[str]:
     ours = [r for r in S.get("rows", []) if r["kind"] == "ours" and r.get("accuracy") is not None]
     fl_ours = [r for r in ours if r["short"] != "Local"]          # Local training is not federated
     if pub and fl_ours:
-        heldout = S.get("metric") == "heldout_accuracy"
-        what = "an accuracy on the unseen test subjects" if heldout else "a mean user accuracy"
+        heldout = str(S.get("metric", "")).startswith("heldout_")
+        what = ("a macro-F1 on the unseen test subjects" if S.get("metric") == "heldout_macro_f1"
+                else "an accuracy on the unseen test subjects" if heldout else "a mean user accuracy")
 
         def src(r):
             return r["source"] if r["source"].startswith(r["short"]) else f"{r['short']}, {r['source']}"
@@ -787,7 +797,7 @@ def findings(rep: dict) -> list[str]:
         if loc:
             txt += (f" Purely local training without any federation already reaches {loc['accuracy']:.3f} under this "
                     f"protocol, consistent with the train/test overlap of its random split.")
-        for fa in [r for r in ours if r["encoder"] in ("mlp", "lstm") and r["short"] == "FedAvg"]:
+        for fa in [r for r in ours if r["encoder"] in ("mlp", "lstm", "convgru") and r["short"] == "FedAvg"]:
             pa = next((r for r in pub if r["short"] == "FedAvg" and r.get("setting", "") == fa.get("setting", "")), None)
             if pa:
                 txt += (f" Our re-run of the published FedAvg + {fa['model']} baseline"

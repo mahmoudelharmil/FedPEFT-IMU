@@ -1,0 +1,29 @@
+# ---------------------------------------------------------------------
+#  UCIHAR profile - main UCI HAR experiments, leakage-free protocol (B):
+#    subjects: 21 FL clients / 6 held-out (new) users / 3 pool users
+#    inside every client: per-activity chronological 80/20 split, 1-window gap
+#  All dataset settings come from configs/datasets/ucihar.yaml.
+# ---------------------------------------------------------------------
+data:
+  dataset: ucihar
+split:
+  seeds: [0]
+centralized:
+  epochs: 25
+  patience: 5
+  batch_size: 128
+  max_val_windows: 6000
+fl:
+  rounds: 100
+  clients_per_round_frac: 0.20     # 4 of 21 clients per round
+  local_epochs: 2
+  max_local_steps: 8               # 8 x 64 = 512 windows per update (~2 passes over a client's data)
+  batch_size: 64                   # a client holds ~275 training windows
+  eval_every: 10
+  local_ft_steps: 20
+  final_personalization_steps: 20
+ablation:
+  encoder: limu_bert
+report:
+  compare_profiles: []
+  stage_labels: {}

@@ -246,7 +246,12 @@ def dirichlet_partition(y: np.ndarray, n_clients: int, alpha: float, rng: np.ran
 def load_experiment_data(cfg, seed: int, device: torch.device) -> ExperimentData:
     """Build the user split for `seed` and the index tensors of every part."""
     meta = load_json(Path(cfg.paths.processed_dir) / "meta.json")
-    split = get_user_split(cfg, meta["participants"], seed)
+    if cfg.split.get("official_split"):
+        # the dataset's own subject split (UCI HAR: 21 training / 9 test subjects), as in published results
+        off = meta["official_split"]
+        split = {"seed": seed, "clients": list(off["train"]), "heldout": list(off["test"]), "pool": []}
+    else:
+        split = get_user_split(cfg, meta["participants"], seed)
     users = split["clients"] + split["heldout"] + split["pool"]
     store = WindowStore(cfg.paths.processed_dir, users, cfg.data.label_scheme,
                         cfg.data.subsample_every, device)
@@ -255,6 +260,28 @@ def load_experiment_data(cfg, seed: int, device: torch.device) -> ExperimentData
     s = cfg.split
     mode = s.get("mode", "chronological")
     gap = int(s.get("gap_windows", 0) or 0)
+    if mode == "dirichlet_per_user":
+        # Every training subject's windows are dealt to `dirichlet_clients_per_user` clients with
+        # Dirichlet label skew (the FedMultimodal protocol of UCI HAR: 21 subjects -> 105 clients).
+        subjects = split["clients"]
+        rng = np.random.default_rng(seed + 7000)
+        fracs = list(s.get("dirichlet_fracs", [0.8, 0.1, 0.1]))
+        names = []
+        for subject in subjects:
+            rows = store.user_index(subject)
+            parts = dirichlet_partition(store.y[rows].cpu().numpy(), int(s.dirichlet_clients_per_user),
+                                        float(s.dirichlet_alpha), rng, min_size=int(s.get("dirichlet_min_size", 5)))
+            for k, pos in enumerate(parts):
+                name = f"{subject}_c{k}"
+                idx = rows[torch.as_tensor(rng.permutation(pos), device=rows.device)]
+                # small clients (strong skew) still keep one validation and one test window
+                n_va = max(1, int(round(fracs[1] * len(idx))))
+                n_tr = len(idx) - n_va - max(1, int(round(fracs[2] * len(idx))))
+                data.client_train[name] = idx[:n_tr].sort().values
+                data.client_val[name] = idx[n_tr:n_tr + n_va].sort().values
+                data.client_test[name] = idx[n_tr + n_va:].sort().values
+                names.append(name)
+        data.split = split = dict(split, clients=names, subjects=subjects)
     if mode == "dirichlet":
         # Clients are NOT users: all windows of the training subjects are pooled and dealt to
         # `dirichlet_clients` clients with Dirichlet label skew (the FedAIoT protocol).
@@ -272,7 +299,7 @@ def load_experiment_data(cfg, seed: int, device: torch.device) -> ExperimentData
             data.client_val[name] = idx[n_tr:n_tr + n_va].sort().values
             data.client_test[name] = idx[n_tr + n_va:].sort().values
         data.split = split = dict(split, clients=names, subjects=subjects)
-    for user in (split["clients"] if mode != "dirichlet" else []):
+    for user in (split["clients"] if mode not in ("dirichlet", "dirichlet_per_user") else []):
         if mode == "chronological":
             data.client_train[user], data.client_test[user] = store.user_time_split(user, s.train_time_frac)
         elif mode == "per_class_chronological":

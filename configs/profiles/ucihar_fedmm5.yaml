@@ -1,0 +1,45 @@
+# ---------------------------------------------------------------------
+#  ucihar_fedmm5 profile - the evaluation protocol (A) of the published UCI HAR results, so that our
+#  numbers can be compared with them directly:
+#    FedMultimodal (Feng et al., KDD 2023, Sec. 3-4, Tables 3-4): the official split of UCI HAR
+#    (21 training / 9 test subjects); every training subject's windows are divided into clients
+#    by a Dirichlet(alpha = 5.0) label partition (105 clients); 10 % of the clients per round,
+#    200 rounds, batch 16, 1 local epoch; metric = F1 of the global model on the test subjects.
+#  Here: the test subjects are our held-out users (zero-shot on ALL their windows); every client
+#  keeps 10 % of its windows for validation and 10 % as a local test part.
+# ---------------------------------------------------------------------
+data:
+  dataset: ucihar
+split:
+  seeds: [0]
+  official_split: true             # the dataset's 21 training / 9 test subjects
+  mode: dirichlet_per_user
+  dirichlet_clients_per_user: 5    # 21 subjects x 5 = 105 clients
+  dirichlet_alpha: 5.0
+  dirichlet_fracs: [0.8, 0.1, 0.1]
+  gap_windows: 0
+  heldout_adapt_frac: 0.0          # the test subjects are scored on ALL their windows
+  fewshot_shots: []
+  transductive_report: false
+centralized:
+  epochs: 25
+  patience: 5
+  batch_size: 128
+fl:
+  rounds: 200                      # FedMultimodal: 200 rounds
+  clients_per_round_frac: 0.10     # FedMultimodal: 10 % of the clients per round
+  local_epochs: 1                  # FedMultimodal: 1 local epoch
+  max_local_steps: 50
+  batch_size: 16                   # FedMultimodal: batch 16
+  eval_every: 20
+  local_ft_steps: 20
+  final_personalization_steps: 20
+encoders:
+  ssl_wearables:
+    budget:
+      fl: {rounds: 200}            # the same schedule for every model
+ablation:
+  encoder: limu_bert
+report:
+  compare_profiles: []
+  stage_labels: {}

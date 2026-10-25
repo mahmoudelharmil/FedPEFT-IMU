@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .base import ACC, BaseEncoder, InputSpec
 from .halo import HaloEncoder
+from .convgru import ConvGruEncoder
 from .limu_bert import LimuBertEncoder
 from .lstm import LstmEncoder
 from .mlp import MlpEncoder
@@ -28,6 +29,7 @@ ENCODERS: dict[str, type[BaseEncoder]] = {
     "halo": HaloEncoder,
     "mlp": MlpEncoder,
     "lstm": LstmEncoder,
+    "convgru": ConvGruEncoder,
 }
 
 
@@ -57,6 +59,11 @@ def build_encoder(name: str, cfg, pretrained: bool, seed: int = 0, data=None) ->
             raise ValueError("the MLP baseline is built from the data format: pass data=DataSpec")
         encoder = MlpEncoder(tuple(data.channels), data.rate_hz, data.n_samples,
                              acc_unit=data.unit("acc") or "g", hidden=int(ecfg.get("hidden", 300)))
+    elif name == "convgru":
+        if data is None:
+            raise ValueError("the Conv-GRU baseline is built from the data format: pass data=DataSpec")
+        encoder = ConvGruEncoder(tuple(data.channels), data.rate_hz, data.n_samples, acc_unit=data.unit("acc") or "g",
+                                 hidden=int(ecfg.get("hidden", 128)))
     elif name == "lstm":
         if data is None:
             raise ValueError("the LSTM baseline is built from the data format: pass data=DataSpec")

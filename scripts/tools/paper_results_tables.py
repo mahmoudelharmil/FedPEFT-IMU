@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 from fedpeft.config import load_config  # noqa: E402
 
 OUT = ROOT / "paper" / "generated"
-ENC = {"limu_bert": "LIMU-BERT", "ssl_wearables": "ssl-wearables", "unimts": "UniMTS", "halo": "HALO", "mlp": "MLP", "lstm": "LSTM"}
+ENC = {"limu_bert": "LIMU-BERT", "ssl_wearables": "ssl-wearables", "unimts": "UniMTS", "halo": "HALO", "mlp": "MLP", "lstm": "LSTM", "convgru": "Conv-GRU"}
 METHODS = [("local_scratch", "Local"), ("fedavg_scratch", "FedAvg"), ("ditto_scratch", "Ditto"),
            ("v0_full_ft", "V0 Full FT"), ("ditto_ft", "Ditto (pretrained)"), ("v1_head_only", "V1 Head only"), ("v2_lora_naive", "V2 LoRA naive"),
            ("v3_lora_exact", "V3 LoRA exact"), ("v4_hetero_rank", "V4 Hetero ranks"),

@@ -1292,16 +1292,17 @@ function sota() {
   $("sota").hidden = false; $("navSota").hidden = false;
   const P = S.protocol || {};
   const pub = S.rows.filter((r) => r.kind === "published");
-  const HELD = S.metric === "heldout_accuracy";
-  const accName = HELD ? "accuracy on the unseen test subjects" : "mean test accuracy over users";
+  const HELD = String(S.metric || "").startsWith("heldout_");
+  const F1M = S.metric === "heldout_macro_f1";
+  const accName = F1M ? "macro-F1 on the unseen test subjects" : HELD ? "accuracy on the unseen test subjects" : "mean test accuracy over users";
   const draws = Math.max(1, ...S.rows.map((r) => r.n_seeds || 1));
   if (HELD) {
     const settings = (S.protocols || []).map((q) => q.setting).filter(Boolean);
-    $("sotaTitle").textContent = "Accuracy on unseen test subjects, same protocol";
+    $("sotaTitle").textContent = (F1M ? "Macro-F1" : "Accuracy") + " on unseen test subjects, same protocol";
     $("sotaLede").textContent =
-      `The published ${DS_NAME} results train on ${P.dirichlet_clients || "many"} clients formed by a Dirichlet label partition of the ` +
-      `training subjects (${settings.join(" and ") || "label skew"}) and report the accuracy of the global model on all windows of ` +
-      `${P.heldout_users || "a few"} subjects that never took part in training (${P.rounds} rounds, ` +
+      `The published ${DS_NAME} results train on ${P.n_clients || P.dirichlet_clients || "many"} clients formed by a Dirichlet label partition of the ` +
+      `training subjects (${settings.join(" and ") || "label skew"}) and report the ${F1M ? "macro-F1" : "accuracy"} of the global model on all windows of ` +
+      `${P.n_test || P.heldout_users || "a few"} subjects that never took part in training (${P.rounds} rounds, ` +
       `${Math.round(100 * (P.clients_per_round_frac || 0))} % of the clients per round). The profiles ` +
       `${(S.protocols || []).map((q) => "“" + q.profile + "”").join(" and ")} re-run our models under that protocol` +
       (draws > 1 ? `; our bars are the mean over ${draws} random draws of the test subjects, because with so few test subjects one atypical subject moves the accuracy by several points` : "") +
@@ -1339,7 +1340,7 @@ function sota() {
   const cols = HELD ? [
     { label: "Method", key: "method", align: "l", render: (r) => (r.kind === "published" ? el("span", {}, r.method) : keyed(r.slot || 7, r.method, true)) },
     { label: "Model", key: "model", align: "l" }, { label: "Setting", key: "setting", align: "l" },
-    { label: "Test-subject acc", key: "accuracy", fmt: f3 },
+    { label: F1M ? "Test-subject macro-F1" : "Test-subject acc", key: "accuracy", fmt: f3 },
     { label: "± std", key: "accuracy_std", fmt: (x) => (isNum(x) ? f3(x) : "—") },
     { label: "Draws", key: "n_seeds", fmt: (x) => (x == null ? "—" : String(x)) },
     { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb },
