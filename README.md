@@ -27,7 +27,7 @@ This project implements, runs and measures the complete *Idea 1* research plan
 |---|---|---|---|
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
-| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete except UniMTS; protocol A (published FedAIoT protocol) partly done | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
+| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); protocol A (published FedAIoT protocol) partly done | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
 | UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; 2 extra user splits queued | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
 The online reports are private links; share them from the page's Share menu.
@@ -37,7 +37,7 @@ The online reports are private links; share them from the page's Share menu.
 restarted at any time; the file must keep CRLF line endings, see below):
 1. ~~UCI HAR, our protocol B, all encoders~~ (done);
 2. ~~UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0)~~ (done);
-3. WISDM, our protocol B: UniMTS (the last missing V0–V5 grid; slowest encoder, 10-s windows);
+3. ~~WISDM, our protocol B: UniMTS~~ (done: every FedAvg / V0–V5 grid of all four datasets is complete);
 4. WISDM, the published protocol (FedAIoT, 400 rounds), draw 0 first, then two more draws of the
    test subjects;
 5. two more user splits of UCI HAR.
@@ -200,17 +200,17 @@ data. Repeated rows are removed and both sensors are interpolated onto one 20-Hz
 
 **Results so far** (protocol B, user split 0, mean user accuracy; shared classifiers after +FT):
 
-| Method | LIMU-BERT | ssl-wearables | HALO | LSTM |
-|---|---|---|---|---|
-| FedAvg (scratch) | 0.763 | 0.735 | 0.465 | 0.708 |
-| Local training | – | – | – | 0.745 |
-| Ditto | – | – | – | 0.839 |
-| V0 full fine-tuning | 0.808 | 0.872 | 0.712 | – |
-| Ditto (pretrained) | 0.914 | – | – | – |
-| V3 LoRA exact | 0.805 | 0.871 | 0.743 | – |
-| **V5 FedPEFT-IMU** | 0.908 | **0.957** | **0.864** | – |
-| Centralized, pretrained (not private) | 0.875 | 0.941 | 0.886 | – |
-| V5 uplink saving vs V0 | 6× | 51× | 93× | |
+| Method | LIMU-BERT | ssl-wearables | UniMTS | HALO | LSTM |
+|---|---|---|---|---|---|
+| FedAvg (scratch) | 0.763 | 0.735 | 0.681 | 0.465 | 0.708 |
+| Local training | – | – | – | – | 0.745 |
+| Ditto | – | – | – | – | 0.839 |
+| V0 full fine-tuning | 0.808 | 0.872 | 0.838 | 0.712 | – |
+| Ditto (pretrained) | 0.914 | – | – | – | – |
+| V3 LoRA exact | 0.805 | 0.871 | 0.836 | 0.743 | – |
+| **V5 FedPEFT-IMU** | 0.908 | **0.957** | **0.875** | **0.864** | – |
+| Centralized, pretrained (not private) | 0.875 | 0.941 | 0.888 | 0.886 | – |
+| V5 uplink saving vs V0 | 6× | 51× | 38× | 93× | |
 
 - **Three user splits (LIMU-BERT):** V5 0.911 ± 0.002 (worst-10 % 0.787) vs Ditto (pretrained)
   0.908 ± 0.006 (0.759) vs V0 0.820 ± 0.018 (0.471), at 6× less uplink than Ditto.
