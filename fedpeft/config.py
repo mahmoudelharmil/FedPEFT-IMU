@@ -1,11 +1,12 @@
 """
 Configuration loading.
 
-The configuration is built in three layers, each overriding the previous one:
+The configuration is built in four layers, each overriding the previous one:
 
     1. configs/default.yaml                 (all defaults, heavily commented)
-    2. configs/profiles/<profile>.yaml      (quick / standard / full)
-    3. command-line overrides               e.g.  fl.rounds=10  data.subsample_every=12
+    2. configs/datasets/<dataset>.yaml      (dataset-specific settings, e.g. harbox)
+    3. configs/profiles/<profile>.yaml      (quick / standard / enhanced / harbox ...)
+    4. command-line overrides               e.g.  fl.rounds=10  data.subsample_every=12
 
 The result is a `Config` object: a normal dict that also allows attribute access,
 so you can write `cfg.fl.rounds` instead of `cfg["fl"]["rounds"]`.
@@ -47,10 +48,16 @@ class Config(dict):
 
 
 def _deep_merge(base: dict, override: dict) -> dict:
-    """Recursively merge `override` into a copy of `base`."""
+    """Recursively merge `override` into a copy of `base`.
+
+    A dict that contains `_replace: true` replaces the base value instead of being
+    merged into it (e.g. a dataset file that redefines an encoder's whole budget).
+    """
     merged = copy.deepcopy(base)
     for key, value in override.items():
-        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+        if isinstance(value, dict) and value.get("_replace"):
+            merged[key] = {k: copy.deepcopy(v) for k, v in value.items() if k != "_replace"}
+        elif isinstance(value, dict) and isinstance(merged.get(key), dict):
             merged[key] = _deep_merge(merged[key], value)
         else:
             merged[key] = copy.deepcopy(value)
@@ -66,22 +73,41 @@ def _parse_override(text: str) -> tuple[list[str], Any]:
 
 
 def load_config(profile: str | None = "standard", overrides: Iterable[str] = ()) -> Config:
-    """Load default.yaml, merge a profile and CLI overrides, and resolve paths."""
+    """Load default.yaml, merge the dataset file, the profile and CLI overrides, and resolve paths.
+
+    The dataset is chosen by `data.dataset` (default.yaml: capture24; a profile or a
+    CLI override such as data.dataset=harbox may change it).  Its file
+    configs/datasets/<dataset>.yaml is merged right after default.yaml, so a profile
+    can still override any dataset setting.
+    """
     with open(CONFIG_DIR / "default.yaml", "r", encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
 
-    # Layer 2: profile file (optional).
+    profile_data = {}
     if profile:
         profile_path = CONFIG_DIR / "profiles" / f"{profile}.yaml"
         if not profile_path.exists():
             raise FileNotFoundError(f"Unknown profile '{profile}' ({profile_path})")
         with open(profile_path, "r", encoding="utf-8") as fh:
+            profile_data = yaml.safe_load(fh) or {}
+    parsed = [_parse_override(text) for text in overrides]
+
+    # Layer 2: dataset file (the profile or a CLI override may select the dataset).
+    dataset = (profile_data.get("data") or {}).get("dataset", data["data"]["dataset"])
+    for keys, value in parsed:
+        if keys == ["data", "dataset"]:
+            dataset = value
+    dataset_path = CONFIG_DIR / "datasets" / f"{dataset}.yaml"
+    if dataset_path.exists():
+        with open(dataset_path, "r", encoding="utf-8") as fh:
             data = _deep_merge(data, yaml.safe_load(fh) or {})
+
+    # Layer 3: profile file (optional).
+    data = _deep_merge(data, profile_data)
     data["profile"] = profile or "default"
 
-    # Layer 3: command-line overrides.
-    for text in overrides:
-        keys, value = _parse_override(text)
+    # Layer 4: command-line overrides.
+    for keys, value in parsed:
         node = data
         for k in keys[:-1]:
             node = node.setdefault(k, {})

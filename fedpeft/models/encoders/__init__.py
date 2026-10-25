@@ -1,19 +1,23 @@
 """
 Encoder registry.
 
-    build_encoder("ssl_wearables", cfg, pretrained=True, seed=0)
+    build_encoder("ssl_wearables", cfg, pretrained=True, seed=0, data=spec)
 
 returns a ready encoder with the official weights loaded (or random weights when
-pretrained=False, i.e. "learning from scratch").
+pretrained=False, i.e. "learning from scratch").  `data` (a DataSpec) describes the
+stored windows; encoders whose input format follows the data (HALO's channels, the
+MLP baseline) are built from it.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from .base import BaseEncoder, InputSpec
+from .base import ACC, BaseEncoder, InputSpec
 from .halo import HaloEncoder
 from .limu_bert import LimuBertEncoder
+from .lstm import LstmEncoder
+from .mlp import MlpEncoder
 from .ssl_wearables import SslWearablesEncoder
 from .unimts import UniMTSEncoder
 
@@ -22,6 +26,8 @@ ENCODERS: dict[str, type[BaseEncoder]] = {
     "ssl_wearables": SslWearablesEncoder,
     "unimts": UniMTSEncoder,
     "halo": HaloEncoder,
+    "mlp": MlpEncoder,
+    "lstm": LstmEncoder,
 }
 
 
@@ -35,12 +41,27 @@ def checkpoint_path(cfg, name: str, seed: int = 0) -> Path:
     return Path(cfg.paths.weights_dir) / rel
 
 
-def build_encoder(name: str, cfg, pretrained: bool, seed: int = 0) -> BaseEncoder:
-    """Instantiate an encoder and optionally load its pretrained weights."""
+def build_encoder(name: str, cfg, pretrained: bool, seed: int = 0, data=None) -> BaseEncoder:
+    """Instantiate an encoder (configured for the dataset) and optionally load its pretrained weights."""
+    ecfg = cfg.encoders.get(name, {})
     if name == "unimts":
-        encoder = UniMTSEncoder(wrist_joint=cfg.encoders.unimts.wrist_joint)
+        encoder = UniMTSEncoder(wrist_joint=ecfg.wrist_joint, n_samples=int(ecfg.get("n_samples", 200)))
     elif name == "limu_bert":
-        encoder = LimuBertEncoder(seq_len=int(cfg.encoders.limu_bert.get("seq_len", 120)))
+        encoder = LimuBertEncoder(seq_len=int(ecfg.get("seq_len", 120)), lora_scope=str(ecfg.get("lora_scope", "qv")))
+    elif name == "halo":
+        channels = tuple(data.channels) if (data is not None and ecfg.get("in_channels") == "all") else ACC
+        encoder = HaloEncoder(rate_hz=float(ecfg.get("rate_hz", 30)), n_samples=int(ecfg.get("n_samples", 300)),
+                              patch_s=float(ecfg.get("patch_s", 1.0)), channels=channels)
+    elif name == "mlp":
+        if data is None:
+            raise ValueError("the MLP baseline is built from the data format: pass data=DataSpec")
+        encoder = MlpEncoder(tuple(data.channels), data.rate_hz, data.n_samples,
+                             acc_unit=data.unit("acc") or "g", hidden=int(ecfg.get("hidden", 300)))
+    elif name == "lstm":
+        if data is None:
+            raise ValueError("the LSTM baseline is built from the data format: pass data=DataSpec")
+        encoder = LstmEncoder(tuple(data.channels), data.rate_hz, data.n_samples,
+                              acc_unit=data.unit("acc") or "g", hidden=int(ecfg.get("hidden", 6)))
     else:
         encoder = ENCODERS[name]()
     if pretrained:

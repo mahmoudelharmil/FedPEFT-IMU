@@ -14,7 +14,14 @@ trained, which are sent to the server (federated), and which stay on the device
     V3 LoRA exact     pretrained  LoRA + g + h                  LoRA + g + h           -
     V4 hetero ranks   pretrained  LoRA(r=2/4/8) + g + h         LoRA + g + h           -
     V5 proposed       pretrained  LoRA(r=2/4/8) + g + h +       LoRA + g + prototypes  norm, adapter, h
-                                  norm + adapter
+                                  norm + adapter                (+ global head h_G)
+                                  (+ global head h_G, optional: model.global_head)
+
+Baselines of the published HARBox results (FedCHAR, IMWUT 2023):
+    Local (scratch)   random      everything                    nothing                everything
+    Ditto (scratch)   random      everything (global copy)      everything             a personal copy of
+                                  + a personal copy (proximal)                         every weight
+    Ditto-FT          pretrained  as Ditto                      everything             as Ditto
 """
 
 from __future__ import annotations
@@ -39,7 +46,7 @@ class MethodSpec:
     aggregation: str = "fedavg"        # fedavg | lora_naive | lora_exact | lora_exact_svd
     use_prototypes: bool = False       # compute/send prototypes and add the prototype loss
     lr_key: str = "lr_peft"            # which learning rate of cfg.fl to use
-    heldout_mode: str = "global"       # global classifier or nearest-prototype for new users
+    heldout_mode: str = "global"       # global classifier, nearest-prototype, or "none" for new users
     slot: int = 1                      # categorical colour slot (1-8) used by every chart of the report
     extra: dict = field(default_factory=dict)
 
@@ -81,10 +88,52 @@ METHODS: dict[str, MethodSpec] = {
     "v5_proposed": MethodSpec(
         name="v5_proposed", short="V5", label="V5 · FedPEFT-IMU (proposed)",
         description="V4 + local norm + local input adapter + personal head + class-prototype alignment.",
-        pretrained=True, trainable=frozenset({"lora", "shared_head", "head", "norm", "adapter"}),
-        federated=frozenset({"lora", "shared_head"}),
+        pretrained=True, trainable=frozenset({"lora", "shared_head", "head", "norm", "adapter", "global_head"}),
+        federated=frozenset({"lora", "shared_head", "global_head"}),
         local=frozenset({"norm", "norm_stats", "adapter", "head"}), use_lora=True, hetero_rank=True,
-        aggregation="lora_exact_svd", use_prototypes=True, heldout_mode="prototype", slot=2),
+        aggregation="lora_exact_svd", use_prototypes=True, heldout_mode="prototype", slot=2,
+        extra={"global_head": True}),
+    # ---- component ablations of V5 (run on one encoder, reported separately) ------
+    "v5_abl_no_local_norm": MethodSpec(
+        name="v5_abl_no_local_norm", short="V5 −norm/adapter", label="V5 without local norm and input adapter",
+        description="V5, but the normalisation layers and the input adapter stay frozen (only the classifier is personal).",
+        pretrained=True, trainable=frozenset({"lora", "shared_head", "head", "global_head"}),
+        federated=frozenset({"lora", "shared_head", "global_head"}), local=frozenset({"head"}), use_lora=True,
+        hetero_rank=True, aggregation="lora_exact_svd", use_prototypes=True, heldout_mode="prototype", slot=2,
+        extra={"global_head": True}),
+    "v5_abl_shared_head": MethodSpec(
+        name="v5_abl_shared_head", short="V5 −personal head", label="V5 with a shared classifier",
+        description="V5, but the classifier is federated (shared) instead of personal; norm and adapter stay local.",
+        pretrained=True, trainable=frozenset({"lora", "shared_head", "head", "norm", "adapter"}),
+        federated=frozenset({"lora", "shared_head", "head"}), local=frozenset({"norm", "norm_stats", "adapter"}),
+        use_lora=True, hetero_rank=True, aggregation="lora_exact_svd", use_prototypes=True, heldout_mode="prototype",
+        slot=2),
+    "v5_abl_fixed_rank": MethodSpec(
+        name="v5_abl_fixed_rank", short="V5 fixed r=8", label="V5 with one LoRA rank (r = 8) on every device",
+        description="V5 without device tiers: every client trains rank 8 (exact aggregation + SVD as in V5).",
+        pretrained=True, trainable=frozenset({"lora", "shared_head", "head", "norm", "adapter", "global_head"}),
+        federated=frozenset({"lora", "shared_head", "global_head"}),
+        local=frozenset({"norm", "norm_stats", "adapter", "head"}),
+        use_lora=True, hetero_rank=False, aggregation="lora_exact_svd", use_prototypes=True,
+        heldout_mode="prototype", slot=2, extra={"global_head": True}),
+    # ---- baselines of the published HARBox results -------------------------------
+    "local_scratch": MethodSpec(
+        name="local_scratch", short="Local", label="Local training (no FL)",
+        description="Every client trains its own model from scratch on its own data; nothing is shared.",
+        pretrained=False, trainable=EVERYTHING, federated=frozenset(),
+        local=EVERYTHING | {"norm_stats"}, lr_key="lr_scratch", heldout_mode="none", slot=8),
+    "ditto_scratch": MethodSpec(
+        name="ditto_scratch", short="Ditto", label="Ditto (personalised FL)",
+        description="Ditto (Li et al., ICML 2021), the basis of FedCHAR: a global FedAvg model plus a personal "
+                    "model per client, trained with a proximal term towards the global model.",
+        pretrained=False, trainable=EVERYTHING, federated=EVERYTHING | {"norm_stats"},
+        lr_key="lr_scratch", slot=8, extra={"ditto": True}),
+    "ditto_ft": MethodSpec(
+        name="ditto_ft", short="Ditto-FT", label="Ditto on the pretrained encoder",
+        description="Ditto starting from the pretrained encoder (V0 + a personal model per client): the strongest "
+                    "personalised full-model baseline, with the communication cost of V0.",
+        pretrained=True, trainable=EVERYTHING, federated=EVERYTHING | {"norm_stats"},
+        lr_key="lr_full", slot=6, extra={"ditto": True}),
 }
 
 

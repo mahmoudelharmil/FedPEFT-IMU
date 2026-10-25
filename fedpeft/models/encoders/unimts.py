@@ -143,8 +143,11 @@ class UniMTSEncoder(BaseEncoder):
     pretrained_source = "Official UniMTS weights (motion-capture-synthesised IMU aligned with text)"
     spec = InputSpec(rate_hz=20, n_samples=200, n_channels=3, acc_unit="m/s2")
 
-    def __init__(self, wrist_joint: int = 21):
+    def __init__(self, wrist_joint: int = 21, n_samples: int = 200):
         super().__init__()
+        # The graph network is length-independent (temporal convolutions + global pooling);
+        # n_samples only tells the preprocessor how long a window to deliver (HARBox: 40).
+        self.spec = InputSpec(rate_hz=20, n_samples=n_samples, n_channels=3, acc_unit="m/s2")
         self.wrist_joint = wrist_joint
         self.register_buffer("A", torch.tensor(skeleton_adjacency(), dtype=torch.float32))
         k = (9, self.A.size(0))                               # temporal kernel 9, spatial kernel 3

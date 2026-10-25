@@ -20,6 +20,112 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Rounds to target, client memory, time | round loop (`federated/simulation.py`), peak GPU memory, wall-clock |
 | Zero-/few-shot F1 on held-out users | 0, 1 and 5 minutes of labels (`training/heldout.py`) |
 
+## HARBox (second dataset, the paper's main benchmark)
+
+[HARBox](https://github.com/xmouyang/FL-Datasets-for-HAR) (Ouyang et al., MobiSys 2021) is the
+crowd-sourced smartphone dataset of the federated-HAR literature: 120 users with data, 77 phone
+models, 5 activities (call, hop, typing, walk, wave), 9-axis IMU at 50 Hz, 2-s windows.
+
+```powershell
+.venv\Scripts\python scripts/01_prepare_data.py --profile harbox      # download (~175 MB) + convert
+.venv\Scripts\python run_all.py --profile harbox --from 3             # leakage-free protocol (B)
+.venv\Scripts\python run_all.py --profile harbox_fedchar --from 4     # the published protocol (A)
+.venv\Scripts\python scripts/07_build_report.py --profile harbox      # report incl. comparison with published results
+```
+
+**Two evaluation protocols.** Consecutive HARBox windows overlap by 50 %. The published results
+(ClusterFL, FedCHAR) split every user's windows *at random*. We measured that **79.7 % of the test
+windows then share half of their samples with a training window**
+(`scripts/tools/paper_harbox_stats.py`). We therefore evaluate twice:
+
+| | Protocol A (`harbox_fedchar`) | Protocol B (`harbox`, ours) |
+|---|---|---|
+| Purpose | comparison with published numbers | all new claims |
+| Users | all 120 are clients | 84 clients / 24 new users / 12 pool users |
+| Client split | 50–500 random windows, random 72/8/20 % | every activity split in time 80/20, 1-window gap |
+| Test windows overlapping training | 79.7 % | 0 % |
+| Metric | mean test accuracy over users | the same + macro-F1, fairness, new users, bytes |
+
+**What is different for HARBox** (all in `configs/datasets/harbox.yaml`):
+- 9 input channels in physical units; each encoder gets its own format through the preprocessor
+  (units, rate, crop or tile) and the input adapter (channels copied by name, e.g. LIMU-BERT takes
+  acc + gyro, HALO all 9 axes).
+- Training-time augmentation for every method: one random rotation (≤ 30°) applied jointly to the
+  acc/gyro/mag triplets + a random gain (`fedpeft/training/augment.py`).
+- No HMM: every activity is recorded in its own session.
+- Baselines of the published results: the MLP model (900 → 300) with FedAvg, Local and Ditto.
+- Few-shot budgets in labelled windows (1 / 5 / 10 per activity).
+- Reduced, documented budgets for the slow encoders (ssl-wearables, HALO: 60 rounds; UniMTS: 40).
+
+<!-- HARBOX_RESULTS -->
+### HARBox results
+
+Shared-classifier methods (FedAvg, V0–V4) are always scored after every client fine-tuned that
+classifier on its own data ("+FT"), so every row compares personalised models. Full tables:
+`paper/generated/res_tab_*.tex` (`scripts/tools/paper_results_tables.py`) and
+`reports/FedPEFT-IMU_report_harbox.html`.
+
+**Protocol A, the published protocol** (mean test accuracy over the 120 users):
+
+| Method | Model | Accuracy | Source |
+|---|---|---|---|
+| FedAvg | MLP (300) | 0.694 | FedCHAR, IMWUT 2023, Tab. 4 |
+| FedCHAR | MLP (300) | 0.917 | FedCHAR, IMWUT 2023, Tab. 4 |
+| FedAvg (our re-run) | MLP | 0.797 (0.815 +FT) | ours |
+| Local training, no federation | MLP | 0.878 | ours |
+| Ditto | MLP | 0.935 | ours |
+| V5 FedPEFT-IMU | LIMU-BERT | 0.940 | ours |
+| V5 FedPEFT-IMU, LoRA on all layers | LIMU-BERT | 0.941 | ours |
+| Ditto on the pretrained encoder | LIMU-BERT | **0.950** | ours |
+
+Every personalised model we trained beats the best published result (0.917). The lead of Ditto
+(pretrained) over V5 (0.009) exists only under this leaky protocol: under protocol B the two are
+level (0.875 vs 0.877), and V5 uploads 5.2× less.
+
+Purely local training already reaches 0.878 here, because 79.7 % of the test windows overlap a
+training window. All claims below use protocol B.
+
+**Protocol B, leakage-free** (mean user accuracy / macro-F1 of the 84 clients, user split 0):
+
+| Method | LIMU-BERT | ssl-wearables | UniMTS | HALO |
+|---|---|---|---|---|
+| FedAvg (scratch) | 0.779 / 0.803 | 0.783 / 0.805 | 0.725 / 0.759 | 0.573 / 0.577 |
+| V0 full fine-tuning | 0.793 / 0.813 | 0.810 / 0.823 | 0.798 / 0.817 | 0.714 / 0.738 |
+| V3 LoRA, exact aggregation | 0.767 / 0.786 | 0.816 / 0.831 | 0.806 / 0.823 | 0.705 / 0.727 |
+| **V5 FedPEFT-IMU** | 0.861 / 0.863 | **0.875 / 0.879** | **0.807 / 0.827** | **0.812 / 0.813** |
+| **V5, LoRA on all layers** | **0.870 / 0.873** | – | – | – |
+| Ditto (pretrained LIMU-BERT) | 0.871 / 0.877 | – | – | – |
+| Centralized, pretrained (not private) | 0.814 / 0.829 | 0.847 / 0.857 | 0.824 / 0.836 | 0.813 / 0.824 |
+| V5 uplink saving vs V0 | 8× (5.2× all layers) | 52× | 38× | 95× |
+
+On the MLP: Local 0.824, FedAvg 0.766, Ditto 0.868.
+
+**Three user splits** (LIMU-BERT, mean ± std): V5 with all-layer LoRA reaches 0.877 ± 0.015 user
+accuracy (worst-10 % 0.581), level with Ditto on the pretrained encoder (0.875 ± 0.008, worst-10 %
+0.569) at 5.2× less uplink, against 0.784 ± 0.013 for V0 and 0.769 ± 0.012 for FedAvg.
+
+**New users** (24 held-out users, mean per-user macro-F1). With 10 labelled windows per activity, V5
+is the best federated model on LIMU-BERT and HALO. Zero-shot, a shared classifier transfers better.
+The transductive rule (below) and all-layer LoRA bring V5 to 0.727 ± 0.054, against 0.743 for V0.
+
+**Added in this round** (each one is an option, so earlier results stay reproducible):
+
+| Change | Where | Effect |
+|---|---|---|
+| Ditto on the pretrained encoder | `fl.methods: ditto_ft` | strongest baseline |
+| LoRA on every linear layer of LIMU-BERT | `encoders.limu_bert.lora_scope=all` | V5 +0.010 F1, V3 +0.031 F1 |
+| Transductive zero-shot: V5's prototypes refined on the new user's unlabelled windows (κ chosen on the pool users) | `split.zero_shot_refine_iters=10` | zero-shot +0.017 to +0.035 (none on ssl-wearables) |
+| BatchNorm statistics frozen during few-shot adaptation | `fedpeft/training/heldout.py` | ssl-wearables 1-shot 0.751 → 0.796 |
+| New-user model saved after every run, re-evaluation without re-training | `scripts/tools/reeval_heldout.py` | |
+| Private LoRA copy in the final personal update (negative result) | `fl.personalize_lora=true` | no gain |
+
+```powershell
+# re-evaluate the new users of a finished run, e.g. with the transductive zero-shot rule
+.venv\Scripts\python scripts/tools/reeval_heldout.py --profile harbox --encoder limu_bert --method v5_proposed split.zero_shot_refine_iters=10 --write --name transductive
+# choose such a setting on the pool (validation) users, never on the test users
+.venv\Scripts\python scripts/tools/reeval_heldout.py --profile harbox --encoder limu_bert --method v5_proposed --on-pool --zero-only split.zero_shot_refine_iters=10
+```
+
 ## Headline results (`enhanced` profile, seed 0)
 
 Macro-F1 on the last 20 % of every client's recording (6 classes, Capture-24, 106 clients).

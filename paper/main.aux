@@ -22,37 +22,34 @@
 \newlabel{eq:global@cref}{{[equation][1][]1}{[1][1][]1}{}{}{}}
 \citation{li2021fedbn}
 \citation{collins2021fedrep,arivazhagan2019fedper}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces FedPEFT-IMU{} architecture. Each client runs the same seven-component model {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 172}--{\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 178} on top of a frozen pretrained IMU encoder. Parameters are partitioned by role: the base weights are frozen (grey); the low-rank adapters and the projection head are federated (blue) and trained at a device-specific rank $r_k$; the input adapter, the normalization layers and the classifier stay on the device (green); class prototypes and one-shot label statistics are the only additional information that is shared (amber). The server aggregates LoRA updates exactly in delta form, re-factorizes them by a truncated SVD and folds the remainder into the frozen weights (\cref  {fig:aggregation}). New users are served without any training through the global prototypes.}}{2}{figure.1}\protected@file@percent }
-\newlabel{fig:architecture}{{1}{2}{\method {} architecture. Each client runs the same seven-component model \ding {172}--\ding {178} on top of a frozen pretrained IMU encoder. Parameters are partitioned by role: the base weights are frozen (grey); the low-rank adapters and the projection head are federated (blue) and trained at a device-specific rank $r_k$; the input adapter, the normalization layers and the classifier stay on the device (green); class prototypes and one-shot label statistics are the only additional information that is shared (amber). The server aggregates LoRA updates exactly in delta form, re-factorizes them by a truncated SVD and folds the remainder into the frozen weights (\cref {fig:aggregation}). New users are served without any training through the global prototypes}{figure.1}{}}
-\newlabel{fig:architecture@cref}{{[figure][1][]1}{[1][1][]2}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Architecture Overview and Parameter Roles}{2}{subsection.3.2}\protected@file@percent }
-\newlabel{sec:method:arch}{{\mbox  {III-B}}{2}{Architecture Overview and Parameter Roles}{subsection.3.2}{}}
-\newlabel{sec:method:arch@cref}{{[subsection][2][3]\mbox  {III-B}}{[1][1][]2}{}{}{}}
+\citation{hu2022lora}
+\citation{li2021fedbn}
 \@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Components of the FedPEFT-IMU{} client model and their roles.}}{2}{table.2}\protected@file@percent }
 \newlabel{tab:roles}{{II}{2}{Components of the \method {} client model and their roles}{table.2}{}}
 \newlabel{tab:roles@cref}{{[table][2][]II}{[1][2][]2}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Architecture Overview and Parameter Roles}{2}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:method:arch}{{\mbox  {III-B}}{2}{Architecture Overview and Parameter Roles}{subsection.3.2}{}}
+\newlabel{sec:method:arch@cref}{{[subsection][2][3]\mbox  {III-B}}{[1][2][]2}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Client Model}{2}{subsection.3.3}\protected@file@percent }
 \newlabel{sec:method:client}{{\mbox  {III-C}}{2}{Client Model}{subsection.3.3}{}}
 \newlabel{sec:method:client@cref}{{[subsection][3][3]\mbox  {III-C}}{[1][2][]2}{}{}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}1}Encoder-agnostic preprocessing {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 172}}{2}{subsubsection.3.3.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}2}Input adapter {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 173}}{2}{subsubsection.3.3.2}\protected@file@percent }
-\citation{hu2022lora}
-\citation{li2021fedbn}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}3}Frozen encoder with low-rank adapters {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 174}}{2}{subsubsection.3.3.3}\protected@file@percent }
+\newlabel{eq:lora}{{2}{2}{Frozen encoder with low-rank adapters \ding {174}}{equation.2}{}}
+\newlabel{eq:lora@cref}{{[equation][2][]2}{[1][2][]2}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}4}Local normalization {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 174}}{2}{subsubsection.3.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}5}Shared projection head {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 175}}{2}{subsubsection.3.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}6}Personal classifier {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 176}}{2}{subsubsection.3.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}7}Class prototypes {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 177}}{2}{subsubsection.3.3.7}\protected@file@percent }
+\newlabel{eq:local-proto}{{3}{2}{Class prototypes \ding {177}}{equation.3}{}}
+\newlabel{eq:local-proto@cref}{{[equation][3][]3}{[1][2][]2}{}{}{}}
 \citation{tan2022fedproto}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}3}Frozen encoder with low-rank adapters {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 174}}{3}{subsubsection.3.3.3}\protected@file@percent }
-\newlabel{eq:lora}{{2}{3}{Frozen encoder with low-rank adapters \ding {174}}{equation.2}{}}
-\newlabel{eq:lora@cref}{{[equation][2][]2}{[1][3][]3}{}{}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}4}Local normalization {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 174}}{3}{subsubsection.3.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}5}Shared projection head {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 175}}{3}{subsubsection.3.3.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}6}Personal classifier {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 176}}{3}{subsubsection.3.3.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}7}Class prototypes {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 177}}{3}{subsubsection.3.3.7}\protected@file@percent }
-\newlabel{eq:local-proto}{{3}{3}{Class prototypes \ding {177}}{equation.3}{}}
-\newlabel{eq:local-proto@cref}{{[equation][3][]3}{[1][3][]3}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces FedPEFT-IMU{} architecture. Each client runs the same seven-component model {\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 172}--{\fontfamily  {pzd}\fontencoding  {U}\fontseries  {m}\fontshape  {n}\selectfont  \char 178} on top of a frozen pretrained IMU encoder. Parameters are partitioned by role: the base weights are frozen (grey); the low-rank adapters and the projection head are federated (blue) and trained at a device-specific rank $r_k$; the input adapter, the normalization layers and the classifier stay on the device (green); class prototypes and one-shot label statistics are the only additional information that is shared (amber). The server aggregates LoRA updates exactly in delta form, re-factorizes them by a truncated SVD and folds the remainder into the frozen weights (\cref  {fig:aggregation}). New users are served without any training through the global prototypes.}}{3}{figure.1}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{3}{\method {} architecture. Each client runs the same seven-component model \ding {172}--\ding {178} on top of a frozen pretrained IMU encoder. Parameters are partitioned by role: the base weights are frozen (grey); the low-rank adapters and the projection head are federated (blue) and trained at a device-specific rank $r_k$; the input adapter, the normalization layers and the classifier stay on the device (green); class prototypes and one-shot label statistics are the only additional information that is shared (amber). The server aggregates LoRA updates exactly in delta form, re-factorizes them by a truncated SVD and folds the remainder into the frozen weights (\cref {fig:aggregation}). New users are served without any training through the global prototypes}{figure.1}{}}
+\newlabel{fig:architecture@cref}{{[figure][1][]1}{[1][2][]3}{}{}{}}
 \newlabel{eq:forward}{{4}{3}{Class prototypes \ding {177}}{equation.4}{}}
-\newlabel{eq:forward@cref}{{[equation][4][]4}{[1][3][]3}{}{}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Exact rank-heterogeneous aggregation for one adapted layer (glyph widths are proportional to the rank). (a)~Each client uploads factors of its own rank $r_k$; the server forms the change $\Delta _k$ of the client's product relative to what the client received. (b)~The weighted mean change is added to the current global product; the result $M$ is re-factorized by a truncated SVD at rank $r_{\max }$, and the remainder $R$ is folded into the frozen weight, so the effective model equals the aggregate of \cref  {prop:exact}. (c)~A device of rank $r_k$ receives the leading $r_k$ singular directions.}}{3}{figure.2}\protected@file@percent }
-\newlabel{fig:aggregation}{{2}{3}{Exact rank-heterogeneous aggregation for one adapted layer (glyph widths are proportional to the rank). (a)~Each client uploads factors of its own rank $r_k$; the server forms the change $\Delta _k$ of the client's product relative to what the client received. (b)~The weighted mean change is added to the current global product; the result $M$ is re-factorized by a truncated SVD at rank $r_{\max }$, and the remainder $R$ is folded into the frozen weight, so the effective model equals the aggregate of \cref {prop:exact}. (c)~A device of rank $r_k$ receives the leading $r_k$ singular directions}{figure.2}{}}
-\newlabel{fig:aggregation@cref}{{[figure][2][]2}{[1][3][]3}{}{}{}}
+\newlabel{eq:forward@cref}{{[equation][4][]4}{[1][2][]3}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Local Objective}{3}{subsection.3.4}\protected@file@percent }
 \newlabel{sec:method:objective}{{\mbox  {III-D}}{3}{Local Objective}{subsection.3.4}{}}
 \newlabel{sec:method:objective@cref}{{[subsection][4][3]\mbox  {III-D}}{[1][3][]3}{}{}{}}
@@ -60,20 +57,24 @@
 \newlabel{eq:local-obj@cref}{{[equation][5][]5}{[1][3][]3}{}{}{}}
 \newlabel{eq:cosine}{{6}{3}{Local Objective}{equation.6}{}}
 \newlabel{eq:cosine@cref}{{[equation][6][]6}{[1][3][]3}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Exact rank-heterogeneous aggregation for one adapted layer (glyph widths are proportional to the rank). (a)~Each client uploads factors of its own rank $r_k$; the server forms the change $\Delta _k$ of the client's product relative to what the client received. (b)~The weighted mean change is added to the current global product; the result $M$ is re-factorized by a truncated SVD at rank $r_{\max }$, and the remainder $R$ is folded into the frozen weight, so the effective model equals the aggregate of \cref  {prop:exact}. (c)~A device of rank $r_k$ receives the leading $r_k$ singular directions.}}{3}{figure.2}\protected@file@percent }
+\newlabel{fig:aggregation}{{2}{3}{Exact rank-heterogeneous aggregation for one adapted layer (glyph widths are proportional to the rank). (a)~Each client uploads factors of its own rank $r_k$; the server forms the change $\Delta _k$ of the client's product relative to what the client received. (b)~The weighted mean change is added to the current global product; the result $M$ is re-factorized by a truncated SVD at rank $r_{\max }$, and the remainder $R$ is folded into the frozen weight, so the effective model equals the aggregate of \cref {prop:exact}. (c)~A device of rank $r_k$ receives the leading $r_k$ singular directions}{figure.2}{}}
+\newlabel{fig:aggregation@cref}{{[figure][2][]2}{[1][3][]3}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Exact Rank-Heterogeneous LoRA Aggregation}{3}{subsection.3.5}\protected@file@percent }
 \newlabel{sec:method:agg}{{\mbox  {III-E}}{3}{Exact Rank-Heterogeneous LoRA Aggregation}{subsection.3.5}{}}
 \newlabel{sec:method:agg@cref}{{[subsection][5][3]\mbox  {III-E}}{[1][3][]3}{}{}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-E}1}Why naive averaging fails}{3}{subsubsection.3.5.1}\protected@file@percent }
-\newlabel{lem:naive}{{1}{3}{Bias of factor averaging}{subsubsection.3.5.1}{}}
-\newlabel{lem:naive@cref}{{[lemma][1][]1}{[1][3][]3}{}{}{}}
-\newlabel{eq:naive-bias}{{7}{3}{Bias of factor averaging}{equation.7}{}}
-\newlabel{eq:naive-bias@cref}{{[equation][7][]7}{[1][3][]3}{}{}{}}
 \citation{singhal2025fedex}
 \citation{halko2011finding}
 \citation{mcmahan2017fedavg}
 \citation{singhal2025fedex}
 \citation{bai2024flexlora}
 \citation{eckart1936approximation}
+\citation{chan2024capture24}
+\newlabel{lem:naive}{{1}{4}{Bias of factor averaging}{subsubsection.3.5.1}{}}
+\newlabel{lem:naive@cref}{{[lemma][1][]1}{[1][3][]4}{}{}{}}
+\newlabel{eq:naive-bias}{{7}{4}{Bias of factor averaging}{equation.7}{}}
+\newlabel{eq:naive-bias@cref}{{[equation][7][]7}{[1][4][]4}{}{}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-E}2}Delta-form aggregation}{4}{subsubsection.3.5.2}\protected@file@percent }
 \newlabel{eq:delta}{{8}{4}{Delta-form aggregation}{equation.8}{}}
 \newlabel{eq:delta@cref}{{[equation][8][]8}{[1][4][]4}{}{}{}}
@@ -99,15 +100,16 @@
 \newlabel{sec:method:stats@cref}{{[subsection][6][3]\mbox  {III-F}}{[1][4][]4}{}{}{}}
 \newlabel{eq:global-proto}{{14}{4}{Aggregation of the Head, Prototypes and Statistics}{equation.14}{}}
 \newlabel{eq:global-proto@cref}{{[equation][14][]14}{[1][4][]4}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-G}}Learning under Label Skew}{4}{subsection.3.7}\protected@file@percent }
-\newlabel{sec:method:skew}{{\mbox  {III-G}}{4}{Learning under Label Skew}{subsection.3.7}{}}
-\newlabel{sec:method:skew@cref}{{[subsection][7][3]\mbox  {III-G}}{[1][4][]4}{}{}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-G}1}Why rare classes vanish with a shared classifier}{4}{subsubsection.3.7.1}\protected@file@percent }
 \citation{menon2021logit,ren2020balanced,zhang2022fedlc}
 \citation{li2021fedrs,shang2022creff}
 \citation{chan2024capture24,walmsley2022reallocation}
 \citation{viterbi1967error}
 \citation{li2018adabn}
+\citation{iwasawa2021t3a}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-G}}Learning under Label Skew}{5}{subsection.3.7}\protected@file@percent }
+\newlabel{sec:method:skew}{{\mbox  {III-G}}{5}{Learning under Label Skew}{subsection.3.7}{}}
+\newlabel{sec:method:skew@cref}{{[subsection][7][3]\mbox  {III-G}}{[1][4][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-G}1}Why rare classes vanish with a shared classifier}{5}{subsubsection.3.7.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-G}2}FedPEFT-IMU}{5}{subsubsection.3.7.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-G}3}Shared-classifier methods}{5}{subsubsection.3.7.3}\protected@file@percent }
 \newlabel{eq:la}{{15}{5}{Shared-classifier methods}{equation.15}{}}
@@ -120,72 +122,69 @@
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-H}1}Enrolled users}{5}{subsubsection.3.8.1}\protected@file@percent }
 \newlabel{eq:calibrated}{{17}{5}{Enrolled users}{equation.17}{}}
 \newlabel{eq:calibrated@cref}{{[equation][17][]17}{[1][5][]5}{}{}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-H}2}Federated temporal decoding}{5}{subsubsection.3.8.2}\protected@file@percent }
-\newlabel{eq:emission}{{18}{5}{Federated temporal decoding}{equation.18}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-H}2}Federated temporal decoding (continuous streams)}{5}{subsubsection.3.8.2}\protected@file@percent }
+\newlabel{eq:emission}{{18}{5}{Federated temporal decoding (continuous streams)}{equation.18}{}}
 \newlabel{eq:emission@cref}{{[equation][18][]18}{[1][5][]5}{}{}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-H}3}New users}{5}{subsubsection.3.8.3}\protected@file@percent }
 \newlabel{eq:zeroshot}{{19}{5}{New users}{equation.19}{}}
 \newlabel{eq:zeroshot@cref}{{[equation][19][]19}{[1][5][]5}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-I}}Training Procedure}{5}{subsection.3.9}\protected@file@percent }
-\newlabel{sec:method:algorithm}{{\mbox  {III-I}}{5}{Training Procedure}{subsection.3.9}{}}
-\newlabel{sec:method:algorithm@cref}{{[subsection][9][3]\mbox  {III-I}}{[1][5][]5}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-J}}Communication, Memory and Computation}{5}{subsection.3.10}\protected@file@percent }
-\newlabel{sec:method:cost}{{\mbox  {III-J}}{5}{Communication, Memory and Computation}{subsection.3.10}{}}
-\newlabel{sec:method:cost@cref}{{[subsection][10][3]\mbox  {III-J}}{[1][5][]5}{}{}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}1}Uplink}{5}{subsubsection.3.10.1}\protected@file@percent }
-\newlabel{eq:uplink}{{20}{5}{Uplink}{equation.20}{}}
-\newlabel{eq:uplink@cref}{{[equation][20][]20}{[1][5][]5}{}{}{}}
+\newlabel{eq:refine}{{20}{5}{New users}{equation.20}{}}
+\newlabel{eq:refine@cref}{{[equation][20][]20}{[1][5][]5}{}{}{}}
 \citation{loshchilov2019adamw}
 \citation{xu2021limubert}
 \citation{yuan2024selfsupervised}
 \citation{zhang2024unimts}
 \citation{ding2026halo}
 \citation{bonawitz2017practical}
-\citation{chan2024capture24}
-\citation{gershuny2020testing}
-\citation{ainsworth2011compendium}
-\citation{kelly2013ethical}
-\citation{willetts2018statistical}
-\citation{chan2024capture24}
-\citation{chan2024capture24}
+\citation{ouyang2021clusterfl}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-I}}Training-Time Augmentation}{6}{subsection.3.9}\protected@file@percent }
+\newlabel{sec:method:augment}{{\mbox  {III-I}}{6}{Training-Time Augmentation}{subsection.3.9}{}}
+\newlabel{sec:method:augment@cref}{{[subsection][9][3]\mbox  {III-I}}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-J}}Training Procedure}{6}{subsection.3.10}\protected@file@percent }
+\newlabel{sec:method:algorithm}{{\mbox  {III-J}}{6}{Training Procedure}{subsection.3.10}{}}
+\newlabel{sec:method:algorithm@cref}{{[subsection][10][3]\mbox  {III-J}}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-K}}Communication, Memory and Computation}{6}{subsection.3.11}\protected@file@percent }
+\newlabel{sec:method:cost}{{\mbox  {III-K}}{6}{Communication, Memory and Computation}{subsection.3.11}{}}
+\newlabel{sec:method:cost@cref}{{[subsection][11][3]\mbox  {III-K}}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-K}1}Uplink}{6}{subsubsection.3.11.1}\protected@file@percent }
+\newlabel{eq:uplink}{{21}{6}{Uplink}{equation.21}{}}
+\newlabel{eq:uplink@cref}{{[equation][21][]21}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-K}2}Downlink}{6}{subsubsection.3.11.2}\protected@file@percent }
 \@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces FedPEFT-IMU{} training}}{6}{algocf.1}\protected@file@percent }
 \newlabel{alg:fedpeft}{{1}{6}{Training Procedure}{algocf.1}{}}
-\newlabel{alg:fedpeft@cref}{{[algorithm][1][]1}{[1][5][]6}{}{}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}2}Downlink}{6}{subsubsection.3.10.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}3}Client memory and computation}{6}{subsubsection.3.10.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-J}4}Server computation}{6}{subsubsection.3.10.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-K}}Privacy Considerations}{6}{subsection.3.11}\protected@file@percent }
-\newlabel{sec:method:privacy}{{\mbox  {III-K}}{6}{Privacy Considerations}{subsection.3.11}{}}
-\newlabel{sec:method:privacy@cref}{{[subsection][11][3]\mbox  {III-K}}{[1][6][]6}{}{}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}Dataset and Experimental Protocol}{6}{section.4}\protected@file@percent }
-\newlabel{sec:data}{{IV}{6}{Dataset and Experimental Protocol}{section.4}{}}
-\newlabel{sec:data@cref}{{[section][4][]IV}{[1][6][]6}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}The Capture-24 Dataset}{6}{subsection.4.1}\protected@file@percent }
-\newlabel{sec:data:capture24}{{\mbox  {IV-A}}{6}{The Capture-24 Dataset}{subsection.4.1}{}}
-\newlabel{sec:data:capture24@cref}{{[subsection][1][4]\mbox  {IV-A}}{[1][6][]6}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Preprocessing}{6}{subsection.4.2}\protected@file@percent }
-\newlabel{sec:data:preprocessing}{{\mbox  {IV-B}}{6}{Preprocessing}{subsection.4.2}{}}
-\newlabel{sec:data:preprocessing@cref}{{[subsection][2][4]\mbox  {IV-B}}{[1][6][]6}{}{}{}}
-\citation{hsu2019measuring}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Parameter budget per encoder and measured communication per client update (fp32 serialization, no compression). $|\Omega _0|$: frozen encoder weights; LoRA: trainable adapter parameters at rank $r=2/4/8$; $|\theta |$: shared head; $|\phi _k|$: local parameters (norm affine, adapter, classifier).}}{7}{table.3}\protected@file@percent }
-\newlabel{tab:budget}{{III}{7}{Parameter budget per encoder and measured communication per client update (fp32 serialization, no compression). $|\Omega _0|$: frozen encoder weights; LoRA: trainable adapter parameters at rank $r=2/4/8$; $|\theta |$: shared head; $|\phi _k|$: local parameters (norm affine, adapter, classifier)}{table.3}{}}
+\newlabel{alg:fedpeft@cref}{{[algorithm][1][]1}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-K}3}Client memory and computation}{6}{subsubsection.3.11.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-K}4}Server computation}{6}{subsubsection.3.11.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-L}}Privacy Considerations}{6}{subsection.3.12}\protected@file@percent }
+\newlabel{sec:method:privacy}{{\mbox  {III-L}}{6}{Privacy Considerations}{subsection.3.12}{}}
+\newlabel{sec:method:privacy@cref}{{[subsection][12][3]\mbox  {III-L}}{[1][6][]6}{}{}{}}
+\citation{li2023fedchar}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Parameter budget per encoder on HARBox and measured communication per client update (fp32 serialization, no compression). $|\Omega _0|$: frozen encoder weights; LoRA: trainable adapter parameters at rank $r=2/4/8$; $|\theta |$: shared head; $|\phi _k|$: local parameters (norm affine, adapter, classifier).}}{7}{table.3}\protected@file@percent }
+\newlabel{tab:budget}{{III}{7}{Parameter budget per encoder on HARBox and measured communication per client update (fp32 serialization, no compression). $|\Omega _0|$: frozen encoder weights; LoRA: trainable adapter parameters at rank $r=2/4/8$; $|\theta |$: shared head; $|\phi _k|$: local parameters (norm affine, adapter, classifier)}{table.3}{}}
 \newlabel{tab:budget@cref}{{[table][3][]III}{[1][6][]7}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Capture-24 classes (Willetts 2018 scheme) after windowing, over all $151$ participants. Codes: distinct Compendium annotations mapped to the class. Users: participants with at least one window of the class. Clients: share of the 106{} FL clients that have the class in their training part. Bout: median length of uninterrupted bouts.}}{7}{table.4}\protected@file@percent }
-\newlabel{tab:classes}{{IV}{7}{Capture-24 classes (Willetts 2018 scheme) after windowing, over all $151$ participants. Codes: distinct Compendium annotations mapped to the class. Users: participants with at least one window of the class. Clients: share of the \NumClients {} FL clients that have the class in their training part. Bout: median length of uninterrupted bouts}{table.4}{}}
-\newlabel{tab:classes@cref}{{[table][4][]IV}{[1][6][]7}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Federated Partition and Data Splits}{7}{subsection.4.3}\protected@file@percent }
-\newlabel{sec:data:splits}{{\mbox  {IV-C}}{7}{Federated Partition and Data Splits}{subsection.4.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces HARBox activities after windowing ($2$\,s windows, $50$\,Hz, $9$ axes), over all 120{} users. Users: users with at least one window of the activity.}}{7}{table.4}\protected@file@percent }
+\newlabel{tab:classes}{{IV}{7}{HARBox activities after windowing ($2$\,s windows, $50$\,Hz, $9$ axes), over all \HBUsers {} users. Users: users with at least one window of the activity}{table.4}{}}
+\newlabel{tab:classes@cref}{{[table][4][]IV}{[1][7][]7}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Dataset and Experimental Protocol}{7}{section.4}\protected@file@percent }
+\newlabel{sec:data}{{IV}{7}{Dataset and Experimental Protocol}{section.4}{}}
+\newlabel{sec:data@cref}{{[section][4][]IV}{[1][6][]7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}The HARBox Dataset}{7}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:data:harbox}{{\mbox  {IV-A}}{7}{The HARBox Dataset}{subsection.4.1}{}}
+\newlabel{sec:data:harbox@cref}{{[subsection][1][4]\mbox  {IV-A}}{[1][6][]7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Preprocessing}{7}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:data:preprocessing}{{\mbox  {IV-B}}{7}{Preprocessing}{subsection.4.2}{}}
+\newlabel{sec:data:preprocessing@cref}{{[subsection][2][4]\mbox  {IV-B}}{[1][7][]7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Evaluation Protocols}{7}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:data:splits}{{\mbox  {IV-C}}{7}{Evaluation Protocols}{subsection.4.3}{}}
 \newlabel{sec:data:splits@cref}{{[subsection][3][4]\mbox  {IV-C}}{[1][7][]7}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces User-level partition (seed $0$), experiment windows (one per minute) and demographics. F/M: female/male. Age groups: 18--29 / 30--37 / 38--52 / $\geq $53 years. Use: chronological split of each user's windows (percent), or role of the pool users.}}{7}{table.5}\protected@file@percent }
-\newlabel{tab:partition}{{V}{7}{User-level partition (seed $0$), experiment windows (one per minute) and demographics. F/M: female/male. Age groups: 18--29 / 30--37 / 38--52 / $\geq $53 years. Use: chronological split of each user's windows (percent), or role of the pool users}{table.5}{}}
-\newlabel{tab:partition@cref}{{[table][5][]V}{[1][7][]7}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Statistical Heterogeneity of the Natural Partition}{7}{subsection.4.4}\protected@file@percent }
-\newlabel{sec:data:hetero}{{\mbox  {IV-D}}{7}{Statistical Heterogeneity of the Natural Partition}{subsection.4.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Statistical Heterogeneity}{7}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:data:hetero}{{\mbox  {IV-D}}{7}{Statistical Heterogeneity}{subsection.4.4}{}}
 \newlabel{sec:data:hetero@cref}{{[subsection][4][4]\mbox  {IV-D}}{[1][7][]7}{}{}{}}
+\citation{ouyang2021clusterfl,li2023fedchar}
+\citation{stisen2015smart}
 \citation{ding2026halo}
 \citation{he2022masked}
 \citation{oord2018representation}
-\citation{zhang2024unimts}
 \citation{xu2021limubert}
 \citation{stisen2015smart}
 \citation{yuan2024selfsupervised}
@@ -193,81 +192,131 @@
 \citation{yan2018spatial}
 \citation{guo2022generating}
 \citation{ding2026halo}
+\citation{li2023fedchar}
 \citation{singhal2025fedex}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Natural heterogeneity of the 106{} Capture-24 clients (training parts, one window per minute). (a)~Label distribution of every client. (b)~Share of clients that observe each class (global share in parentheses); bicycling and vehicle are absent from most clients. (c)~Jensen--Shannon divergence of each client's label distribution from the global one, and between the same client's training and test parts. The temporal shift within a client exceeds the shift between clients.}}{8}{figure.3}\protected@file@percent }
-\newlabel{fig:labelskew}{{3}{8}{Natural heterogeneity of the \NumClients {} Capture-24 clients (training parts, one window per minute). (a)~Label distribution of every client. (b)~Share of clients that observe each class (global share in parentheses); bicycling and vehicle are absent from most clients. (c)~Jensen--Shannon divergence of each client's label distribution from the global one, and between the same client's training and test parts. The temporal shift within a client exceeds the shift between clients}{figure.3}{}}
-\newlabel{fig:labelskew@cref}{{[figure][3][]3}{[1][7][]8}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Statistical heterogeneity of the FL clients (training parts unless stated). JSD: Jensen--Shannon divergence in bits. Equivalent $\alpha $: concentration of a $\mathrm  {Dir}(\alpha C\bm  {\pi })$ label-skew model with the same client sizes and the same mean JSD.}}{8}{table.6}\protected@file@percent }
-\newlabel{tab:hetero}{{VI}{8}{Statistical heterogeneity of the FL clients (training parts unless stated). JSD: Jensen--Shannon divergence in bits. Equivalent $\alpha $: concentration of a $\mathrm {Dir}(\alpha C\boldsymbol {\pi })$ label-skew model with the same client sizes and the same mean JSD}{table.6}{}}
-\newlabel{tab:hetero@cref}{{[table][6][]VI}{[1][7][]8}{}{}{}}
+\citation{li2021ditto}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces HARBox at a glance. (a)~Windows per user and activity: users differ in how long they recorded, not in which activities. (b)~Length of the recording of one activity by one user, typically below one minute. (c)~Share of test windows that overlap a training window by half of their samples. The random split of the published protocol leaks the large majority; our per-activity chronological split with a one-window gap leaks none.}}{8}{figure.3}\protected@file@percent }
+\newlabel{fig:harbox}{{3}{8}{HARBox at a glance. (a)~Windows per user and activity: users differ in how long they recorded, not in which activities. (b)~Length of the recording of one activity by one user, typically below one minute. (c)~Share of test windows that overlap a training window by half of their samples. The random split of the published protocol leaks the large majority; our per-activity chronological split with a one-window gap leaks none}{figure.3}{}}
+\newlabel{fig:harbox@cref}{{[figure][3][]3}{[1][7][]8}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces The two evaluation protocols on HARBox (seed $0$). $^{\dagger }$Pool users' windows (validation).}}{8}{table.5}\protected@file@percent }
+\newlabel{tab:partition}{{V}{8}{The two evaluation protocols on HARBox (seed $0$). $^{\dagger }$Pool users' windows (validation)}{table.5}{}}
+\newlabel{tab:partition@cref}{{[table][5][]V}{[1][7][]8}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Statistical heterogeneity of the 120{} HARBox users. JSD: Jensen--Shannon divergence in bits.}}{8}{table.6}\protected@file@percent }
+\newlabel{tab:hetero}{{VI}{8}{Statistical heterogeneity of the \HBUsers {} HARBox users. JSD: Jensen--Shannon divergence in bits}{table.6}{}}
+\newlabel{tab:hetero@cref}{{[table][6][]VI}{[1][8][]8}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Pretrained Encoders}{8}{subsection.4.5}\protected@file@percent }
 \newlabel{sec:data:encoders}{{\mbox  {IV-E}}{8}{Pretrained Encoders}{subsection.4.5}{}}
 \newlabel{sec:data:encoders@cref}{{[subsection][5][4]\mbox  {IV-E}}{[1][8][]8}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Compared Methods}{8}{subsection.4.6}\protected@file@percent }
+\newlabel{sec:data:methods}{{\mbox  {IV-F}}{8}{Compared Methods}{subsection.4.6}{}}
+\newlabel{sec:data:methods@cref}{{[subsection][6][4]\mbox  {IV-F}}{[1][8][]8}{}{}{}}
 \citation{mcmahan2017fedavg}
+\citation{li2021ditto}
 \citation{singhal2025fedex}
 \citation{beutel2020flower}
 \citation{loshchilov2019adamw}
-\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Pretrained IMU encoders. Input: channels after the input adapter, sampling rate, samples per window (duration) and units, produced from the canonical $3\times 300$ window by $\Pi _E$.}}{9}{table.7}\protected@file@percent }
-\newlabel{tab:encoders}{{VII}{9}{Pretrained IMU encoders. Input: channels after the input adapter, sampling rate, samples per window (duration) and units, produced from the canonical $3\times 300$ window by $\Pi _E$}{table.7}{}}
+\citation{li2023fedchar}
+\citation{li2023fedchar}
+\citation{li2023fedchar}
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Encoders and their HARBox input. Input: channels after the input adapter, sampling rate, samples (duration) and units, produced from the stored $9\times 100$ window by $\Pi _E$.}}{9}{table.7}\protected@file@percent }
+\newlabel{tab:encoders}{{VII}{9}{Encoders and their HARBox input. Input: channels after the input adapter, sampling rate, samples (duration) and units, produced from the stored $9\times 100$ window by $\Pi _E$}{table.7}{}}
 \newlabel{tab:encoders@cref}{{[table][7][]VII}{[1][8][]9}{}{}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Compared Methods}{9}{subsection.4.6}\protected@file@percent }
-\newlabel{sec:data:methods}{{\mbox  {IV-F}}{9}{Compared Methods}{subsection.4.6}{}}
-\newlabel{sec:data:methods@cref}{{[subsection][6][4]\mbox  {IV-F}}{[1][8][]9}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Evaluation Metrics}{9}{subsection.4.7}\protected@file@percent }
 \newlabel{sec:data:metrics}{{\mbox  {IV-G}}{9}{Evaluation Metrics}{subsection.4.7}{}}
 \newlabel{sec:data:metrics@cref}{{[subsection][7][4]\mbox  {IV-G}}{[1][9][]9}{}{}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-H}}Implementation Details}{9}{subsection.4.8}\protected@file@percent }
 \newlabel{sec:data:impl}{{\mbox  {IV-H}}{9}{Implementation Details}{subsection.4.8}{}}
 \newlabel{sec:data:impl@cref}{{[subsection][8][4]\mbox  {IV-H}}{[1][9][]9}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Results}{9}{section.5}\protected@file@percent }
+\newlabel{sec:results}{{V}{9}{Results}{section.5}{}}
+\newlabel{sec:results@cref}{{[section][5][]V}{[1][9][]9}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Comparison with Published Results}{9}{subsection.5.1}\protected@file@percent }
+\newlabel{sec:results:sota}{{\mbox  {V-A}}{9}{Comparison with Published Results}{subsection.5.1}{}}
+\newlabel{sec:results:sota@cref}{{[subsection][1][5]\mbox  {V-A}}{[1][9][]9}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Federated methods. $\Omega $: encoder weights; $g$, $h$: shared and classifier heads; $\psi $: normalization; $a$: input adapter; P: prototypes.}}{10}{table.8}\protected@file@percent }
+\newlabel{tab:methods}{{VIII}{10}{Federated methods. $\Omega $: encoder weights; $g$, $h$: shared and classifier heads; $\psi $: normalization; $a$: input adapter; P: prototypes}{table.8}{}}
+\newlabel{tab:methods@cref}{{[table][8][]VIII}{[1][9][]10}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Hyperparameters on HARBox (Protocol B unless stated). Budget of ssl-wearables and HALO / UniMTS in parentheses where it differs.}}{10}{table.9}\protected@file@percent }
+\newlabel{tab:hparams}{{IX}{10}{Hyperparameters on HARBox (Protocol B unless stated). Budget of ssl-wearables and HALO / UniMTS in parentheses where it differs}{table.9}{}}
+\newlabel{tab:hparams@cref}{{[table][9][]IX}{[1][9][]10}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {X}{\ignorespaces HARBox under the published protocol (Protocol A: random 72/8/20 split of 50--500 windows per user, all 120 users, 100 rounds, half of the users per round). Mean test accuracy over users and of the worst-served $10\,\%$. Published numbers are copied from FedCHAR~\cite  {li2023fedchar} (benign setting); \emph  {ours} are re-runs under the same protocol. Sorted by accuracy.}}{10}{table.10}\protected@file@percent }
+\newlabel{tab:sota}{{X}{10}{HARBox under the published protocol (Protocol A: random 72/8/20 split of 50--500 windows per user, all 120 users, 100 rounds, half of the users per round). Mean test accuracy over users and of the worst-served $10\,\%$. Published numbers are copied from FedCHAR~\cite {li2023fedchar} (benign setting); \emph {ours} are re-runs under the same protocol. Sorted by accuracy}{table.10}{}}
+\newlabel{tab:sota@cref}{{[table][10][]X}{[1][9][]10}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Leakage-Free Benchmark}{10}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:results:main}{{\mbox  {V-B}}{10}{Leakage-Free Benchmark}{subsection.5.2}{}}
+\newlabel{sec:results:main@cref}{{[subsection][2][5]\mbox  {V-B}}{[1][10][]10}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XI}{\ignorespaces HARBox, leakage-free Protocol B (84 clients, per-activity chronological split with a one-window gap). Each cell: mean user accuracy / pooled macro-F1 on the clients' test parts. Methods with a shared classifier are scored after every client fine-tuned that classifier on its own training part (``+FT''), so every row compares personalized models. Best per encoder in bold. Budgets differ between encoders (\cref  {tab:hparams}), so compare methods within a column.}}{11}{table.11}\protected@file@percent }
+\newlabel{tab:main}{{XI}{11}{HARBox, leakage-free Protocol B (84 clients, per-activity chronological split with a one-window gap). Each cell: mean user accuracy / pooled macro-F1 on the clients' test parts. Methods with a shared classifier are scored after every client fine-tuned that classifier on its own training part (``+FT''), so every row compares personalized models. Best per encoder in bold. Budgets differ between encoders (\cref {tab:hparams}), so compare methods within a column}{table.11}{}}
+\newlabel{tab:main@cref}{{[table][11][]XI}{[1][9][]11}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XII}{\ignorespaces New users (24 held-out users, Protocol B): mean per-user macro-F1 with zero, $1$, $5$ and $10$ labelled windows per activity. ``transd.'': the same V5 model with the transductive zero-shot rule (\cref  {eq:refine}), which also initializes the few-shot head.}}{11}{table.12}\protected@file@percent }
+\newlabel{tab:newusers}{{XII}{11}{New users (24 held-out users, Protocol B): mean per-user macro-F1 with zero, $1$, $5$ and $10$ labelled windows per activity. ``transd.'': the same V5 model with the transductive zero-shot rule (\cref {eq:refine}), which also initializes the few-shot head}{table.12}{}}
+\newlabel{tab:newusers@cref}{{[table][12][]XII}{[1][9][]11}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XIII}{\ignorespaces Component ablation of FedPEFT-IMU{} (LIMU-BERT, Protocol B, one component removed at a time). Acc.: mean user accuracy; $\Delta $: macro-F1 change against the complete V5; new users: mean per-user macro-F1 with $0$ and $10$ labelled windows per activity.}}{11}{table.13}\protected@file@percent }
+\newlabel{tab:ablation}{{XIII}{11}{Component ablation of \method {} (LIMU-BERT, Protocol B, one component removed at a time). Acc.: mean user accuracy; $\Delta $: macro-F1 change against the complete V5; new users: mean per-user macro-F1 with $0$ and $10$ labelled windows per activity}{table.13}{}}
+\newlabel{tab:ablation@cref}{{[table][13][]XIII}{[1][9][]11}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XIV}{\ignorespaces Client cost of full fine-tuning (V0) and FedPEFT-IMU{} (V5) on HARBox: uplink per client update, peak training memory (MB) and time per local update (s).}}{12}{table.14}\protected@file@percent }
+\newlabel{tab:cost}{{XIV}{12}{Client cost of full fine-tuning (V0) and \method {} (V5) on HARBox: uplink per client update, peak training memory (MB) and time per local update (s)}{table.14}{}}
+\newlabel{tab:cost@cref}{{[table][14][]XIV}{[1][9][]12}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Robustness Across User Splits}{12}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:results:seeds}{{\mbox  {V-C}}{12}{Robustness Across User Splits}{subsection.5.3}{}}
+\newlabel{sec:results:seeds@cref}{{[subsection][3][5]\mbox  {V-C}}{[1][12][]12}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Fairness}{12}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:results:fairness}{{\mbox  {V-D}}{12}{Fairness}{subsection.5.4}{}}
+\newlabel{sec:results:fairness@cref}{{[subsection][4][5]\mbox  {V-D}}{[1][12][]12}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}New Users}{12}{subsection.5.5}\protected@file@percent }
+\newlabel{sec:results:newusers}{{\mbox  {V-E}}{12}{New Users}{subsection.5.5}{}}
+\newlabel{sec:results:newusers@cref}{{[subsection][5][5]\mbox  {V-E}}{[1][12][]12}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-F}}Communication, Memory and Time}{12}{subsection.5.6}\protected@file@percent }
+\newlabel{sec:results:cost}{{\mbox  {V-F}}{12}{Communication, Memory and Time}{subsection.5.6}{}}
+\newlabel{sec:results:cost@cref}{{[subsection][6][5]\mbox  {V-F}}{[1][12][]12}{}{}{}}
 \bibstyle{IEEEtran}
 \bibdata{references}
 \bibcite{li2021fedbn}{1}
 \bibcite{collins2021fedrep}{2}
 \bibcite{arivazhagan2019fedper}{3}
 \bibcite{hu2022lora}{4}
+\@writefile{lot}{\contentsline {table}{\numberline {XV}{\ignorespaces Repeated user splits (Protocol B, seeds $0$--$2$; $n$: number of splits): mean\,$\pm $\,standard deviation. Enrolled clients: mean user accuracy, macro-F1 and the mean accuracy of the worst-served $10\,\%$ (shared classifiers after ``+FT''). New users: mean per-user macro-F1 zero-shot (V5: transductive rule) and with $10$ labelled windows per activity.}}{13}{table.15}\protected@file@percent }
+\newlabel{tab:seeds}{{XV}{13}{Repeated user splits (Protocol B, seeds $0$--$2$; $n$: number of splits): mean\,$\pm $\,standard deviation. Enrolled clients: mean user accuracy, macro-F1 and the mean accuracy of the worst-served $10\,\%$ (shared classifiers after ``+FT''). New users: mean per-user macro-F1 zero-shot (V5: transductive rule) and with $10$ labelled windows per activity}{table.15}{}}
+\newlabel{tab:seeds@cref}{{[table][15][]XV}{[1][9][]13}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-G}}Ablation}{13}{subsection.5.7}\protected@file@percent }
+\newlabel{sec:results:ablation}{{\mbox  {V-G}}{13}{Ablation}{subsection.5.7}{}}
+\newlabel{sec:results:ablation@cref}{{[subsection][7][5]\mbox  {V-G}}{[1][12][]13}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-H}}Discussion and Limitations}{13}{subsection.5.8}\protected@file@percent }
+\newlabel{sec:results:limits}{{\mbox  {V-H}}{13}{Discussion and Limitations}{subsection.5.8}{}}
+\newlabel{sec:results:limits@cref}{{[subsection][8][5]\mbox  {V-H}}{[1][13][]13}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{13}{section.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{VI}{13}{Conclusion}{section.6}{}}
+\newlabel{sec:conclusion@cref}{{[section][6][]VI}{[1][13][]13}{}{}{}}
+\@writefile{toc}{\contentsline {section}{References}{13}{section*.1}\protected@file@percent }
 \bibcite{tan2022fedproto}{5}
 \bibcite{singhal2025fedex}{6}
 \bibcite{halko2011finding}{7}
 \bibcite{mcmahan2017fedavg}{8}
 \bibcite{bai2024flexlora}{9}
 \bibcite{eckart1936approximation}{10}
-\bibcite{menon2021logit}{11}
-\bibcite{ren2020balanced}{12}
-\bibcite{zhang2022fedlc}{13}
-\bibcite{li2021fedrs}{14}
-\bibcite{shang2022creff}{15}
-\bibcite{chan2024capture24}{16}
+\bibcite{chan2024capture24}{11}
+\bibcite{menon2021logit}{12}
+\bibcite{ren2020balanced}{13}
+\bibcite{zhang2022fedlc}{14}
+\bibcite{li2021fedrs}{15}
+\bibcite{shang2022creff}{16}
 \bibcite{walmsley2022reallocation}{17}
 \bibcite{viterbi1967error}{18}
 \bibcite{li2018adabn}{19}
-\bibcite{loshchilov2019adamw}{20}
-\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Federated methods. $\Omega $: encoder weights; $g$, $h$: shared and classifier heads; $\psi $: normalization; $a$: input adapter; P: prototypes.}}{10}{table.8}\protected@file@percent }
-\newlabel{tab:methods}{{VIII}{10}{Federated methods. $\Omega $: encoder weights; $g$, $h$: shared and classifier heads; $\psi $: normalization; $a$: input adapter; P: prototypes}{table.8}{}}
-\newlabel{tab:methods@cref}{{[table][8][]VIII}{[1][9][]10}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Hyperparameters (UniMTS budget in parentheses where it differs).}}{10}{table.9}\protected@file@percent }
-\newlabel{tab:hparams}{{IX}{10}{Hyperparameters (UniMTS budget in parentheses where it differs)}{table.9}{}}
-\newlabel{tab:hparams@cref}{{[table][9][]IX}{[1][10][]10}{}{}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {V}Results}{10}{section.5}\protected@file@percent }
-\newlabel{sec:results}{{V}{10}{Results}{section.5}{}}
-\newlabel{sec:results@cref}{{[section][5][]V}{[1][10][]10}{}{}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{10}{section.6}\protected@file@percent }
-\newlabel{sec:conclusion}{{VI}{10}{Conclusion}{section.6}{}}
-\newlabel{sec:conclusion@cref}{{[section][6][]VI}{[1][10][]10}{}{}{}}
-\@writefile{toc}{\contentsline {section}{References}{10}{section*.1}\protected@file@percent }
-\bibcite{xu2021limubert}{21}
-\bibcite{yuan2024selfsupervised}{22}
-\bibcite{zhang2024unimts}{23}
-\bibcite{ding2026halo}{24}
-\bibcite{bonawitz2017practical}{25}
-\bibcite{gershuny2020testing}{26}
-\bibcite{ainsworth2011compendium}{27}
-\bibcite{kelly2013ethical}{28}
-\bibcite{willetts2018statistical}{29}
-\bibcite{hsu2019measuring}{30}
-\bibcite{he2022masked}{31}
-\bibcite{oord2018representation}{32}
-\bibcite{stisen2015smart}{33}
-\bibcite{yan2018spatial}{34}
-\bibcite{guo2022generating}{35}
-\bibcite{beutel2020flower}{36}
-\gdef \@abspage@last{11}
+\bibcite{iwasawa2021t3a}{20}
+\bibcite{loshchilov2019adamw}{21}
+\bibcite{xu2021limubert}{22}
+\bibcite{yuan2024selfsupervised}{23}
+\bibcite{zhang2024unimts}{24}
+\bibcite{ding2026halo}{25}
+\bibcite{bonawitz2017practical}{26}
+\bibcite{ouyang2021clusterfl}{27}
+\bibcite{li2023fedchar}{28}
+\bibcite{stisen2015smart}{29}
+\bibcite{he2022masked}{30}
+\bibcite{oord2018representation}{31}
+\bibcite{yan2018spatial}{32}
+\bibcite{guo2022generating}{33}
+\bibcite{li2021ditto}{34}
+\bibcite{beutel2020flower}{35}
+\gdef \@abspage@last{14}

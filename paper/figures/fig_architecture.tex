@@ -28,12 +28,12 @@
   \node[anchor=north west, font=\footnotesize\bfseries] at (0.15,8.98)
        {Client $k\in\mathcal{S}_t$ \textnormal{(device tier $r_k\in\{2,4,8\}$; raw IMU data never leave the device)}};
 
-  % -- data: one 10-s window of the local stream (never leaves the device)
+  % -- data: one window of the local stream (never leaves the device); HARBox: 9 axes x 2 s at 50 Hz
   \node[align=center, font=\scriptsize] (data) at (0.72,7.05)
-        {window\\[1pt] $\mathbf{x}\!\in\!\mathbb{R}^{3\times300}$\\[1pt] from $\mathcal{D}_k$};
+        {window\\[1pt] $\mathbf{x}\!\in\!\mathbb{R}^{9\times100}$\\[1pt] from $\mathcal{D}_k$};
   % -- (1) preprocessor
   \node[fixed, minimum width=1.85cm] (pre) at (2.72,7.05)
-        {\ding{172} Preprocess $\Pi_E$\\ resample $\cdot$ crop\\ unit conversion};
+        {\ding{172} Preprocess $\Pi_E$\\ units $\cdot$ resample\\ crop / tile};
   % -- (2) input adapter
   \node[loc, minimum width=1.45cm] (adp) at (4.78,7.05) {\ding{173} Input\\ adapter $a_k$\\ ($1{\times}1$ conv)};
 

@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------------
+#  HARBOX profile - main HARBox experiments, leakage-free protocol (B):
+#    users: 84 FL clients / 24 held-out (new) users / 12 pool users
+#    inside every client: per-activity chronological 80/20 split, 1-window gap
+#  All dataset settings come from configs/datasets/harbox.yaml.
+#      python run_all.py --profile harbox
+# ---------------------------------------------------------------------
+data:
+  dataset: harbox
+split:
+  seeds: [0]
+centralized:
+  epochs: 25
+  patience: 5
+  batch_size: 128
+  max_val_windows: 6000
+fl:
+  rounds: 100
+  clients_per_round_frac: 0.20     # 17 of 84 clients per round
+  local_epochs: 2
+  max_local_steps: 8               # 8 x 64 = 512 windows per update (~2 passes over a client's data)
+  batch_size: 64                   # a client holds ~230 training windows
+  eval_every: 10
+  local_ft_steps: 20
+  final_personalization_steps: 20
+ablation:
+  encoder: limu_bert
+report:
+  compare_profiles: []
+  stage_labels: {}

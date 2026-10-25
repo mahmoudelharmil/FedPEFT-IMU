@@ -39,7 +39,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .base import BaseEncoder, InputSpec
+from .base import ACC, BaseEncoder, InputSpec
 
 
 class AttentionBlock(nn.Module):
@@ -131,13 +131,19 @@ class HaloEncoder(BaseEncoder):
     name = "halo"
     display_name = "HALO"
     architecture = "Patch-channel Transformer, 8 alternating temporal/channel layers, d=192"
-    pretrained_source = "Our re-implementation, self-supervised (MAE + patch contrastive) on the Capture-24 pool users"
+    pretrained_source = "Our re-implementation, self-supervised (MAE + patch contrastive) on the pool users"
     spec = InputSpec(rate_hz=30, n_samples=300, n_channels=3, acc_unit="g")
 
     def __init__(self, d: int = 192, n_layers: int = 8, n_heads: int = 6, patch_s: float = 1.0,
-                 out_dim: int = 256, n_pool_queries: int = 4, dropout: float = 0.1):
+                 out_dim: int = 256, n_pool_queries: int = 4, dropout: float = 0.1,
+                 rate_hz: float = 30, n_samples: int = 300, channels: tuple[str, ...] = ACC):
         super().__init__()
-        self.patch_len = int(round(self.spec.rate_hz * patch_s))       # 30 samples = 1 s
+        # HALO tokenises every (patch, channel) pair on its own, so any set of channels
+        # works: Capture-24 uses the 3 acc axes at 30 Hz with 1-s patches, HARBox all
+        # 9 axes (acc, gyro, mag) at 50 Hz with 0.4-s patches.
+        self.spec = InputSpec(rate_hz=rate_hz, n_samples=n_samples, n_channels=len(channels), acc_unit="g")
+        self.input_channels = tuple(channels)
+        self.patch_len = int(round(self.spec.rate_hz * patch_s))       # 30 samples = 1 s at 30 Hz
         self.d = d
         self.tokenizer = HaloTokenizer(d)
         self.channel_embed = nn.Parameter(torch.randn(self.spec.n_channels, d) * 0.02)   # sensor conditioning e_c

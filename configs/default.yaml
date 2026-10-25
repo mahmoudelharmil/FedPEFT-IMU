@@ -37,13 +37,29 @@ split:
   seeds: [0]                        # one user split per seed (paper-grade runs use 3-5)
   heldout_frac: 0.20                # 20 % of users never take part in training
   pool_frac: 0.10                   # 10 % of users: unlabelled SSL pretraining pool + validation users
+  # How each user's windows are divided (fedpeft/data/store.py):
+  #   chronological            first train_time_frac of the recording = train, the rest = test
+  #   per_class_chronological  the same, separately inside every activity (HARBox records each
+  #                            activity in its own session), dropping gap_windows in between
+  #   random                   random windows (the protocol of the HARBox / FedCHAR papers),
+  #                            see random_* below
+  mode: chronological
+  gap_windows: 0                    # windows dropped between train and test (overlapping windows)
+  random_windows_per_user: null     # random mode: [min, max] windows drawn per user (null = all)
+  random_fracs: [0.72, 0.08, 0.20]  # random mode: train / validation / test
   train_time_frac: 0.80             # chronological train/test split inside each FL client
   heldout_adapt_frac: 0.50          # held-out users: first 50 % may be used for few-shot labels, last 50 % is tested
   fewshot_minutes: [1, 5]           # "1-5 min of labels" per activity for few-shot adaptation
+  fewshot_shots: null               # alternative budget: labelled WINDOWS per activity (e.g. [1, 5, 10])
   fewshot_steps: 60                 # optimisation steps used for few-shot adaptation
   fewshot_batch: 64                 # batch size of few-shot adaptation through the encoder (V5)
   max_heldout_test_windows: null    # optional cap on test windows per held-out user (null = all)
   adabn_new_users: true             # V5 zero-shot: estimate BatchNorm statistics from the new user's UNLABELLED data
+  zero_shot_refine_iters: 0         # transductive zero-shot: soft k-means steps that move the class prototypes
+                                    # towards the new user's UNLABELLED windows (0 = off; every method)
+  zero_shot_refine_prior: 10.0      # weight of the starting prototype in that update, in windows
+  zero_shot_refine_shared: false    # also refine the class rows of SHARED classifiers (lowered their validation scores)
+  transductive_report: false        # V5 runs also store the transductive zero-shot results (heldout_transductive)
 
 # ---------------------------------------------------------------------
 #  Class imbalance and decoding (fedpeft/training/imbalance.py, hmm.py)
@@ -58,6 +74,18 @@ imbalance:
   tau_inf_prototype: 0.0            # same for V5's nearest-prototype zero-shot rule (validated: 0 is best)
 decoding:
   hmm: true                         # also report HMM-smoothed results (standard for Capture-24)
+
+# ---------------------------------------------------------------------
+#  Training-time data augmentation (fedpeft/training/augment.py), applied
+#  identically to every method.  Off for Capture-24; on for HARBox, where
+#  77 phone models are held in many different ways.
+# ---------------------------------------------------------------------
+augment:
+  enabled: false
+  rotation_deg: 0.0                 # random 3-D rotation of every sensor triplet, angle up to this
+  scale_std: 0.0                    # random gain per window: x * (1 + N(0, scale_std))
+  jitter_std: 0.0                   # Gaussian noise, relative to each channel's std in the window
+  p: 1.0                            # probability that a window is augmented
 
 # ---------------------------------------------------------------------
 #  Encoders.  "pretrained" says where the frozen weights W0 come from.
@@ -99,6 +127,8 @@ model:
                                     # during training (1.4x faster on conv encoders). Set 0.1 to use the two-branch form.
     tiers: [2, 4, 8]                # heterogeneous device tiers (V4 / V5): low, mid, high
   proto_weight: 0.5                 # lambda of the prototype loss (V5)
+  global_head: false                # dual-head V5: also train a federated global classifier for new users
+  global_head_weight: 1.0           # weight of its (balanced-softmax) loss
   proto_max_windows: 512            # windows used to compute a client's local prototypes after training
 
 # ---------------------------------------------------------------------
@@ -134,8 +164,17 @@ fl:
   weight_decay: 1.0e-4
   target_f1_fraction: 0.90          # target F1 = 90 % of the centralized from-scratch macro-F1 (same encoder)
   final_personalization_steps: 8    # V5: one last update of every client's personal parts before testing
+  personalize_augment: true         # augment the windows of that last personal update too (false = real data only)
+  personalize_lora: false           # V5: that last update also fine-tunes a private copy of the LoRA adapters
+  personalize_prox: 0.0             # proximal weight towards the global adapters in that update (Ditto-style)
+  save_new_user_model: true         # keep the final new-user model (results/<profile>/models) for re-evaluation
   classwise_head_aggregation: true  # average each class row of the shared classifier only over clients with that class
   local_ft_steps: 8                 # "+FT" score: each client fine-tunes the shared classifier on its own data (0 = off)
+  ditto_lambda: 0.1                 # Ditto baseline: strength of the pull of the personal model to the global one
+  new_user_local_init: pretrained   # V5: new users start from the pretrained norm/adapter ("pretrained") or from
+                                    # the clients' average, uploaded once at the end of training ("average")
+  new_user_head: prototype          # V5 zero-shot rule for new users: nearest global prototype ("prototype") or
+                                    # the clients' average personal classifier, uploaded once ("average")
 
 # ---------------------------------------------------------------------
 #  HALO self-supervised pretraining on the pool users (stage 1 of HALO)

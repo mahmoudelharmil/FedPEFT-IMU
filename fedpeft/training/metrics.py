@@ -11,6 +11,8 @@ Definitions used everywhere in this project:
                           test data (a client who never cycles is not scored on cycling)
     worst-10 % client F1  mean per-client F1 of the lowest-scoring 10 % of clients
     client-F1 std         standard deviation of the per-client F1 values
+    client accuracy       accuracy on each client's test windows; its mean over clients
+                          is the metric of the published HARBox results (FedCHAR, ClusterFL)
 """
 
 from __future__ import annotations
@@ -55,11 +57,20 @@ def evaluate_predictions(y_true_by_user: dict[str, np.ndarray], y_pred_by_user: 
     y_pred = np.concatenate([y_pred_by_user[u] for u in users])
     client_f1 = {u: macro_f1(y_true_by_user[u], y_pred_by_user[u], labels=np.unique(y_true_by_user[u]))
                  for u in users}
+    # Per-client accuracy: the metric of the published HARBox results (mean over users).
+    client_acc = {u: float(np.mean(y_true_by_user[u] == y_pred_by_user[u])) for u in users
+                  if len(y_true_by_user[u])}
+    acc_values = np.array(sorted(client_acc.values()))
+    k = max(1, int(math.ceil(0.10 * len(acc_values)))) if len(acc_values) else 0
     out = {
         "macro_f1": macro_f1(y_true, y_pred, labels=np.arange(n_classes)),
         "accuracy": float(accuracy_score(y_true, y_pred)),
         "per_class_f1": per_class_f1(y_true, y_pred, n_classes),
         "client_f1": client_f1,
+        "client_acc": client_acc,
+        "client_acc_mean": float(acc_values.mean()) if k else float("nan"),
+        "client_acc_std": float(acc_values.std()) if k else float("nan"),
+        "worst10_acc": float(acc_values[:k].mean()) if k else float("nan"),
         "n_test_windows": int(len(y_true)),
     }
     out.update(fairness_summary(client_f1))

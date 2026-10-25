@@ -27,6 +27,7 @@ the report can show what each change bought.
 from __future__ import annotations
 
 import platform
+import re
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -36,7 +37,9 @@ import numpy as np
 from ..federated.methods import METHODS
 
 METHOD_ORDER = list(METHODS)
-from ..models.encoders import ENCODERS
+from ..data.splits import split_path
+from ..data.store import fewshot_budgets, load_data_spec
+from ..models.encoders import ENCODERS, build_encoder
 from ..utils import load_json
 
 CENTRAL_MODES = {"scratch": "From scratch", "pretrained_ft": "Pretrained + fine-tuning"}
@@ -62,14 +65,27 @@ def _first_reach(evals, target):
 
 
 def _heldout_summary(h: dict | None) -> dict:
+    """{budget: metrics}; budget "0" = zero-shot, otherwise minutes (Capture-24, few_shot_5min)
+    or labelled windows (HARBox, few_shot_5shot) per activity."""
     out = {}
     for key, value in (h or {}).items():
         if key in ("protocol", "hmm"):
             continue
-        minutes = 0 if key == "zero_shot" else int(key.split("_")[2].replace("min", ""))
-        out[str(minutes)] = {"mean_user_f1": value["mean_user_f1"], "pooled_macro_f1": value["pooled_macro_f1"],
-                             "accuracy": value["accuracy"], "worst10_f1": value["worst10_f1"]}
+        budget = 0 if key == "zero_shot" else int(key.split("_")[2].replace("min", "").replace("shot", ""))
+        out[str(budget)] = {"mean_user_f1": value["mean_user_f1"], "pooled_macro_f1": value["pooled_macro_f1"],
+                            "accuracy": value["accuracy"], "worst10_f1": value["worst10_f1"],
+                            "mean_user_acc": value.get("mean_user_acc")}
     return out
+
+
+def _acc_fields(block: list[dict]) -> dict:
+    """Per-client accuracy (the metric of the published HARBox results)."""
+    if not block or "client_acc_mean" not in block[0]:
+        return {}
+    return {"client_acc_mean": _mean([m["client_acc_mean"] for m in block]),
+            "client_acc_std": _mean([m["client_acc_std"] for m in block]),
+            "worst10_acc": _mean([m["worst10_acc"] for m in block]),
+            "client_acc": list(block[0]["client_acc"].values())}
 
 
 def _hmm_fields(runs: list[dict], key: str) -> dict:
@@ -94,6 +110,7 @@ def _ft_fields(runs: list[dict]) -> dict:
     fh = [r["final_ft_hmm"] for r in runs if r.get("final_ft_hmm")]
     return {"macro_f1_ft": _mean([m["macro_f1"] for m in ft]), "accuracy_ft": _mean([m["accuracy"] for m in ft]),
             "worst10_f1_ft": _mean([m["worst10_f1"] for m in ft]),
+            "client_acc_mean_ft": _mean([m.get("client_acc_mean") for m in ft]),
             "macro_f1_ft_hmm": _mean([m["macro_f1"] for m in fh]) if fh else None}
 
 
@@ -156,7 +173,9 @@ def collect_window_ablation(cfg) -> list[dict]:
 
 def collect_baseline(cfg) -> dict | None:
     """Key metrics of the first pipeline (results/<baseline profile>), for before/after charts."""
-    compare = cfg.get("report", {}).get("compare_profiles") or ["baseline"]
+    compare = cfg.get("report", {}).get("compare_profiles") or []
+    if not compare:                 # no earlier pipeline of THIS dataset to compare with
+        return None
     name = cfg.get("report", {}).get("baseline_profile", compare[0])
     base = Path(cfg.paths.results_dir) / name
     if name == cfg.profile or not base.exists():
@@ -177,6 +196,100 @@ def collect_baseline(cfg) -> dict | None:
         out["federated"].append({"encoder": r["encoder"], "method": r["method"], "tag": r.get("tag", ""),
                                  **pick(r, "final")})
     return out
+
+
+def collect_sota(cfg) -> dict | None:
+    """Comparison with the published results of the dataset (HARBox, WISDM).
+
+    The published numbers (report.published) were obtained under THEIR protocol; the
+    profiles report.sota_profiles (or the single report.sota_profile) re-run our models
+    under that same protocol, so the rows are directly comparable.  Several profiles are
+    allowed, e.g. one per Dirichlet alpha; every row then names its setting.
+    Metric (report.sota_metric):
+        client_accuracy    mean test accuracy per user (HARBox / FedCHAR)
+        heldout_accuracy   accuracy of the global model on all windows of unseen test
+                           subjects (WISDM / FedAIoT), mean over the seeds (test-subject draws)
+    """
+    rcfg = cfg.get("report", {})
+    profiles = list(rcfg.get("sota_profiles") or ([rcfg["sota_profile"]] if rcfg.get("sota_profile") else []))
+    published = rcfg.get("published") or []
+    if not profiles and not published:
+        return None
+    metric = rcfg.get("sota_metric", "client_accuracy")
+    rows = [dict(p.to_dict() if hasattr(p, "to_dict") else p, kind="published") for p in published]
+    sota_tags = {f"__{k}": v for k, v in (rcfg.get("sota_tags") or {}).items()}
+
+    def heldout_acc(run: dict) -> float | None:
+        return ((run.get("heldout") or {}).get("zero_shot") or {}).get("accuracy")
+
+    def acc(run: dict, central: bool = False) -> float | None:
+        if metric == "heldout_accuracy":
+            return heldout_acc(run)
+        return (run["test"] if central else run["final"]).get("client_acc_mean")
+
+    def spread(runs: list, central: bool = False) -> float | None:
+        vals = [v for v in (acc(r, central) for r in runs) if v is not None]
+        if metric == "heldout_accuracy":
+            return float(np.std(vals)) if len(vals) > 1 else None
+        return (runs[0]["test"] if central else runs[0]["final"]).get("client_acc_std")
+
+    from ..config import load_config
+    protocols = []
+    for prof in profiles:
+        base = Path(cfg.paths.results_dir) / prof
+        if not base.exists():
+            continue
+        pc = load_config(prof)
+        alpha = pc.split.get("dirichlet_alpha")
+        setting = f"α = {float(alpha):g}" if alpha is not None else ""
+        protocols.append({"profile": prof, "setting": setting, "split_mode": pc.split.get("mode"),
+                          "windows_per_user": pc.split.get("random_windows_per_user"),
+                          "fracs": list(pc.split.get("random_fracs") or []), "rounds": pc.fl.rounds,
+                          "clients_per_round_frac": pc.fl.clients_per_round_frac, "local_epochs": pc.fl.local_epochs,
+                          "batch_size": pc.fl.batch_size, "dirichlet_alpha": alpha,
+                          "dirichlet_clients": pc.split.get("dirichlet_clients"),
+                          "heldout_users": pc.split.get("heldout_users")})
+        groups: dict = defaultdict(list)
+        for f in sorted((base / "federated").glob("*.json")):
+            run = load_json(f)
+            tag = run.get("tag") or ""
+            if not tag or tag in sota_tags:
+                groups[(run["encoder"], run["method"], tag)].append(run)
+        for (_, _, tag), runs in groups.items():
+            run = runs[0]
+            ft = run.get("final_ft") or {}
+            label = run["method_label"].split(" [")[0] + (f", {sota_tags[tag]}" if tag else "")
+            rows.append({"kind": "ours", "method": label, "short": run["method_short"], "setting": setting,
+                         "slot": run["method_slot"], "model": run["encoder_display"], "encoder": run["encoder"],
+                         "accuracy": _mean([acc(r) for r in runs]), "accuracy_std": spread(runs),
+                         "n_seeds": len(runs),
+                         "worst10_acc": run["final"].get("worst10_acc"), "macro_f1": run["final"]["macro_f1"],
+                         "accuracy_ft": None if metric == "heldout_accuracy" else ft.get("client_acc_mean"),
+                         "personal": bool(run["config"].get("personal_head_plain_ce")),
+                         "uplink_mb_client_round": run["comm"]["uplink_mb_per_client_round"],
+                         "source": f"ours ({prof})"})
+        # centralized training does not depend on the label partition: shown once (first profile)
+        if prof != profiles[0]:
+            continue
+        cgroups: dict = defaultdict(list)
+        for f in sorted((base / "centralized").glob("*.json")):
+            run = load_json(f)
+            cgroups[(run["encoder"], run["mode"])].append(run)
+        for runs in cgroups.values():
+            run = runs[0]
+            rows.append({"kind": "ours_central", "method": "Centralized · " + CENTRAL_MODES[run["mode"]],
+                         "short": "Central", "slot": 7, "model": run["encoder_display"], "encoder": run["encoder"],
+                         "setting": "", "accuracy": _mean([acc(r, True) for r in runs]),
+                         "accuracy_std": spread(runs, True), "n_seeds": len(runs),
+                         "worst10_acc": run["test"].get("worst10_acc"), "macro_f1": run["test"]["macro_f1"],
+                         "personal": False, "source": f"ours ({prof}), not private"})
+    for r in rows:                       # published rows: their setting from the method name, e.g. "(alpha = 0.1)"
+        if r["kind"] == "published" and "setting" not in r:
+            m = re.search(r"alpha = ([0-9.]+)", r["method"])
+            r["setting"] = f"α = {float(m.group(1)):g}" if m else ""
+            r["method"] = re.sub(r"\s*\(alpha = [0-9.]+\)", "", r["method"])
+    return {"profile": profiles[0] if profiles else None, "protocol": protocols[0] if protocols else None,
+            "protocols": protocols, "rows": rows, "metric": metric}
 
 
 def collect(cfg) -> dict:
@@ -210,8 +323,9 @@ def collect(cfg) -> dict:
             "trainable_params": r0["trainable_params"],
             "epochs_run": len(r0["history"]),
             "heldout": _heldout_summary(r0["heldout"]),
-            "heldout_hmm": _heldout_summary(r0["heldout"].get("hmm")),
+            "heldout_hmm": _heldout_summary((r0["heldout"] or {}).get("hmm")),
             "val_tau_sweep": r0.get("val_tau_sweep"),
+            **_acc_fields([r["test"] for r in runs]),
             **_hmm_fields(runs, "test_hmm"),
         }
         centralized.append(entry)
@@ -223,7 +337,7 @@ def collect(cfg) -> dict:
     for p in sorted((base / "federated").glob("*.json")):
         r = load_json(p)
         fed_runs[(r["encoder"], r["method"], r.get("tag", ""))].append(r)
-    federated, ablation = [], []
+    federated, ablation, components = [], [], []
     v0_uplink = {}
     for (enc, method, tag), runs in fed_runs.items():
         if method == "v0_full_ft" and not tag:
@@ -271,12 +385,21 @@ def collect(cfg) -> dict:
             "rounds": [{"round": h["round"], "uplink_mb": h["uplink_mb"], "cum_uplink_mb": h["cum_uplink_mb"],
                         "train_loss": h["train_loss"], "agg_error": h["agg_error"]} for h in r0["history"]],
             "heldout": _heldout_summary(r0["heldout"]),
-            "heldout_hmm": _heldout_summary(r0["heldout"].get("hmm")),
+            "heldout_hmm": _heldout_summary((r0["heldout"] or {}).get("hmm")),
+            # the same model re-evaluated with the transductive zero-shot rule (scripts/tools/reeval_heldout.py)
+            "heldout_transductive": _heldout_summary(r0.get("heldout_transductive")) if r0.get("heldout_transductive") else None,
             "before_personalization": r0.get("final_before_personalization"),
+            **_acc_fields([r["final"] for r in runs]),
             **_hmm_fields(runs, "final_hmm"),
             **_ft_fields(runs),
         }
-        (ablation if tag else federated).append(entry)
+        # Rank sweep ("__r16") -> ablation; V5 component ablations (methods v5_abl_*, or other tags such
+        # as "__noproto") -> components; everything else is the main grid.
+        is_rank = tag.startswith("__r") and tag[3:].isdigit()
+        if method.startswith("v5_abl") or (tag and not is_rank):
+            components.append(entry)
+        else:
+            (ablation if tag else federated).append(entry)
 
     # Rank ablation: add the main V3 run as the default-rank point.
     if ablation:
@@ -300,8 +423,10 @@ def collect(cfg) -> dict:
     bench_path = base / "benchmark" / "encoders.json"
     bench = load_json(bench_path) if bench_path.exists() else {}
     encoders = []
-    for name, cls in ENCODERS.items():
+    data_spec = load_data_spec(cfg.paths.processed_dir)
+    for name in cfg.encoders.names:
         b = bench.get(name, {})
+        cls = build_encoder(name, cfg, pretrained=False, data=data_spec)   # configured for this dataset
         spec = cls.spec
         encoders.append({"name": name, "display": cls.display_name, "architecture": cls.architecture,
                          "pretrained_source": cls.pretrained_source,
@@ -311,8 +436,7 @@ def collect(cfg) -> dict:
                                                   "inference_win_per_s", "train_full_peak_mb", "train_lora_peak_mb")}})
 
     ssl = [load_json(p) for p in sorted((base / "pretraining").glob("*.json"))]
-    splits = [load_json(p) for p in sorted((Path(cfg.paths.results_dir) / "splits").glob("*.json"))
-              if load_json(p)["seed"] in cfg.split.seeds]
+    splits = [load_json(split_path(cfg, seed)) for seed in cfg.split.seeds if split_path(cfg, seed).exists()]
 
     # Dataset statistics from the processed files' metadata (class counts per user are in the npz).
     dataset = _dataset_stats(cfg, meta, splits)
@@ -333,6 +457,11 @@ def collect(cfg) -> dict:
             "subsample_every": cfg.data.subsample_every, "seeds": list(cfg.split.seeds),
             "heldout_frac": cfg.split.heldout_frac, "pool_frac": cfg.split.pool_frac,
             "train_time_frac": cfg.split.train_time_frac, "fewshot_minutes": list(cfg.split.fewshot_minutes),
+            "fewshot": [{"n": str(n_cls if cfg.split.get("fewshot_shots") else key.split("_")[2].replace("min", "")),
+                         "label": label} for key, n_cls, label in fewshot_budgets(cfg, meta["window_s"])],
+            "fewshot_unit": "windows" if cfg.split.get("fewshot_shots") else "minutes",
+            "split_mode": cfg.split.get("mode", "chronological"), "gap_windows": cfg.split.get("gap_windows", 0),
+            "augment": (cfg.get("augment") or {}).get("enabled", False),
             "rounds": cfg.fl.rounds, "clients_per_round_frac": cfg.fl.clients_per_round_frac,
             "local_epochs": cfg.fl.local_epochs, "max_local_steps": cfg.fl.max_local_steps,
             "batch_size": cfg.fl.batch_size, "eval_every": cfg.fl.eval_every,
@@ -354,7 +483,9 @@ def collect(cfg) -> dict:
         "centralized": centralized,
         "federated": federated,
         "ablation": ablation,
+        "components": components,
         "baseline": collect_baseline(cfg),
+        "sota": collect_sota(cfg),
         "stages": collect_stages(cfg),
         "window_ablation": collect_window_ablation(cfg),
         "stage_label": cfg.get("report", {}).get("stage_labels", {}).get(cfg.profile, cfg.profile),
@@ -384,7 +515,12 @@ def _dataset_stats(cfg, meta, splits) -> dict:
         s = splits[0]
         groups = {g: len(s[g]) for g in ("clients", "heldout", "pool")}
     vals = np.array(list(per_user.values()))
-    return {"n_participants": len(meta["participants"]), "class_counts": counts.tolist(),
+    return {"name": meta.get("dataset", "capture24"), "display_name": meta.get("display_name", "Capture-24"),
+            "description": cfg.get("report", {}).get("dataset_description")
+            or "free-living wrist accelerometry",
+            "rate_hz": meta["base_rate_hz"], "window_s": meta["window_s"], "hop_s": meta.get("hop_s", meta["window_s"]),
+            "channels": meta.get("channels", ["acc_x", "acc_y", "acc_z"]),
+            "n_participants": len(meta["participants"]), "class_counts": counts.tolist(),
             "n_windows": int(counts.sum()), "windows_per_user_mean": float(vals.mean()),
             "windows_per_user_min": int(vals.min()), "windows_per_user_max": int(vals.max()),
             "groups": groups}
@@ -448,7 +584,9 @@ def findings(rep: dict) -> list[str]:
                  for e in names if (e, "scratch") in cen and (e, "pretrained_ft") in cen]
         txt = f"Centralized from scratch, {best['encoder_display']} is the strongest architecture (macro-F1 {best['macro_f1']:.3f})."
         if gains:
-            txt += (" Starting from the pretrained weights improves every encoder: "
+            lead = ("improves every encoder" if all(g > 0.005 for _, g in gains)
+                    else "changes the macro-F1 of each encoder by")
+            txt += (f" Starting from the pretrained weights {lead}: "
                     + ", ".join(f"{names[e]} {g:+.3f}" for e, g in gains) + " macro-F1.")
         out.append(txt)
 
@@ -456,7 +594,8 @@ def findings(rep: dict) -> list[str]:
     drops = [(e, cen[(e, "scratch")]["macro_f1"] - val(e, "fedavg_scratch", "macro_f1"))
              for e in encs if (e, "scratch") in cen and val(e, "fedavg_scratch", "macro_f1") is not None]
     if drops:
-        out.append("Training from scratch in the federation (non-IID users, 20 % participation) loses "
+        out.append(f"Training from scratch in the federation (non-IID users, "
+                   f"{round(100 * rep['protocol']['clients_per_round_frac'])} % participation) loses "
                    + ", ".join(f"{names[e]} {d:.3f}" for e, d in drops)
                    + " macro-F1 against centralized training from scratch. This is the gap the pretrained encoders are meant to close.")
 
@@ -492,9 +631,12 @@ def findings(rep: dict) -> list[str]:
     if diffs:
         down = [(e, val(e, "v3_lora_exact", "downlink_mb_round") / val(e, "v2_lora_naive", "downlink_mb_round"))
                 for e, _ in diffs if val(e, "v2_lora_naive", "downlink_mb_round")]
+        mean_d = float(np.mean([d for _, d in diffs]))
         txt = ("Exact LoRA aggregation (V3) versus naive averaging (V2), macro-F1 difference: "
-               + ", ".join(f"{names[e]} {d:+.3f}" for e, d in diffs) + ". In this setting the naive error is small "
-               "(see the aggregation-error chart) and does not cost accuracy.")
+               + ", ".join(f"{names[e]} {d:+.3f}" for e, d in diffs) + ". "
+               + ("On average the two rules are within 0.01 macro-F1 here: the naive error is small "
+                  "(see the aggregation-error chart)." if abs(mean_d) < 0.01 else
+                  f"On average exact aggregation is {'better' if mean_d > 0 else 'worse'} by {abs(mean_d):.3f}."))
         if down:
             txt += (" Exact aggregation must ship the dense residual to every client: downlink per round is "
                     + ", ".join(f"{names[e]} {x:.0f}x" for e, x in down) + " that of V2.")
@@ -508,8 +650,8 @@ def findings(rep: dict) -> list[str]:
         src_txt = f" — from the “{src}” run" if src and src != rep["profile"] else ""
         out.append(f"LoRA rank ({A[0]['encoder_display']}, V3{src_txt}): "
                    + ", ".join(f"r={a['rank']} {a['macro_f1']:.3f}" for a in A)
-                   + f". The best rank is r={best['rank']} at {best['uplink_mb_client_round']:.2f} MB per client-round; "
-                     "a larger rank does not buy accuracy here.")
+                   + f". The best rank is r={best['rank']} at {best['uplink_mb_client_round']:.2f} MB per client-round"
+                   + ("; a larger rank does not buy accuracy here." if best["rank"] < max(a["rank"] for a in A) else "."))
 
     # 7. Fairness.
     parts = []
@@ -530,10 +672,23 @@ def findings(rep: dict) -> list[str]:
             parts.append(f"{names[e]} V5 {v5['heldout']['0']['mean_user_f1']:.3f} vs V3 {v3['heldout']['0']['mean_user_f1']:.3f}")
     if parts:
         adabn = rep["protocol"].get("adabn_new_users")
+        d = [fed[(e, "v5_proposed")]["heldout"]["0"]["mean_user_f1"] - fed[(e, "v3_lora_exact")]["heldout"]["0"]["mean_user_f1"]
+             for e in encs if (e, "v3_lora_exact") in fed and (e, "v5_proposed") in fed]
+        verdict = (" On average V5's prototype rule transfers better to brand-new users than V3's shared classifier "
+                   f"({np.mean(d):+.3f})." if np.mean(d) > 0.005 else
+                   " On average the shared classifier of V3 transfers better to brand-new users than V5's prototype rule "
+                   f"({np.mean(d):+.3f}); V5's advantage is on the devices that trained with it." if np.mean(d) < -0.005 else
+                   " On average the two rules transfer equally well.")
         out.append("New users, zero-shot (V5 = nearest global prototype"
                    + ("; BatchNorm encoders first estimate their norm statistics from the new user's unlabelled windows" if adabn else "")
-                   + "): " + "; ".join(parts) + ". The shared classifier of V3 transfers better to brand-new users "
-                   "than V5's prototype rule; V5's advantage is on the devices that trained with it.")
+                   + "): " + "; ".join(parts) + "." + verdict)
+        tr = [(e, fed[(e, "v5_proposed")]) for e in encs
+              if (e, "v5_proposed") in fed and fed[(e, "v5_proposed")].get("heldout_transductive")]
+        if tr:
+            out.append("Transductive zero-shot (V5's prototypes first refined on the new user's unlabelled windows, "
+                       "no labels and no communication): " + "; ".join(
+                           f"{names[e]} {v['heldout']['0']['mean_user_f1']:.3f} -> "
+                           f"{v['heldout_transductive']['0']['mean_user_f1']:.3f}" for e, v in tr) + ".")
     few = [(f, f["heldout"]["0"]["mean_user_f1"], f["heldout"]["5"]["mean_user_f1"]) for f in rep["federated"]
            if f["heldout"].get("5") and f["heldout"].get("0")]
     worse = [f for f, z, v in few if v < z]
@@ -543,14 +698,57 @@ def findings(rep: dict) -> list[str]:
         low = float(np.mean([v - z for _, z, v in ordered[:half]]))
         high = float(np.mean([v - z for _, z, v in ordered[half:]]))
         corrected = rep["protocol"].get("tau_train", 0) > 0
-        out.append(f"For {len(worse)} of {len(few)} federated models, 5 minutes of labels score below zero-shot. "
-                   f"The models with the weaker half of zero-shot scores gain {low:+.3f} on average from 5 minutes of labels, "
+        lab = next((b["label"] for b in rep["protocol"].get("fewshot", []) if b["n"] == "5"), "5 min")
+        out.append(f"For {len(worse)} of {len(few)} federated models, {lab} of labels score below zero-shot. "
+                   f"The models with the weaker half of zero-shot scores gain {low:+.3f} on average from {lab} of labels, "
                    f"the stronger half changes by {high:+.3f}. "
                    + ("The few-shot fit already corrects for its class-balanced sample, so the remaining loss suggests the "
-                      "classifier over-fits the 6-30 windows per class; regularising it towards the global classifier is "
+                      "classifier over-fits the few labelled windows per class; regularising it towards the global classifier is "
                       "the next step." if corrected else
                       "This is consistent with a class-prior shift: the few-shot sample is roughly class-balanced while "
                       "real days are dominated by sleep and sitting."))
+
+    S = rep.get("sota") or {}
+    pub = [r for r in S.get("rows", []) if r["kind"] == "published"]
+    ours = [r for r in S.get("rows", []) if r["kind"] == "ours" and r.get("accuracy") is not None]
+    fl_ours = [r for r in ours if r["short"] != "Local"]          # Local training is not federated
+    if pub and fl_ours:
+        heldout = S.get("metric") == "heldout_accuracy"
+        what = "an accuracy on the unseen test subjects" if heldout else "a mean user accuracy"
+
+        def src(r):
+            return r["source"] if r["source"].startswith(r["short"]) else f"{r['short']}, {r['source']}"
+
+        parts = []
+        # one comparison per setting (e.g. Dirichlet alpha), federated against federated
+        for setting in sorted({r.get("setting", "") for r in fl_ours}):
+            mine = [r for r in fl_ours if r.get("setting", "") == setting]
+            theirs = [r for r in pub if r.get("setting", "") == setting and r["short"] != "Central"]
+            if not theirs:
+                theirs = [r for r in pub if r["short"] != "Central"] or pub
+            bo, bp = max(mine, key=lambda r: r["accuracy"]), max(theirs, key=lambda r: r["accuracy"])
+            n = f" (mean of {bo['n_seeds']} draws of the test subjects)" if heldout and bo.get("n_seeds", 1) > 1 else ""
+            parts.append(f"{'with ' + setting + ', ' if setting else ''}our best federated model ({bo['short']}, {bo['model']}) "
+                         f"reaches {what} of {bo['accuracy']:.3f}{n}, against {bp['accuracy']:.3f} for the best published "
+                         f"federated result ({src(bp)})")
+        txt = "Under the published protocol, " + "; ".join(parts) + "."
+        pc = [r for r in pub if r["short"] == "Central"]
+        oc = [r for r in S.get("rows", []) if r["kind"] == "ours_central" and r.get("accuracy") is not None]
+        if pc and oc:
+            bc = max(oc, key=lambda r: r["accuracy"])
+            txt += (f" Centralized, our best model ({bc['model']}, {bc['method'].split(' · ')[-1].lower()}) reaches "
+                    f"{bc['accuracy']:.3f}, against {pc[0]['accuracy']:.3f} published.")
+        loc = next((r for r in ours if r["short"] == "Local"), None)
+        if loc:
+            txt += (f" Purely local training without any federation already reaches {loc['accuracy']:.3f} under this "
+                    f"protocol, consistent with the train/test overlap of its random split.")
+        for fa in [r for r in ours if r["encoder"] in ("mlp", "lstm") and r["short"] == "FedAvg"]:
+            pa = next((r for r in pub if r["short"] == "FedAvg" and r.get("setting", "") == fa.get("setting", "")), None)
+            if pa:
+                txt += (f" Our re-run of the published FedAvg + {fa['model']} baseline"
+                        f"{' (' + fa['setting'] + ')' if fa.get('setting') else ''} scores {fa['accuracy']:.3f} "
+                        f"(published {pa['accuracy']:.3f}).")
+        out.insert(0, txt)
 
     if budget_encs:
         out.append("Budget note: " + ", ".join(names[e] for e in budget_encs if e in names)

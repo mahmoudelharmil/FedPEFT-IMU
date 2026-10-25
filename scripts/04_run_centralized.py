@@ -26,10 +26,11 @@ def extra(p):
 if __name__ == "__main__":
     cfg, device, log, args = setup("04_run_centralized", __doc__, extra)
     encoders = csv_list(args.encoders, cfg.encoders.names)
-    modes = csv_list(args.modes, cfg.centralized.modes)
     for seed in cfg.split.seeds:
         data = load_experiment_data(cfg, seed, device)
         for enc in encoders:
+            # An encoder may restrict its modes (the MLP baseline has no pretrained weights).
+            modes = csv_list(args.modes, cfg.encoders.get(enc, {}).get("modes") or cfg.centralized.modes)
             for mode in modes:
                 out = Path(cfg.paths.results_dir) / cfg.profile / "centralized" / f"{enc}__{mode}__seed{seed}.json"
                 if out.exists() and not args.rerun:

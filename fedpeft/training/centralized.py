@@ -28,11 +28,12 @@ import numpy as np
 import torch
 
 from ..config import encoder_config
-from ..data.store import ExperimentData
+from ..data.store import ExperimentData, load_data_spec
 from ..models.client_model import ClientModel
 from ..models.encoders import build_encoder, encoder_display_name
 from ..utils import get_logger, save_arrays, save_json, seed_everything
 from .decoding import Decoder, make_decoder
+from .augment import make_augmenter
 from .engine import make_scaler, predict, train_local
 from .heldout import evaluate_heldout
 from .imbalance import logit_adjustment
@@ -46,8 +47,10 @@ ALL_ROLES = {"encoder", "norm", "adapter", "shared_head", "head"}
 def build_model(cfg, encoder_name: str, pretrained: bool, n_classes: int, seed: int,
                 device: torch.device) -> ClientModel:
     """Encoder (+ weights) wrapped in the full 8-component client model."""
-    encoder = build_encoder(encoder_name, cfg, pretrained=pretrained, seed=seed)
-    model = ClientModel(encoder, n_classes, cfg.model.embed_dim, cfg.data.base_rate_hz, cfg.data.window_s).to(device)
+    data = load_data_spec(cfg.paths.processed_dir)
+    encoder = build_encoder(encoder_name, cfg, pretrained=pretrained, seed=seed, data=data)
+    fit = cfg.encoders.get(encoder_name, {}).get("fit", "crop")
+    model = ClientModel(encoder, n_classes, cfg.model.embed_dim, data, fit).to(device)
     model.eval_batch_size = cfg.runtime.get("eval_batch_size", 512)   # inference batch (memory-bound encoders use less)
     return model
 
@@ -89,6 +92,7 @@ def run_centralized(cfg, data: ExperimentData, encoder_name: str, mode: str, see
     # Class imbalance: balanced-softmax loss with the global prior + calibrated decisions.
     decoder, prior, _ = make_decoder(cfg, data)
     logit_adj = logit_adjustment(prior, cfg.imbalance.tau_train, device)
+    augment = make_augmenter(cfg, data.store.spec)
     # Validation = pool users (a fixed random subset keeps validation fast).
     val_idx = data.pool_index
     max_val = c.get("max_val_windows") or 6000
@@ -112,7 +116,7 @@ def run_centralized(cfg, data: ExperimentData, encoder_name: str, mode: str, see
             epoch_idx = train_idx[pick.to(train_idx.device)]
         stats = train_local(model, X, y, epoch_idx, params, lr=lr, weight_decay=c.weight_decay, epochs=1,
                             batch_size=c.batch_size, amp=amp, generator=gen, optimizer=optimizer,
-                            scaler=scaler, logit_adj=logit_adj)
+                            scaler=scaler, logit_adj=logit_adj, augment=augment)
         peak_mem = max(peak_mem, stats["train_mem_mb"])
         val_logits, _ = predict(model, X, val_idx, amp=amp)
         val_f1 = macro_f1(y[val_idx].cpu().numpy(), decoder.window(val_logits), labels=np.arange(data.n_classes))
@@ -151,9 +155,10 @@ def run_centralized(cfg, data: ExperimentData, encoder_name: str, mode: str, see
     client_metrics, conf = test["window"]
     heldout = evaluate_heldout(model, data, cfg, decoder, mode="global", amp=amp, seed=seed)
     hmm_txt = f"  | +HMM F1 {test['hmm'][0]['macro_f1']:.4f}" if "hmm" in test else ""
+    zs = f"  | held-out zero-shot {heldout['zero_shot']['mean_user_f1']:.4f}" if heldout else ""
     log.info(f"TEST macro-F1 {client_metrics['macro_f1']:.4f}  acc {client_metrics['accuracy']:.4f}  "
-             f"worst10 {client_metrics['worst10_f1']:.4f}{hmm_txt}  | held-out zero-shot "
-             f"{heldout['zero_shot']['mean_user_f1']:.4f}")
+             f"client-acc {client_metrics['client_acc_mean']:.4f}  worst10 {client_metrics['worst10_f1']:.4f}"
+             f"{hmm_txt}{zs}")
 
     result = {
         "kind": "centralized",
@@ -181,6 +186,7 @@ def run_centralized(cfg, data: ExperimentData, encoder_name: str, mode: str, see
                    "tau_train": cfg.imbalance.tau_train, "tau_inf": cfg.imbalance.tau_inf,
                    "hmm": bool(cfg.decoding.hmm),
                    "subsample_every": cfg.data.subsample_every,
+                   "augment": cfg.get("augment", {}).get("enabled", False),
                    "max_train_windows": c.get("max_train_windows"),
                    "budget_applied": cfg.get("budget_applied")},
     }

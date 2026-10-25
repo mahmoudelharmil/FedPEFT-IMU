@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.7.13)  1 OCT 2026 22:32
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.7.13)  25 OCT 2026 19:43
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1015,7 +1015,7 @@ e 7852.
 \c@lemma=\count373
 \c@remark=\count374
 \c@corollary=\count375
-(generated/macros.tex)
+(generated/harbox_macros.tex) (generated/res_macros.tex)
 Package translations Info: No language package found. I am going to use `englis
 h' as default language. on input line 83.
 
@@ -1121,9 +1121,6 @@ Package hyperref Info: Link coloring OFF on input line 83.
 (C:\Users\mahmo\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd)
 (C:\Users\mahmo\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msb.cfg)
 
-(figures/fig_architecture.tex)
-Underfull \vbox (badness 2951) has occurred while \output is active []
-
 
 
 [1{C:/Users/mahmo/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/ma
@@ -1131,38 +1128,39 @@ hmo/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
 
 
 ]
+(figures/fig_architecture.tex)
 
 
-
-[2]
-Underfull \hbox (badness 10000) in paragraph at lines 197--202
+Underfull \hbox (badness 10000) in paragraph at lines 200--205
  \OT1/ptm/m/it/10 (+20) 5) Shared pro-jec-tion head \U/pzd/m/n/10 ¯\OT1/ptm/m/i
 t/10 (+20) : [][][] $\OML/cmm/m/it/10 g[]\OT1/cmr/m/n/10 (\OT1/cmr/bx/n/10 z\OT
 1/cmr/m/n/10 ) =
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 197--202
+Underfull \hbox (badness 10000) in paragraph at lines 200--205
 [][]\OML/cmm/m/it/10 W[] []\OT1/cmr/m/n/10 ([](\OT1/cmr/bx/n/10 z\OT1/cmr/m/n/1
 0 )) + \OT1/cmr/bx/n/10 b[][]$ \OT1/ptm/m/n/10 (+20) maps the en-coder
  []
 
 
 
-(figures/fig_aggregation.tex)
-Underfull \hbox (badness 10000) in paragraph at lines 276--278
+[2] (figures/fig_aggregation.tex)
+
+
+
+[3]
+Underfull \hbox (badness 10000) in paragraph at lines 279--281
  \OT1/ptm/m/it/10 (+20) Proof: \OT1/ptm/m/n/10 (+20) Ex-pand-ing the right-hand
  side gives
  []
 
 
 
-[3]
-
 
 
 [4]
-Underfull \hbox (badness 10000) in paragraph at lines 428--431
+Underfull \hbox (badness 10000) in paragraph at lines 432--435
  \OT1/ptm/m/it/10 (+20) 1) En-rolled users: [][][] \OT1/ptm/m/n/10 (+20) FedPEF
 T-IMU pre-dicts
  []
@@ -1172,64 +1170,100 @@ T-IMU pre-dicts
 
 
 [5]
-Underfull \hbox (badness 10000) in paragraph at lines 548--552
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 593--597
  \OT1/ptm/m/it/10 (+20) 4) Server com-pu-ta-tion: [][][] \OT1/ptm/m/n/10 (+20) 
 Form-ing $\OML/cmm/m/it/10 M[]$ \OT1/ptm/m/n/10 (+20) costs
  []
 
 
-Underfull \hbox (badness 4621) in paragraph at lines 548--552
+Underfull \hbox (badness 4621) in paragraph at lines 593--597
 \OMS/cmsy/m/n/10 O[]\OML/cmm/m/it/10 d[]d[] [][] r[][]$\OT1/ptm/m/n/10 (+20) , 
 and the ran-dom-ized SVD costs
  []
 
-) (sections/dataset.tex
-
-(generated/tab_classes.tex)
-
-[6]
-
-(generated/tab_partition.tex)
-<figures/label_skew.pdf, id=440, 517.45322pt x 166.22101pt>
-File: figures/label_skew.pdf Graphic file (type pdf)
-<use figures/label_skew.pdf>
-Package pdftex.def Info: figures/label_skew.pdf  used on input line 137.
-(pdftex.def)             Requested size: 516.0pt x 165.75642pt.
- (generated/tab_heterogeneity.tex)
-(generated/tab_heterogeneity.tex) (generated/tab_heterogeneity.tex)
-
-[7]
+(generated/res_tab_budget.tex)) (sections/dataset.tex
+Underfull \vbox (badness 2334) has occurred while \output is active []
 
 
 
-[8 <./figures/label_skew.pdf>]
+[6] (generated/harbox_tab_classes.tex) (generated/harbox_tab_classes.tex)
+(generated/harbox_tab_classes.tex)
+<figures/harbox_stats.pdf, id=464, 517.45322pt x 158.99399pt>
+File: figures/harbox_stats.pdf Graphic file (type pdf)
+<use figures/harbox_stats.pdf>
+Package pdftex.def Info: figures/harbox_stats.pdf  used on input line 47.
+(pdftex.def)             Requested size: 516.0pt x 158.54962pt.
+
+
+(generated/harbox_tab_partition.tex) (generated/harbox_tab_partition.tex)
+(generated/harbox_tab_partition.tex)
+
+[7] (generated/harbox_tab_hetero.tex) (generated/harbox_tab_hetero.tex)
+(generated/harbox_tab_hetero.tex)
+Underfull \vbox (badness 1616) has occurred while \output is active []
 
 
 
-[9]) (main.bbl
+
+
+[8 <./figures/harbox_stats.pdf>]
+
+) (sections/results.tex (sections/results_tables.tex
+
+LaTeX Font Warning: Font shape `OT1/ptm/m/scit' undefined
+(Font)              using `OT1/ptm/m/it' instead on input line 11.
+
+(generated/res_tab_sota.tex) (generated/res_tab_sota.tex)
+(generated/res_tab_sota.tex) (generated/res_tab_main.tex)
+(generated/res_tab_newusers.tex) (generated/res_tab_ablation.tex)
+(generated/res_tab_ablation.tex) (generated/res_tab_ablation.tex)
+(generated/res_tab_cost.tex) (generated/res_tab_seeds.tex))
+
+[9]
 
 
 
-[10])
+[10]
+
+
+Underfull \vbox (badness 1776) has occurred while \output is active []
 
 
 
-[11] (main.aux)
+[11]
+
+
+
+[12]
+
+) (main.bbl
+
+
+Package balance Warning: You have called \balance in second column
+(balance)                Columns might not be balanced.
+
+[13]
+
+)
+
+[14] (main.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-06-09>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 0B10A1C76260E797334B2EAD26A14D33;8298.
+(rerunfilecheck)             Checksum: 611BAC1915377DB55D54D18BABA27F8A;9694.
  ) 
 Here is how much of TeX's memory you used:
- 34397 strings out of 468221
- 708350 string characters out of 5432891
- 1134531 words of memory out of 5000000
- 61804 multiletter control sequences out of 15000+600000
- 696468 words of font info for 406 fonts, out of 8000000 for 9000
+ 34511 strings out of 468221
+ 711270 string characters out of 5432891
+ 1161201 words of memory out of 5000000
+ 61846 multiletter control sequences out of 15000+600000
+ 697274 words of font info for 413 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 84i,18n,87p,1075b,1215s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,18n,87p,1075b,1209s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/mahmo/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/
 cmbx10.pfb><C:/Users/mahmo/AppData/Local/Programs/MiKTeX/fonts/type1/public/ams
 fonts/cm/cmbx7.pfb><C:/Users/mahmo/AppData/Local/Programs/MiKTeX/fonts/type1/pu
@@ -1265,9 +1299,9 @@ bi8a.pfb><C:/Users/mahmo/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/ut
 mr8a.pfb><C:/Users/mahmo/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/ut
 mri8a.pfb><C:/Users/mahmo/AppData/Local/Programs/MiKTeX/fonts/type1/urw/zapfdin
 g/uzdr.pfb>
-Output written on main.pdf (11 pages, 595561 bytes).
+Output written on main.pdf (14 pages, 627945 bytes).
 PDF statistics:
- 701 PDF objects out of 1000 (max. 8388607)
- 148 named destinations out of 1000 (max. 500000)
- 77288 words of extra memory for PDF output out of 89155 (max. 10000000)
+ 787 PDF objects out of 1000 (max. 8388607)
+ 166 named destinations out of 1000 (max. 500000)
+ 77360 words of extra memory for PDF output out of 89155 (max. 10000000)
 

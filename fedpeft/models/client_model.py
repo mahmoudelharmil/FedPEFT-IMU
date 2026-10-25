@@ -1,7 +1,7 @@
 """
 The complete client model (PDF Part 2, Figure 2) and the ROLE of every tensor.
 
-    x (3 x 300 @ 30 Hz)
+    x (C x L: Capture-24 3 x 300 @ 30 Hz, HARBox 9 x 100 @ 50 Hz)
       -> 1 Preprocessor -> 2 InputAdapter -> 3 Encoder (+4 LoRA, 5 norms inside)
       -> z -> 6 SharedHead g -> e -> 7 PersonalHead h -> logits
                                e -> 8 prototypes
@@ -23,24 +23,30 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
+from ..data.store import DataSpec
 from .components import InputAdapter, PersonalHead, Preprocessor, SharedHead
 from .encoders.base import BaseEncoder
 from .encoders.limu_bert import LimuLayerNorm
 from .lora import LoRALayer, inject_lora
 
 NORM_TYPES = (nn.LayerNorm, nn.BatchNorm1d, nn.BatchNorm2d, LimuLayerNorm)
-ROLES = ("encoder", "lora", "norm", "norm_stats", "adapter", "shared_head", "head", "const")
+# The Capture-24 window format (its meta.json predates the channel keys).
+CAPTURE24_SPEC = DataSpec(rate_hz=30, window_s=10, channels=("acc_x", "acc_y", "acc_z"),
+                          groups=(("acc", (0, 1, 2)),), units=(("acc", "g"),), hop_s=10)
+ROLES = ("encoder", "lora", "norm", "norm_stats", "adapter", "shared_head", "head", "global_head", "const")
 
 
 class ClientModel(nn.Module):
     def __init__(self, encoder: BaseEncoder, n_classes: int, embed_dim: int = 64,
-                 base_rate_hz: int = 30, window_s: int = 10):
+                 data: DataSpec | None = None, fit: str = "crop"):
         super().__init__()
-        self.preprocess = Preprocessor(encoder.spec, base_rate_hz, window_s)   # 1
-        self.adapter = InputAdapter(3, encoder.spec.n_channels)                # 2
-        self.encoder = encoder                                                 # 3 (+4, 5 inside)
+        data = data or CAPTURE24_SPEC
+        self.preprocess = Preprocessor(encoder.spec, data, fit)                         # 1
+        self.adapter = InputAdapter(list(data.channels), list(encoder.input_channels))  # 2
+        self.encoder = encoder                                                          # 3 (+4, 5 inside)
         self.shared_head = SharedHead(encoder.feat_dim, embed_dim)             # 6
         self.head = PersonalHead(embed_dim, n_classes)                         # 7
+        self.ghead: PersonalHead | None = None   # optional global classifier (add_global_head)
         self.n_classes = n_classes
         self.embed_dim = embed_dim
         self.lora_layers: dict[str, LoRALayer] = {}   # plain dict: layers are registered inside the encoder
@@ -53,6 +59,18 @@ class ClientModel(nn.Module):
     def lora_key(self, layer_name: str) -> str:
         """State-dict key of the (frozen) base weight of a LoRA layer."""
         return f"encoder.{layer_name}.base.weight"
+
+    def add_global_head(self) -> None:
+        """A second, FEDERATED linear classifier on the embedding (dual-head V5).
+
+        The personal head h_k decides for its enrolled user; the global head is trained by all
+        clients together and serves users who have no personal head yet (zero-shot) and the
+        start of their few-shot adaptation."""
+        p = next(self.head.parameters())
+        self.ghead = PersonalHead(self.embed_dim, self.n_classes).to(p.device)
+
+    def global_logits(self, e: torch.Tensor) -> torch.Tensor:
+        return self.ghead(e)
 
     # ------------------------------------------------------------- forward
     def embed(self, x: torch.Tensor) -> torch.Tensor:
@@ -82,6 +100,8 @@ class ClientModel(nn.Module):
                 roles[key] = "adapter"
             elif key.startswith("shared_head."):
                 roles[key] = "shared_head"
+            elif key.startswith("ghead."):
+                roles[key] = "global_head"
             elif key.startswith("head."):
                 roles[key] = "head"
             elif key.endswith("lora_A") or key.endswith("lora_B"):
@@ -117,10 +137,14 @@ class ClientModel(nn.Module):
         """Like nn.Module.train, but frozen BatchNorms keep using their stored statistics.
 
         When the norm role is frozen (V1-V4), BatchNorm layers must stay in eval mode,
-        otherwise their running statistics would silently drift during training.
+        otherwise their running statistics would silently drift during training. The same
+        holds when `freeze_bn_stats` is set.
         """
         super().train(mode)
-        if mode and not getattr(self, "_norm_trainable", True):
+        # freeze_bn_stats: the norm's scale/shift may train, but its statistics stay fixed (few-shot
+        # adaptation of a new user: the statistics come from ALL its unlabelled windows via AdaBN,
+        # a batch of a few labelled windows would overwrite them).
+        if mode and (not getattr(self, "_norm_trainable", True) or getattr(self, "freeze_bn_stats", False)):
             for m in self.encoder.modules():
                 if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
                     m.eval()

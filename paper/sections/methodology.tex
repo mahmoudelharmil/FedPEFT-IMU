@@ -48,10 +48,11 @@ $N_k$, $\Gamma$ & $C\times C$ transition counts of client $k$, HMM transition ma
 % ---------------------------------------------------------------------
 \subsection{Problem Setting and Design Goals}\label{sec:method:problem}
 
-We consider $K$ users, each holding one wrist-worn inertial measurement unit (IMU) that
-records a continuous stream of tri-axial acceleration. The stream of user $k$ is segmented into
-non-overlapping windows $\mathbf{x}\in\R^{3\times L}$ (here $10$\,s at $30$\,Hz, $L=300$) with
-activity labels $y\in\{1,\dots,C\}$, giving a chronologically ordered dataset
+We consider $K$ users, each holding one device with an inertial measurement unit (IMU), e.g., a
+smartphone. The device records multi-axis signals (acceleration and, where available, angular
+velocity and magnetic field), segmented into windows $\mathbf{x}\in\R^{C\times L}$ (on HARBox $C=9$
+axes, $2$\,s at $50$\,Hz, $L=100$) with activity labels $y\in\{1,\dots,C_y\}$; for readability we
+write $C$ for the number of activity classes from here on. This gives a chronologically ordered dataset
 $\Dk=\{(\mathbf{x}_{k,i},y_{k,i})\}_{i=1}^{|\Dk|}$. Raw windows never leave the device. A
 server orchestrates training over rounds $t=0,\dots,T-1$ in which a random subset
 $\St$ of $\lceil\rho K\rfloor$ clients participates.
@@ -60,19 +61,21 @@ The setting combines four kinds of heterogeneity that, together, distinguish fed
 activity recognition (HAR) from the image and text benchmarks on which most federated
 parameter-efficient fine-tuning (PEFT) methods were developed:
 \begin{enumerate}[label=(H\arabic*)]
-  \item \emph{Label skew}: $\boldsymbol{\pi}_k\neq\boldsymbol{\pi}$; rare activities (e.g.,
-        bicycling) are absent from most clients (\cref{sec:data:hetero}).
-  \item \emph{Feature shift}: $p_k(\mathbf{x}\mid y)$ differs across users because of body
-        size, gait, device orientation and wear habits.
+  \item \emph{Label skew}: $\boldsymbol{\pi}_k\neq\boldsymbol{\pi}$; users perform different
+        activities, and different amounts of them.
+  \item \emph{Feature shift}: $p_k(\mathbf{x}\mid y)$ differs across users because of device
+        model, grip and orientation, body size and movement style; on HARBox this is the
+        dominant heterogeneity (\cref{sec:data:hetero}).
   \item \emph{System heterogeneity}: devices differ in memory and compute; we model this by a
         per-device budget expressed as a LoRA rank $r_k\in\mathcal{R}=\{2,4,8\}$.
-  \item \emph{Temporal dependence}: labels form long bouts, so consecutive windows are strongly
-        correlated (\cref{sec:data:hetero}).
+  \item \emph{Temporal dependence}: activities last longer than a window, so consecutive
+        windows are correlated; with overlapping windows they even share samples, which an
+        evaluation protocol must respect (\cref{sec:data:splits}).
 \end{enumerate}
 A pretrained IMU encoder $E$ with weights $\Omega_0$, obtained from data outside the
 federation, is available to every participant. The design goals are
 (G1)~high macro-F1 for \emph{enrolled} users on their \emph{future} data;
-(G2)~useful predictions for \emph{new} users with zero or a few minutes of labels;
+(G2)~useful predictions for \emph{new} users with zero or a few labelled windows;
 (G3)~low uplink traffic;
 (G4)~training within each device's budget $r_k$; and
 (G5)~fairness, i.e., a high F1 for the worst-served users.
@@ -389,11 +392,12 @@ $C^2+C=42$ integers per client.
 \subsubsection{Why rare classes vanish with a shared classifier}
 With a shared classifier $f$ and plain cross-entropy, the gradient with respect to the logit of
 class $c$ is $q_c-\mathbf{1}[y=c]$, where $q=\mathrm{softmax}(f(\mathbf{x}))$. On a client that
-never observes $c$, every sample therefore lowers the logit of $c$. In Capture-24, $74\,\%$ of the
-clients never cycle (\cref{sec:data:hetero}); averaging their updates erases the class from the
-global model. In a preliminary configuration without the remedies described below, $35$ of the
-$168$ per-class F1 scores of the federated models ($4$ encoders $\times$ $7$ methods $\times$ $6$
-classes) were zero: $17$ for bicycling, $13$ for vehicle and $5$ for walking.
+never observes $c$, every sample therefore lowers the logit of $c$. When a class is absent on
+most clients, averaging their updates erases it from the global model. In our earlier experiments
+on the free-living Capture-24 dataset~\cite{chan2024capture24}, where three quarters of the users
+never cycle, $35$ of the $168$ per-class F1 scores of the federated models were zero without the
+remedies described below. HARBox is far less skewed (\cref{sec:data:hetero}), but some users still
+lack one or two activities.
 
 \subsubsection{\method}
 The proposed design avoids this structurally: the classifier is personal (\ding{176}), so no
@@ -436,9 +440,10 @@ decisions under $\boldsymbol{\pi}$; macro-F1 is best in between. We select
 $\tau_{\mathrm{inf}}=0.5$ from $\{0,0.25,0.5,0.75,1\}$ on the validation users and keep it fixed for all
 methods and encoders.
 
-\subsubsection{Federated temporal decoding}
-Activities last minutes to hours, whereas the classifier sees a single window. Following
-the Capture-24 benchmark~\cite{chan2024capture24,walmsley2022reallocation}, we optionally decode each
+\subsubsection{Federated temporal decoding (continuous streams)}
+In free-living data, activities last minutes to hours, whereas the classifier sees a single
+window. Following the Capture-24 benchmark~\cite{chan2024capture24,walmsley2022reallocation}, \method{}
+can therefore decode each
 user's chronological sequence with a hidden Markov model (HMM) whose hidden states are the
 activities. The transition matrix is estimated from the aggregated counts with add-one smoothing,
 $\Gamma_{ij}=(1+\sum_kN_{k,ij})/\sum_{j'}(1+\sum_kN_{k,ij'})$, so it is learned federatedly from
@@ -458,19 +463,58 @@ recording gaps. Decoding runs on the device; it uses only the shared $\Gamma$ an
 
 \subsubsection{New users}
 A user $u$ who never participated downloads the global state (rank $\rmax$) and the prototypes.
-\emph{Zero-shot}: encoders with BatchNorm first re-estimate their normalization statistics on the
-user's \emph{unlabelled} windows (AdaBN~\cite{li2018adabn}), since the global model has no
-population-level statistics after training with local norms; the user is then served by the
+Its local parts must be initialized. The pretrained normalization and adapter do not match the
+representation that the federated LoRA and head were trained with, because every client trained
+its own. Therefore, once at the end of training, every client uploads its local normalization
+parameters and input adapter (not its personal classifier), and the server keeps their
+$n_k$-weighted average $\bar{\psi},\bar{a}$ as the initialization for new users. On LIMU-BERT this
+costs a one-time upload of $2$\,kB per client and raises the new-user scores at every label budget
+(\cref{sec:results:newusers}).
+\emph{Zero-shot}: encoders with BatchNorm additionally re-estimate their normalization statistics on
+the user's \emph{unlabelled} windows (AdaBN~\cite{li2018adabn}); the user is then served by the
 nearest-prototype rule
 \begin{equation}\label{eq:zeroshot}
   \hat{y}=\arg\max_{c\in\mathcal{C}_P}\ \cos\big(\mathbf{e},\mathbf{P}_c\big).
 \end{equation}
+\emph{Transductive zero-shot} (optional). The global prototypes describe the federation, not the
+new user. Before serving, the device can move them towards its own unlabelled windows
+$\{\mathbf{z}_i\}$ (unit-norm embeddings of the same windows AdaBN uses) with $T$ soft $k$-means
+steps anchored at the global prototypes $\hat{\mathbf{P}}^{(0)}_c=\mathbf{P}_c/\norm{\mathbf{P}_c}$:
+\begin{equation}\label{eq:refine}
+\begin{aligned}
+  w_{ic}&=\operatorname{softmax}_{c\in\mathcal{C}_P}\big(\mathbf{z}_i^\top\hat{\mathbf{P}}^{(t)}_c/\vartheta\big),\\
+  \hat{\mathbf{P}}^{(t+1)}_c&=\mathbf{m}_c/\norm{\mathbf{m}_c},\quad
+  \mathbf{m}_c=\textstyle\sum_i w_{ic}\,\mathbf{z}_i+\kappa\,\hat{\mathbf{P}}^{(0)}_c,
+\end{aligned}
+\end{equation}
+and then applies \cref{eq:zeroshot} with $\hat{\mathbf{P}}^{(T)}$. The anchor weight $\kappa$, in windows,
+keeps a class the user rarely performs close to its global prototype; without it ($\kappa=0$) the
+clusters drift away from their classes. This is the prototype counterpart of test-time classifier
+adjustment~\cite{iwasawa2021t3a}: it uses no labels, no communication and no gradient step. We use
+$T=10$, $\vartheta=0.1$ and $\kappa=10$, selected on the validation users. Applied to the
+normalized class weights of a shared classifier, the same update lowers the validation zero-shot
+score, so the baselines keep their own classifier.
 \emph{Few-shot}: with $m$ minutes of labels per activity, a new personal head is initialized at the
-zero-shot solution, $[W_u]_c=\mathbf{P}_c/\norm{\mathbf{P}_c}$ and $b_{u,c}=0$, since
+zero-shot solution, $[W_u]_c=\mathbf{P}_c/\norm{\mathbf{P}_c}$ and $b_{u,c}=0$ (with the refined
+prototypes when the transductive rule is used), since
 $\arg\max_c\cos(\mathbf{e},\mathbf{P}_c)=\arg\max_c\mathbf{P}_c^\top\mathbf{e}/\norm{\mathbf{P}_c}$. The head, the
-norms and the input adapter $\{h_u,\psi_u,a_u\}$ are then fine-tuned on the shots. Because the
+norms and the input adapter $\{h_u,\psi_u,a_u\}$ are then fine-tuned on the shots. BatchNorm
+statistics stay fixed at their AdaBN estimates during this fit: the scale and shift of $\psi_u$
+adapt to the labels, but the statistics come from all of the user's unlabelled windows, not from a
+batch of a few shots. Because the
 shots are roughly class-balanced, unlike a real day, this fit uses \cref{eq:la} with the prior of
 the shots, and decisions use \cref{eq:calibrated}.
+
+% ---------------------------------------------------------------------
+\subsection{Training-Time Augmentation}\label{sec:method:augment}
+
+The same device can be held at many angles, and different devices use different axis
+conventions. During local training, each window is therefore transformed, with probability $p$,
+by one random rotation $R\in SO(3)$ (uniform axis, angle up to $\theta_{\max}$) and a random gain $g$:
+$\mathbf{x}_{s}\leftarrow g\,R\,\mathbf{x}_{s}$ for every sensor triplet $s$ (accelerometer, gyroscope,
+magnetometer). The same $R$ is applied to all triplets, as for a rotated phone. The
+transformation acts on the stored windows before $\Pi_E$, so it is identical for every encoder and
+method, and it costs one batched $C\times C$ matrix product per mini-batch.
 
 % ---------------------------------------------------------------------
 \subsection{Training Procedure}\label{sec:method:algorithm}
@@ -525,8 +569,9 @@ Per round, client $k$ uploads
 \end{equation}
 values, which is linear in the rank and independent of the size of the frozen encoder. Full
 fine-tuning uploads $|\Omega_0|+|\theta|+|h|$ values. \Cref{tab:budget} lists the resulting budgets
-for the four encoders together with the measured uplink, which ranges from $0.03$\,MB to
-$1.2$\,MB per update for \method{} versus $0.23$--$42$\,MB for full fine-tuning.
+for the four encoders on HARBox together with the measured uplink: \method{} sends
+$\ResUplinkRatioMin\times$ (LIMU-BERT, the smallest encoder) to $\ResUplinkRatioMax\times$ fewer bytes per
+update than full fine-tuning, and the factor grows with the size of the encoder.
 
 \subsubsection{Downlink}
 In addition to the truncated factors, the head and the prototypes, exact aggregation changes the
@@ -552,7 +597,7 @@ number of participating clients.
 
 \begin{table*}[!t]
 \centering
-\caption{Parameter budget per encoder and measured communication per client update
+\caption{Parameter budget per encoder on HARBox and measured communication per client update
 (fp32 serialization, no compression). $|\Omega_0|$: frozen encoder weights; LoRA: trainable
 adapter parameters at rank $r=2/4/8$; $|\theta|$: shared head; $|\phi_k|$: local parameters
 (norm affine, adapter, classifier).}
@@ -565,10 +610,7 @@ adapter parameters at rank $r=2/4/8$; $|\theta|$: shared head; $|\phi_k|$: local
 Encoder & LoRA targets & $|\Omega_0|$ & LoRA ($r{=}2/4/8$) & $|\theta|$ & $|\phi_k|$
   & \makecell{Uplink \method\\ $r{=}2/4/8$ (MB)} & \makecell{Uplink full FT\\ (MB)} & \makecell{Ratio$^{\dagger}$} \\
 \midrule
-LIMU-BERT~\cite{xu2021limubert}      & $W_q$, $W_v$ (shared layers)  & 51.1\,k  & 0.6/1.2/2.3\,k   & 4.8\,k  & 0.8\,k  & 0.023/0.025/0.030 & 0.227 & 8.6$\times$ \\
-ssl-wearables~\cite{yuan2024selfsupervised} & all Conv1d kernels      & 10.4\,M  & 60/119/239\,k   & 67.6\,k & 12.1\,k & 0.511/0.750/1.227 & 42.15 & 49.8$\times$ \\
-UniMTS~\cite{zhang2024unimts}        & graph + temporal convs      & 5.17\,M  & 46/91/182\,k    & 33.9\,k & 9.0\,k  & 0.319/0.502/0.866 & 20.89 & 36.4$\times$ \\
-HALO~\cite{ding2026halo}$^{\ddagger}$ & $W_q$, $W_v$ (all blocks)  & 4.60\,M  & 14/28/55\,k     & 17.0\,k & 9.6\,k  & 0.125/0.180/0.291 & 18.50 & 91.3$\times$ \\
+\inputrows{generated/res_tab_budget.tex}
 \bottomrule
 \end{tabular}
 

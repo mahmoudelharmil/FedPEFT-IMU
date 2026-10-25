@@ -5,7 +5,8 @@ Build the manuscript and (optionally) render page previews.
     python paper/build.py --preview    # also writes paper/preview/page-XX.png (needs PyMuPDF)
 
 The dataset numbers and tables are regenerated first by
-scripts/tools/paper_dataset_stats.py unless --no-stats is given.
+scripts/tools/paper_harbox_stats.py unless --no-stats is given (the Capture-24 statistics
+of the earlier version: scripts/tools/paper_dataset_stats.py).
 """
 
 from __future__ import annotations
@@ -46,7 +47,7 @@ def main() -> None:
     args = ap.parse_args()
 
     if not args.no_stats:
-        subprocess.run([sys.executable, str(ROOT / "scripts/tools/paper_dataset_stats.py")], check=True,
+        subprocess.run([sys.executable, str(ROOT / "scripts/tools/paper_harbox_stats.py")], check=True,
                        capture_output=True)
     tex = find_tex("pdflatex")
     # MiKTeX would otherwise install missing packages on the fly; never change the TeX

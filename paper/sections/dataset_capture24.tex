@@ -1,0 +1,374 @@
+% =====================================================================
+%  Section IV - Dataset and experimental protocol
+%  All numbers come from paper/generated/ (scripts/tools/paper_dataset_stats.py)
+%  or from the configuration files configs/default.yaml + configs/profiles/enhanced.yaml.
+% =====================================================================
+\section{Dataset and Experimental Protocol}\label{sec:data}
+
+% ---------------------------------------------------------------------
+\subsection{The Capture-24 Dataset}\label{sec:data:capture24}
+
+We evaluate on Capture-24~\cite{chan2024capture24}, one of the largest publicly available
+free-living datasets of wrist-worn accelerometry with activity annotations. Its free-living
+protocol, its size and its natural division into individuals make it a realistic testbed for
+federated HAR. Participants are naturally treated as clients, so no synthetic partition is
+needed. The data originate from the CAPTURE-24 study (mainly 2014--2015), which compared
+time-use diaries with wearable sensors~\cite{gershuny2020testing}. Members of the public in
+Oxfordshire, United Kingdom, wore an Axivity AX3 tri-axial accelerometer on the dominant wrist for
+about $24$\,h, recording at $100$\,Hz with a dynamic range of $\pm8\,g$. Ground truth during waking
+hours came from a wearable camera worn on a lanyard (OMG Life Autographer), which took a
+photograph every $20$--$40$\,s, and during the night from a sleep diary. Trained annotators, who had to
+reach an inter-rater agreement of Cohen's $\kappa>0.8$ on a gold-standard set, labelled the
+recordings with codes from the Compendium of Physical
+Activities~\cite{ainsworth2011compendium}. The camera protocol followed an established ethical
+framework~\cite{kelly2013ethical}. The images are not released, and for de-identification the ages
+are binned and the dates randomized. Of $166$ recruited participants, $151$ remained after quality
+control, providing $3{,}883$\,h of recordings of which $2{,}562$\,h are annotated with $206$ distinct
+codes. The dataset is distributed under the CC~BY~4.0 licence.
+
+The $206$ codes are mapped to the six-class scheme of Willetts \emph{et
+al.}~\cite{willetts2018statistical}, a standard benchmark task on this dataset: \emph{sleep},
+\emph{sit/stand}, \emph{mixed activity}, \emph{walking}, \emph{vehicle} and \emph{bicycling}
+(\cref{tab:classes}). The task is strongly imbalanced. Sleep and sitting/standing account for
+$\PctSleep\,\%$ and $\PctSitStand\,\%$ of the data, whereas bicycling accounts for only
+$\PctBicycling\,\%$ (an imbalance ratio of $\ImbalanceRatio{:}1$), and only $\UsersBicycling$ of the
+$151$ participants cycle at all. The participants are $99$ women and $52$ men in four age groups
+(\cref{tab:partition}).
+
+\begin{table*}[!t]
+\centering
+\caption{Capture-24 classes (Willetts 2018 scheme) after windowing, over all $151$ participants.
+Codes: distinct Compendium annotations mapped to the class. Users: participants with at least one
+window of the class. Clients: share of the \NumClients{} FL clients that have the class in their training
+part. Bout: median length of uninterrupted bouts.}
+\label{tab:classes}
+\footnotesize
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}l l r r r r r r@{}}
+\toprule
+Class & Content (sub-labels) & Codes & Windows & Share (\%) & Users & Clients (\%) & Bout (min) \\
+\midrule
+\inputrows{generated/tab_classes.tex}
+\bottomrule
+\end{tabular}
+\end{table*}
+
+% ---------------------------------------------------------------------
+\subsection{Preprocessing}\label{sec:data:preprocessing}
+
+Each participant's recording is processed independently, as it would be on the device. The
+released signals already include the authors' sampling-rate correction and gravity
+autocalibration~\cite{chan2024capture24}. We (i)~split the stream into continuous segments wherever
+two consecutive timestamps are more than $1.5$ sample periods apart; (ii)~resample each segment from
+$100$ to $30$\,Hz with an anti-aliased polyphase filter, the rate at which ssl-wearables and HALO
+operate and from which the $20$\,Hz encoders are derived by $\Pi_E$; (iii)~cut non-overlapping $10$\,s
+windows ($3\times300$ samples, in $g$); and (iv)~label each window with the majority label of its
+$1{,}000$ raw samples, discarding windows whose majority is unannotated. This yields
+$\NWindowsFull$ labelled windows ($\NHoursFull$\,h). This total agrees with the $2{,}562$
+annotated hours of the release and the $922{,}199$ windows of the official
+benchmark~\cite{chan2024capture24}, and the small difference comes from the majority rule. Per
+participant, the labelled time ranges from $\HoursPerUserMin$ to $\HoursPerUserMax$\,h (median
+$\HoursPerUserMedian$\,h). Windows are stored in half precision with their start time, which the
+temporal decoder needs.
+
+To keep the full experimental grid (four encoders, nine training configurations, centralized and
+federated) tractable on a single GPU, the experiments use one window per minute, i.e., every sixth
+window of each participant. This sub-sampling preserves each participant's diurnal sequence, label
+proportions and bout structure at a $1$-min resolution. It yields $\NWindowsExp$ windows, of which the
+federated clients hold $\NTrainWindows$ training and $\NTestWindows$ test windows. The pipeline supports
+the full resolution without modification.
+
+% ---------------------------------------------------------------------
+\subsection{Federated Partition and Data Splits}\label{sec:data:splits}
+
+The split is made in two steps, first by user and then by time (\cref{tab:partition}).
+
+\emph{User level.} The $151$ participants are randomly assigned, with a fixed seed, to three
+disjoint groups: \NumClients{} \emph{FL clients} ($70\,\%$), which take part in federated training;
+\NumHeldout{} \emph{held-out users} ($20\,\%$), who are never seen during training and measure
+generalization to new users; and \NumPool{} \emph{pool users} ($10\,\%$). The pool users provide
+\emph{unlabelled} data for the self-supervised pretraining of HALO and serve as validation users for
+early stopping and for the choice of $\tau_{\mathrm{inf}}$. No test data are used for any model or
+hyperparameter selection. Each client corresponds to exactly one participant, so label skew,
+quantity skew and feature shift are all natural.
+
+\emph{Time level.} Within each FL client, the first $80\,\%$ of the chronologically ordered windows
+form the training part and the last $20\,\%$ the test part. A random window-level split would place
+temporally adjacent and nearly identical windows on both sides and inflate the scores; the
+chronological split instead asks the model to recognize the user's \emph{future} activities. For each
+held-out user, the first $50\,\%$ is the adaptation part, from which few-shot labels are drawn, and the
+last $50\,\%$ the test part on which every new-user protocol is scored.
+
+The centralized references are trained on the union of the clients' training parts and tested on
+the same per-client test parts, so centralized and federated results are directly comparable. The
+user partition, the device-tier assignment and the client sampling are seeded. The partition files
+are released with the code.
+% TODO (before submission): repeat every experiment for split seeds 1 and 2 and report mean +- std.
+
+\begin{table}[!t]
+\centering
+\caption{User-level partition (seed $0$), experiment windows (one per minute) and demographics.
+F/M: female/male. Age groups: 18--29 / 30--37 / 38--52 / $\geq$53 years. Use: chronological split
+of each user's windows (percent), or role of the pool users.}
+\label{tab:partition}
+\footnotesize
+\setlength{\tabcolsep}{3.2pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}l r r c c l@{}}
+\toprule
+Group & Users & Windows & F/M & Age groups & Use \\
+\midrule
+\inputrows{generated/tab_partition.tex}
+\bottomrule
+\end{tabular*}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Statistical Heterogeneity of the Natural Partition}\label{sec:data:hetero}
+
+Federated methods are commonly evaluated on synthetic partitions in which client label
+distributions are drawn from a Dirichlet distribution~\cite{hsu2019measuring}. The natural partition
+of Capture-24 differs from these partitions in ways that matter for the design of
+\cref{sec:method}. \Cref{fig:labelskew} and \cref{tab:hetero} quantify them.
+
+\begin{figure*}[!t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/label_skew.pdf}
+  \caption{Natural heterogeneity of the \NumClients{} Capture-24 clients (training parts, one window per
+  minute). (a)~Label distribution of every client. (b)~Share of clients that observe each class (global
+  share in parentheses); bicycling and vehicle are absent from most clients. (c)~Jensen--Shannon
+  divergence of each client's label distribution from the global one, and between the same client's
+  training and test parts. The temporal shift within a client exceeds the shift between clients.}
+  \label{fig:labelskew}
+\end{figure*}
+
+\begin{table}[!t]
+\centering
+\caption{Statistical heterogeneity of the FL clients (training parts unless stated). JSD: Jensen--Shannon
+divergence in bits. Equivalent $\alpha$: concentration of a $\mathrm{Dir}(\alpha C\boldsymbol{\pi})$ label-skew model
+with the same client sizes and the same mean JSD.}
+\label{tab:hetero}
+\footnotesize
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\columnwidth}{@{}Y r@{}}
+\toprule
+Statistic & Value \\
+\midrule
+\inputrows{generated/tab_heterogeneity.tex}
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\emph{Skew is concentrated in the rare classes.} All clients observe sit/stand, mixed activity and
+walking, and nearly all observe sleep, but only $\ClientsVehiclePct\,\%$ observe vehicle and
+$\ClientsBicyclingPct\,\%$ bicycling. A client observes $\ClassesPerClient$ of the six classes on
+average, and only $\AllSixPct\,\%$ observe all of them. The mean divergence from the global
+distribution ($\JSDMean$ bits) corresponds to a Dirichlet concentration of about $\DirAlpha$, a
+moderate skew by the standards of synthetic benchmarks. Its structure, however, is different: the
+rare classes are not under-represented but \emph{absent} on most clients. This is the regime in
+which a shared classifier trained with cross-entropy loses rare classes
+(\cref{sec:method:skew}).
+
+\emph{Temporal shift exceeds client shift.} Because each recording covers roughly one day, a
+chronological split separates different parts of the day. On average, sleep accounts for
+$\SleepTrainPct\,\%$ of a client's training part but $\SleepTestPct\,\%$ of its test part, and the
+test part is mostly sleep for $\TestMostlySleepPct\,\%$ of the clients. The divergence between a
+client's own training and test parts (mean $\JSDTrainTest$ bits) is more than three times larger
+than the divergence between clients. Decision
+rules that copy the local training prior are therefore miscalibrated even for enrolled users,
+which motivates calibrating decisions with the population prior (\cref{eq:calibrated}) and modelling
+temporal context explicitly. In $\UnseenClientsPct\,\%$ of the clients, the test part contains a
+class that the client never observed in training ($\UnseenWindowsPct\,\%$ of all test windows), a case
+that only shared knowledge can handle.
+
+\emph{Quantity skew is mild.} The fixed $24$-h protocol makes client sizes similar
+($\WinPerClientMin$--$\WinPerClientMax$ training windows, Gini coefficient $\GiniClients$). The
+weights $\ptil_k$ are therefore close to uniform, and the heterogeneity is predominantly in the labels and
+the users' movement patterns.
+
+\emph{Activities are persistent.} At the $1$-min resolution of the experiments, the diagonal of the
+aggregated transition matrix ranges from $\SelfTransMin$ (walking) to $\SelfTransMax$ (sleep), and
+the median bout lasts from $2.5$\,min (walking) to more than $3$\,h (sleep; \cref{tab:classes}).
+Window-level classifiers ignore this structure; the federated HMM of \cref{sec:method:inference}
+exploits it at the cost of $42$ integers per client.
+
+% ---------------------------------------------------------------------
+\subsection{Pretrained Encoders}\label{sec:data:encoders}
+
+To test whether the conclusions depend on the backbone, we instantiate \method{} with four IMU
+encoders that differ in architecture (Transformer, residual CNN, spatio-temporal graph network,
+patch-channel Transformer), in size ($51$\,k to $10.5$\,M frozen parameters), in pretraining corpus
+and objective, and in input format (\cref{tab:encoders}). Three are used with their official
+checkpoints. The weights are loaded into re-implementations with identical parameter names, and
+loading fails if less than $90\,\%$ of the tensors match. HALO~\cite{ding2026halo} has not released
+weights. We therefore re-implemented its encoder at a reduced width ($d=192$) and pretrained it with
+its stage-1 objectives (masked reconstruction of $50\,\%$ of the $1$-s patches~\cite{he2022masked} and a
+patch-level InfoNCE loss~\cite{oord2018representation} at temperature $0.2$) on the $94{,}847$
+unlabelled windows of the pool users. Two documented deviations apply: learned channel embeddings
+replace the text-derived sensor descriptions, and each token receives the patch mean and log
+standard deviation, which per-patch z-scoring would otherwise remove. Because the pool users are
+disjoint from the clients and the held-out users, this pretraining leaks no evaluation data.
+Capture-24 provides only an accelerometer, so the input adapter feeds zeros to LIMU-BERT's gyroscope
+channels at initialization, and UniMTS receives the signal on the right-wrist joint of its
+$22$-joint skeleton with zeros elsewhere, as prescribed by its authors~\cite{zhang2024unimts}.
+
+\begin{table*}[!t]
+\centering
+\caption{Pretrained IMU encoders. Input: channels after the input adapter, sampling rate, samples
+per window (duration) and units, produced from the canonical $3\times300$ window by $\Pi_E$.}
+\label{tab:encoders}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}l Y Y l r r@{}}
+\toprule
+Encoder & Architecture & Pretraining data and objective & Input & $d_z$ & $|\Omega_0|$ \\
+\midrule
+LIMU-BERT~\cite{xu2021limubert} &
+  Transformer, 4 weight-shared layers (ALBERT-style), $d=72$, 4 heads, mean pooling &
+  HHAR smartphones and smartwatches~\cite{stisen2015smart}; masked-span reconstruction (official checkpoint) &
+  6 (acc+gyro), 20\,Hz, 120 (6\,s), $g$ & 72 & 51\,k \\
+ssl-wearables~\cite{yuan2024selfsupervised} &
+  1-D ResNet-V2 (harnet10), 5 stages, 64--1024 channels, anti-aliased down-sampling &
+  UK Biobank, 700\,k person-days of wrist Axivity AX3 data; multi-task self-supervision (arrow of
+  time, permutation, time warping) &
+  3, 30\,Hz, 300 (10\,s), $g$ & 1024 & 10.4\,M \\
+UniMTS~\cite{zhang2024unimts} &
+  ST-GCN~\cite{yan2018spatial}, 10 blocks over a 22-joint skeleton graph, 64--512 channels &
+  IMU signals synthesized from motion capture (HumanML3D~\cite{guo2022generating}); contrastive
+  alignment with LLM-augmented text descriptions &
+  3 on wrist joint, 20\,Hz, 200 (10\,s), m\,s$^{-2}$ & 512 & 5.2\,M \\
+HALO~\cite{ding2026halo} (re-impl.) &
+  1-s patch $\times$ channel tokens (temporal, spectral and statistics branches), 8 alternating
+  temporal/cross-channel attention layers, $d=192$, 6 heads, query pooling &
+  Capture-24 pool users (unlabelled, disjoint from all evaluation users); masked reconstruction +
+  patch contrastive, 8 epochs &
+  3, 30\,Hz, 300 (10\,s), $g$ & 256 & 4.6\,M \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+% ---------------------------------------------------------------------
+\subsection{Compared Methods}\label{sec:data:methods}
+
+\Cref{tab:methods} lists the federated methods, each defined by the roles of \cref{tab:roles}.
+FedAvg trains the whole model from a random initialization. V0 and V1 are the upper-cost and
+lower-cost ways of using a pretrained encoder (full fine-tuning and a frozen encoder with
+trainable heads). V2 and V3 isolate the aggregation rule for homogeneous LoRA: factor averaging
+versus exact aggregation~\cite{singhal2025fedex}. V4 adds rank heterogeneity with the delta-form
+aggregation of \cref{sec:method:agg}, and it is the ablation of \method{} (V5) without local parts and
+prototypes. All methods with a shared classifier use the label-skew remedies of
+\cref{sec:method:skew}, and all methods are scored with the same decoders. Two centralized
+references are trained on the pooled training parts: \emph{from scratch}, which defines the target F1,
+and \emph{pretrained fine-tuning}, an upper reference without privacy constraints.
+
+\begin{table*}[!t]
+\centering
+\caption{Federated methods. $\Omega$: encoder weights; $g$, $h$: shared and classifier heads;
+$\psi$: normalization; $a$: input adapter; P: prototypes.}
+\label{tab:methods}
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}l l l l l l l@{}}
+\toprule
+Method & Init. & Trained & Uploaded & Kept local & LoRA rank & Aggregation \\
+\midrule
+FedAvg~\cite{mcmahan2017fedavg} & random & $\Omega,\psi,a,g,h$ & $\Omega,\psi,a,g,h$ & -- & -- & FedAvg \\
+V0 Full fine-tuning & pretrained & $\Omega,\psi,a,g,h$ & $\Omega,\psi,a,g,h$ & -- & -- & FedAvg \\
+V1 Head only & pretrained & $g,h$ & $g,h$ & -- & -- & FedAvg \\
+V2 LoRA, factor averaging & pretrained & LoRA, $g,h$ & LoRA, $g,h$ & -- & 8 & avg.\ $A$, avg.\ $B$ \\
+V3 LoRA, exact & pretrained & LoRA, $g,h$ & LoRA, $g,h$ & -- & 8 & FedEx-LoRA~\cite{singhal2025fedex} \\
+V4 Heterogeneous ranks & pretrained & LoRA, $g,h$ & LoRA, $g,h$ & -- & 2/4/8 & delta form + SVD (\cref{sec:method:agg}) \\
+\textbf{V5 \method} & pretrained & LoRA, $g,h,\psi,a$ & LoRA, $g$, P & $h,\psi,a$ & 2/4/8 & delta form + SVD, prototypes \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+% ---------------------------------------------------------------------
+\subsection{Evaluation Metrics}\label{sec:data:metrics}
+
+\emph{Recognition.} The primary metric is the \emph{macro-F1} over the six classes, computed on the
+pooled test windows of all clients, so that rare activities weigh as much as frequent ones. We
+also report accuracy.
+
+\emph{Fairness.} For every client we compute its macro-F1 over the classes present in its own test
+part (a user who never cycles is not scored on cycling). We report the \emph{worst-10\,\% client F1},
+i.e., the mean over the $\lceil0.1K\rceil=11$ lowest-scoring clients, and the standard deviation of
+the client F1 values.
+
+\emph{Communication.} Every message is an explicit set of tensors. Its size is measured as the
+serialized size of uncompressed arrays (four bytes per real value, eight per integer), as in
+Flower's NumPy serialization~\cite{beutel2020flower}, and includes every tensor that is sent: factors,
+heads, residual weights, prototypes and counts. The one-shot statistics are charged in the first
+round. We report the \emph{uplink per client update} (MB), the \emph{rounds to target}, i.e., the first
+evaluated round whose macro-F1 reaches $90\,\%$ of the centralized from-scratch macro-F1 of the same
+encoder (evaluations every $8$ rounds), and the cumulative uplink of all clients up to that round
+(\emph{MB to target}). No compression or quantization is applied, since it would benefit all methods
+equally.
+
+\emph{Client cost.} The \emph{client memory} is the size of all model tensors plus the peak additional
+device memory allocated during a local update (activations, gradients and optimizer states), measured
+with the CUDA allocator. The \emph{client time} is the wall-clock time of one local update.
+
+\emph{New users.} On the \NumHeldout{} held-out users we report the mean per-user macro-F1 on their test
+halves: \emph{zero-shot} (no labels) and \emph{few-shot} with $m\in\{1,5\}$ minutes of labels per
+activity, drawn at random from the adaptation half. For methods with a shared classifier, the
+few-shot protocol re-fits the classifier on the frozen embeddings.
+
+\emph{Decoding.} Every metric is reported per window and after federated HMM decoding (``+HMM'').
+For methods with a shared classifier, we also report the common ``FedAvg + local fine-tuning''
+protocol of personalized FL (``+FT''): every client fine-tunes only the classifier on its own
+training part ($8$ steps, the same loss as in training) and is scored with this personal classifier.
+\method{} needs no such step, because its classifier is already personal.
+
+% ---------------------------------------------------------------------
+\subsection{Implementation Details}\label{sec:data:impl}
+
+All methods run in one transparent federated simulator written in PyTorch~2.11 (Python~3.13). All
+windows reside in GPU memory, so a mini-batch is an index tensor and every method sees exactly the same
+data stream for a given seed. Experiments ran on a single NVIDIA GeForce GTX~1660~Ti (6\,GB) in fp32.
+\Cref{tab:hparams} lists the hyperparameters. They are identical for all encoders except UniMTS. Its
+graph network costs about $7$\,GMAC per window, so it trains with a reduced budget ($40$ rounds,
+batch size $16$, $20$ few-shot steps, intermediate evaluations on $60$ test windows per client and at most
+$200$ test windows per held-out user). UniMTS results are therefore comparable across methods, but
+not with the other encoders. All local updates use AdamW~\cite{loshchilov2019adamw} with a fresh
+optimizer state in every round.
+
+\begin{table}[!t]
+\centering
+\caption{Hyperparameters (UniMTS budget in parentheses where it differs).}
+\label{tab:hparams}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\columnwidth}{@{}l Y@{}}
+\toprule
+\multicolumn{2}{@{}l}{\textit{Federated training}} \\
+Rounds $T$; clients per round & $80$ ($40$); $21$ of $106$ ($\rho=0.2$) \\
+Local work per round & $1$ epoch, capped at $S=8$ steps of batch $64$ ($16$) \\
+Learning rates & FedAvg $10^{-3}$; V0 body $3\!\times\!10^{-4}$; LoRA, heads, $\psi$, $a$: $2\!\times\!10^{-3}$ \\
+Weight decay & $10^{-4}$ \\
+LoRA & $r=8$ (V2, V3); tiers $\{2,4,8\}$ uniform (V4, V5); $\alpha=2r$; dropout $0$ \\
+Embedding $D$; prototype weight $\lambda$ & $64$; $0.5$ (prototypes on $\le512$ windows) \\
+Label skew (shared classifiers) & $\tau=1$ with client prior; class-wise rows; prior floor $10^{-4}$ \\
+Decisions & $\tau_{\mathrm{inf}}=0.5$ (shared), arg\,max (personal), nearest prototype (zero-shot) \\
+HMM & add-one smoothing; split at gaps $>3$\,min \\
+Final personalization; +FT & $8$ steps on $\phi_k$; $8$ steps on $h$ \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{New users}} \\
+Few-shot labels; steps & $1$ and $5$ min per activity; $60$ ($20$) \\
+\method{} few-shot & adapt $h_u,\psi_u,a_u$, batch $64$ ($16$), lr $2\!\times\!10^{-3}$ \\
+Shared-classifier few-shot & re-fit $h$ on frozen embeddings, Adam, lr $5\!\times\!10^{-3}$ \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Centralized references}} \\
+Epochs; early stopping & $10$ ($5$), cosine schedule; patience $3$ ($2$) on validation macro-F1 \\
+Batch; learning rate & $128$ ($16$); scratch $10^{-3}$, fine-tuning $3\!\times\!10^{-4}$ \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{HALO pretraining (pool users)}} \\
+Schedule & $8$ epochs, batch $128$, AdamW lr $3\!\times\!10^{-4}$ (cosine), wd $10^{-5}$ \\
+Objectives & mask ratio $0.5$; InfoNCE temperature $0.2$; scaling, jitter, time warping \\
+\bottomrule
+\end{tabularx}
+\end{table}

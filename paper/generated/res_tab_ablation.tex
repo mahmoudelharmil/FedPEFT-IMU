@@ -1,0 +1,18 @@
+V5 (complete) & 0.861 & 0.863 & -- & 0.533 & 0.591 & 0.854 \\
+$+$ transductive zero-shot (same model) & 0.861 & 0.863 & $\pm$0 & 0.533 & 0.626 & 0.858 \\
+$-$ prototype alignment ($\lambda=0$) & 0.859 & 0.862 & -0.001 & 0.555 & 0.596 & 0.844 \\
+$-$ local norm and input adapter & 0.833 & 0.838 & -0.025 & 0.461 & 0.602 & 0.859 \\
+$-$ personal classifier (shared $h$) & 0.862 & 0.866 & +0.004 & 0.550 & 0.596 & 0.852 \\
+$-$ device tiers (all $r=8$) & 0.863 & 0.866 & +0.003 & 0.542 & 0.618 & 0.852 \\
+$-$ training augmentation & 0.872 & 0.873 & +0.011 & 0.609 & 0.581 & 0.845 \\
+$-$ averaged local parts for new users & 0.861 & 0.863 & -0.000 & 0.538 & 0.575 & 0.843 \\
+$-$ augmentation in the last personal update & 0.862 & 0.865 & +0.002 & 0.580 & 0.591 & 0.853 \\
+$+$ average personal classifier for new users & 0.865 & 0.866 & +0.003 & 0.544 & 0.593 & 0.856 \\
+$+$ federated global classifier (dual head) & 0.850 & 0.854 & -0.009 & 0.507 & 0.598 & 0.843 \\
+$+$ LoRA on all linear layers (not only $W_q,W_v$) & 0.870 & 0.873 & +0.011 & 0.552 & 0.635 & 0.858 \\
+$+$ private LoRA copy in the last personal update & 0.860 & 0.863 & +0.000 & 0.517 & 0.589 & 0.857 \\
+$+$ private LoRA copy, $3\times$ longer personal update & 0.862 & 0.866 & +0.003 & 0.539 & 0.592 & 0.854 \\
+\midrule
+V4 ($-$ all local parts and prototypes) & 0.752 & 0.770 & -0.093 & 0.281 & 0.635 & 0.822 \\
+V0 full fine-tuning & 0.793 & 0.813 & -0.050 & 0.294 & 0.688 & 0.829 \\
+V0 $-$ training augmentation & 0.786 & 0.807 & -0.056 & 0.294 & 0.685 & 0.833 \\

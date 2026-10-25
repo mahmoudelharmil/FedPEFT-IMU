@@ -1,0 +1,1494 @@
+{
+  "dataset": "harbox",
+  "display_name": "HARBox",
+  "default_scheme": "HARBox",
+  "schemes": {
+    "HARBox": [
+      "Call",
+      "Hop",
+      "Typing",
+      "Walk",
+      "Wave"
+    ]
+  },
+  "base_rate_hz": 50,
+  "window_s": 2.0,
+  "hop_s": 1.0,
+  "channels": [
+    "acc_x",
+    "acc_y",
+    "acc_z",
+    "gyro_x",
+    "gyro_y",
+    "gyro_z",
+    "mag_x",
+    "mag_y",
+    "mag_z"
+  ],
+  "channel_groups": {
+    "acc": [
+      0,
+      1,
+      2
+    ],
+    "gyro": [
+      3,
+      4,
+      5
+    ],
+    "mag": [
+      6,
+      7,
+      8
+    ]
+  },
+  "channel_units": {
+    "acc": "m/s2",
+    "gyro": "rad/s",
+    "mag": "uT"
+  },
+  "participants": [
+    "u001",
+    "u002",
+    "u003",
+    "u004",
+    "u005",
+    "u006",
+    "u007",
+    "u008",
+    "u009",
+    "u010",
+    "u011",
+    "u012",
+    "u013",
+    "u014",
+    "u015",
+    "u016",
+    "u017",
+    "u018",
+    "u019",
+    "u020",
+    "u021",
+    "u022",
+    "u023",
+    "u024",
+    "u025",
+    "u026",
+    "u027",
+    "u028",
+    "u029",
+    "u030",
+    "u031",
+    "u032",
+    "u033",
+    "u034",
+    "u035",
+    "u036",
+    "u037",
+    "u038",
+    "u039",
+    "u040",
+    "u041",
+    "u042",
+    "u043",
+    "u044",
+    "u045",
+    "u046",
+    "u047",
+    "u048",
+    "u049",
+    "u050",
+    "u051",
+    "u052",
+    "u053",
+    "u054",
+    "u055",
+    "u056",
+    "u057",
+    "u058",
+    "u059",
+    "u060",
+    "u061",
+    "u062",
+    "u063",
+    "u064",
+    "u065",
+    "u066",
+    "u067",
+    "u068",
+    "u069",
+    "u070",
+    "u071",
+    "u072",
+    "u073",
+    "u074",
+    "u075",
+    "u076",
+    "u077",
+    "u078",
+    "u079",
+    "u080",
+    "u081",
+    "u082",
+    "u083",
+    "u084",
+    "u085",
+    "u086",
+    "u087",
+    "u088",
+    "u089",
+    "u090",
+    "u091",
+    "u092",
+    "u093",
+    "u094",
+    "u095",
+    "u096",
+    "u097",
+    "u098",
+    "u099",
+    "u100",
+    "u101",
+    "u102",
+    "u103",
+    "u104",
+    "u105",
+    "u106",
+    "u107",
+    "u108",
+    "u109",
+    "u110",
+    "u111",
+    "u112",
+    "u113",
+    "u114",
+    "u115",
+    "u116",
+    "u117",
+    "u118",
+    "u119",
+    "u120"
+  ],
+  "participant_info": [
+    {
+      "pid": "u001",
+      "n_windows": 265,
+      "class_counts": [
+        47,
+        46,
+        81,
+        44,
+        47
+      ]
+    },
+    {
+      "pid": "u002",
+      "n_windows": 221,
+      "class_counts": [
+        43,
+        45,
+        44,
+        45,
+        44
+      ]
+    },
+    {
+      "pid": "u003",
+      "n_windows": 245,
+      "class_counts": [
+        45,
+        46,
+        63,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u004",
+      "n_windows": 202,
+      "class_counts": [
+        47,
+        44,
+        47,
+        43,
+        21
+      ]
+    },
+    {
+      "pid": "u005",
+      "n_windows": 221,
+      "class_counts": [
+        45,
+        44,
+        46,
+        45,
+        41
+      ]
+    },
+    {
+      "pid": "u006",
+      "n_windows": 226,
+      "class_counts": [
+        45,
+        44,
+        45,
+        45,
+        47
+      ]
+    },
+    {
+      "pid": "u007",
+      "n_windows": 229,
+      "class_counts": [
+        45,
+        45,
+        46,
+        47,
+        46
+      ]
+    },
+    {
+      "pid": "u008",
+      "n_windows": 235,
+      "class_counts": [
+        45,
+        53,
+        44,
+        47,
+        46
+      ]
+    },
+    {
+      "pid": "u009",
+      "n_windows": 233,
+      "class_counts": [
+        45,
+        49,
+        50,
+        45,
+        44
+      ]
+    },
+    {
+      "pid": "u010",
+      "n_windows": 232,
+      "class_counts": [
+        46,
+        42,
+        49,
+        49,
+        46
+      ]
+    },
+    {
+      "pid": "u011",
+      "n_windows": 229,
+      "class_counts": [
+        44,
+        49,
+        44,
+        49,
+        43
+      ]
+    },
+    {
+      "pid": "u012",
+      "n_windows": 225,
+      "class_counts": [
+        45,
+        45,
+        45,
+        45,
+        45
+      ]
+    },
+    {
+      "pid": "u013",
+      "n_windows": 220,
+      "class_counts": [
+        45,
+        37,
+        46,
+        46,
+        46
+      ]
+    },
+    {
+      "pid": "u014",
+      "n_windows": 227,
+      "class_counts": [
+        46,
+        43,
+        45,
+        46,
+        47
+      ]
+    },
+    {
+      "pid": "u015",
+      "n_windows": 241,
+      "class_counts": [
+        45,
+        49,
+        54,
+        47,
+        46
+      ]
+    },
+    {
+      "pid": "u016",
+      "n_windows": 237,
+      "class_counts": [
+        48,
+        46,
+        45,
+        52,
+        46
+      ]
+    },
+    {
+      "pid": "u017",
+      "n_windows": 501,
+      "class_counts": [
+        91,
+        93,
+        89,
+        137,
+        91
+      ]
+    },
+    {
+      "pid": "u018",
+      "n_windows": 228,
+      "class_counts": [
+        47,
+        45,
+        45,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u019",
+      "n_windows": 268,
+      "class_counts": [
+        44,
+        47,
+        43,
+        90,
+        44
+      ]
+    },
+    {
+      "pid": "u020",
+      "n_windows": 213,
+      "class_counts": [
+        45,
+        47,
+        44,
+        39,
+        38
+      ]
+    },
+    {
+      "pid": "u021",
+      "n_windows": 263,
+      "class_counts": [
+        46,
+        50,
+        47,
+        47,
+        73
+      ]
+    },
+    {
+      "pid": "u022",
+      "n_windows": 220,
+      "class_counts": [
+        45,
+        43,
+        44,
+        43,
+        45
+      ]
+    },
+    {
+      "pid": "u023",
+      "n_windows": 224,
+      "class_counts": [
+        44,
+        47,
+        43,
+        45,
+        45
+      ]
+    },
+    {
+      "pid": "u024",
+      "n_windows": 464,
+      "class_counts": [
+        92,
+        93,
+        93,
+        93,
+        93
+      ]
+    },
+    {
+      "pid": "u025",
+      "n_windows": 222,
+      "class_counts": [
+        45,
+        44,
+        45,
+        43,
+        45
+      ]
+    },
+    {
+      "pid": "u026",
+      "n_windows": 181,
+      "class_counts": [
+        45,
+        44,
+        45,
+        47,
+        0
+      ]
+    },
+    {
+      "pid": "u027",
+      "n_windows": 230,
+      "class_counts": [
+        49,
+        47,
+        44,
+        45,
+        45
+      ]
+    },
+    {
+      "pid": "u028",
+      "n_windows": 183,
+      "class_counts": [
+        45,
+        45,
+        46,
+        47,
+        0
+      ]
+    },
+    {
+      "pid": "u029",
+      "n_windows": 225,
+      "class_counts": [
+        44,
+        45,
+        45,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u030",
+      "n_windows": 211,
+      "class_counts": [
+        42,
+        44,
+        44,
+        37,
+        44
+      ]
+    },
+    {
+      "pid": "u031",
+      "n_windows": 235,
+      "class_counts": [
+        47,
+        46,
+        45,
+        52,
+        45
+      ]
+    },
+    {
+      "pid": "u032",
+      "n_windows": 115,
+      "class_counts": [
+        0,
+        18,
+        48,
+        49,
+        0
+      ]
+    },
+    {
+      "pid": "u033",
+      "n_windows": 233,
+      "class_counts": [
+        43,
+        51,
+        44,
+        52,
+        43
+      ]
+    },
+    {
+      "pid": "u034",
+      "n_windows": 225,
+      "class_counts": [
+        45,
+        44,
+        44,
+        47,
+        45
+      ]
+    },
+    {
+      "pid": "u035",
+      "n_windows": 190,
+      "class_counts": [
+        0,
+        49,
+        46,
+        45,
+        50
+      ]
+    },
+    {
+      "pid": "u036",
+      "n_windows": 234,
+      "class_counts": [
+        47,
+        45,
+        49,
+        47,
+        46
+      ]
+    },
+    {
+      "pid": "u037",
+      "n_windows": 221,
+      "class_counts": [
+        44,
+        44,
+        44,
+        44,
+        45
+      ]
+    },
+    {
+      "pid": "u038",
+      "n_windows": 232,
+      "class_counts": [
+        47,
+        45,
+        46,
+        47,
+        47
+      ]
+    },
+    {
+      "pid": "u039",
+      "n_windows": 454,
+      "class_counts": [
+        91,
+        91,
+        90,
+        91,
+        91
+      ]
+    },
+    {
+      "pid": "u040",
+      "n_windows": 266,
+      "class_counts": [
+        48,
+        56,
+        78,
+        35,
+        49
+      ]
+    },
+    {
+      "pid": "u041",
+      "n_windows": 436,
+      "class_counts": [
+        92,
+        91,
+        68,
+        139,
+        46
+      ]
+    },
+    {
+      "pid": "u042",
+      "n_windows": 221,
+      "class_counts": [
+        45,
+        44,
+        43,
+        45,
+        44
+      ]
+    },
+    {
+      "pid": "u043",
+      "n_windows": 212,
+      "class_counts": [
+        45,
+        38,
+        44,
+        44,
+        41
+      ]
+    },
+    {
+      "pid": "u044",
+      "n_windows": 247,
+      "class_counts": [
+        49,
+        46,
+        59,
+        47,
+        46
+      ]
+    },
+    {
+      "pid": "u045",
+      "n_windows": 306,
+      "class_counts": [
+        46,
+        0,
+        45,
+        169,
+        46
+      ]
+    },
+    {
+      "pid": "u046",
+      "n_windows": 225,
+      "class_counts": [
+        44,
+        45,
+        44,
+        47,
+        45
+      ]
+    },
+    {
+      "pid": "u047",
+      "n_windows": 219,
+      "class_counts": [
+        44,
+        43,
+        43,
+        44,
+        45
+      ]
+    },
+    {
+      "pid": "u048",
+      "n_windows": 677,
+      "class_counts": [
+        55,
+        53,
+        45,
+        474,
+        50
+      ]
+    },
+    {
+      "pid": "u049",
+      "n_windows": 230,
+      "class_counts": [
+        46,
+        45,
+        46,
+        48,
+        45
+      ]
+    },
+    {
+      "pid": "u050",
+      "n_windows": 273,
+      "class_counts": [
+        44,
+        94,
+        44,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u051",
+      "n_windows": 293,
+      "class_counts": [
+        52,
+        52,
+        44,
+        100,
+        45
+      ]
+    },
+    {
+      "pid": "u052",
+      "n_windows": 233,
+      "class_counts": [
+        45,
+        45,
+        46,
+        52,
+        45
+      ]
+    },
+    {
+      "pid": "u053",
+      "n_windows": 220,
+      "class_counts": [
+        43,
+        43,
+        43,
+        48,
+        43
+      ]
+    },
+    {
+      "pid": "u054",
+      "n_windows": 234,
+      "class_counts": [
+        44,
+        44,
+        44,
+        51,
+        51
+      ]
+    },
+    {
+      "pid": "u055",
+      "n_windows": 228,
+      "class_counts": [
+        46,
+        41,
+        47,
+        48,
+        46
+      ]
+    },
+    {
+      "pid": "u056",
+      "n_windows": 435,
+      "class_counts": [
+        79,
+        96,
+        95,
+        90,
+        75
+      ]
+    },
+    {
+      "pid": "u057",
+      "n_windows": 230,
+      "class_counts": [
+        35,
+        46,
+        45,
+        63,
+        41
+      ]
+    },
+    {
+      "pid": "u058",
+      "n_windows": 227,
+      "class_counts": [
+        45,
+        45,
+        46,
+        45,
+        46
+      ]
+    },
+    {
+      "pid": "u059",
+      "n_windows": 226,
+      "class_counts": [
+        41,
+        44,
+        45,
+        51,
+        45
+      ]
+    },
+    {
+      "pid": "u060",
+      "n_windows": 224,
+      "class_counts": [
+        45,
+        44,
+        44,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u061",
+      "n_windows": 230,
+      "class_counts": [
+        46,
+        45,
+        46,
+        47,
+        46
+      ]
+    },
+    {
+      "pid": "u062",
+      "n_windows": 408,
+      "class_counts": [
+        45,
+        94,
+        45,
+        131,
+        93
+      ]
+    },
+    {
+      "pid": "u063",
+      "n_windows": 230,
+      "class_counts": [
+        45,
+        47,
+        45,
+        46,
+        47
+      ]
+    },
+    {
+      "pid": "u064",
+      "n_windows": 224,
+      "class_counts": [
+        45,
+        44,
+        44,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u065",
+      "n_windows": 357,
+      "class_counts": [
+        91,
+        88,
+        44,
+        90,
+        44
+      ]
+    },
+    {
+      "pid": "u066",
+      "n_windows": 226,
+      "class_counts": [
+        45,
+        45,
+        45,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u067",
+      "n_windows": 229,
+      "class_counts": [
+        45,
+        47,
+        46,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u068",
+      "n_windows": 226,
+      "class_counts": [
+        45,
+        44,
+        48,
+        44,
+        45
+      ]
+    },
+    {
+      "pid": "u069",
+      "n_windows": 243,
+      "class_counts": [
+        53,
+        50,
+        44,
+        44,
+        52
+      ]
+    },
+    {
+      "pid": "u070",
+      "n_windows": 469,
+      "class_counts": [
+        93,
+        90,
+        92,
+        94,
+        100
+      ]
+    },
+    {
+      "pid": "u071",
+      "n_windows": 224,
+      "class_counts": [
+        45,
+        45,
+        44,
+        45,
+        45
+      ]
+    },
+    {
+      "pid": "u072",
+      "n_windows": 464,
+      "class_counts": [
+        90,
+        93,
+        97,
+        93,
+        91
+      ]
+    },
+    {
+      "pid": "u073",
+      "n_windows": 265,
+      "class_counts": [
+        59,
+        47,
+        53,
+        50,
+        56
+      ]
+    },
+    {
+      "pid": "u074",
+      "n_windows": 239,
+      "class_counts": [
+        46,
+        45,
+        44,
+        54,
+        50
+      ]
+    },
+    {
+      "pid": "u075",
+      "n_windows": 183,
+      "class_counts": [
+        0,
+        45,
+        48,
+        46,
+        44
+      ]
+    },
+    {
+      "pid": "u076",
+      "n_windows": 320,
+      "class_counts": [
+        45,
+        92,
+        44,
+        95,
+        44
+      ]
+    },
+    {
+      "pid": "u077",
+      "n_windows": 769,
+      "class_counts": [
+        149,
+        147,
+        139,
+        195,
+        139
+      ]
+    },
+    {
+      "pid": "u078",
+      "n_windows": 249,
+      "class_counts": [
+        57,
+        52,
+        50,
+        45,
+        45
+      ]
+    },
+    {
+      "pid": "u079",
+      "n_windows": 1007,
+      "class_counts": [
+        196,
+        194,
+        188,
+        243,
+        186
+      ]
+    },
+    {
+      "pid": "u080",
+      "n_windows": 183,
+      "class_counts": [
+        45,
+        45,
+        0,
+        45,
+        48
+      ]
+    },
+    {
+      "pid": "u081",
+      "n_windows": 444,
+      "class_counts": [
+        89,
+        88,
+        88,
+        89,
+        90
+      ]
+    },
+    {
+      "pid": "u082",
+      "n_windows": 918,
+      "class_counts": [
+        186,
+        183,
+        183,
+        183,
+        183
+      ]
+    },
+    {
+      "pid": "u083",
+      "n_windows": 234,
+      "class_counts": [
+        47,
+        45,
+        46,
+        51,
+        45
+      ]
+    },
+    {
+      "pid": "u084",
+      "n_windows": 227,
+      "class_counts": [
+        47,
+        45,
+        44,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u085",
+      "n_windows": 248,
+      "class_counts": [
+        47,
+        45,
+        63,
+        48,
+        45
+      ]
+    },
+    {
+      "pid": "u086",
+      "n_windows": 217,
+      "class_counts": [
+        43,
+        44,
+        43,
+        44,
+        43
+      ]
+    },
+    {
+      "pid": "u087",
+      "n_windows": 420,
+      "class_counts": [
+        94,
+        93,
+        47,
+        93,
+        93
+      ]
+    },
+    {
+      "pid": "u088",
+      "n_windows": 225,
+      "class_counts": [
+        47,
+        44,
+        44,
+        46,
+        44
+      ]
+    },
+    {
+      "pid": "u089",
+      "n_windows": 228,
+      "class_counts": [
+        45,
+        46,
+        45,
+        47,
+        45
+      ]
+    },
+    {
+      "pid": "u090",
+      "n_windows": 232,
+      "class_counts": [
+        46,
+        46,
+        48,
+        46,
+        46
+      ]
+    },
+    {
+      "pid": "u091",
+      "n_windows": 580,
+      "class_counts": [
+        92,
+        145,
+        108,
+        144,
+        91
+      ]
+    },
+    {
+      "pid": "u092",
+      "n_windows": 225,
+      "class_counts": [
+        45,
+        43,
+        47,
+        46,
+        44
+      ]
+    },
+    {
+      "pid": "u093",
+      "n_windows": 233,
+      "class_counts": [
+        45,
+        49,
+        46,
+        48,
+        45
+      ]
+    },
+    {
+      "pid": "u094",
+      "n_windows": 230,
+      "class_counts": [
+        45,
+        45,
+        45,
+        48,
+        47
+      ]
+    },
+    {
+      "pid": "u095",
+      "n_windows": 224,
+      "class_counts": [
+        46,
+        44,
+        46,
+        44,
+        44
+      ]
+    },
+    {
+      "pid": "u096",
+      "n_windows": 235,
+      "class_counts": [
+        46,
+        49,
+        47,
+        47,
+        46
+      ]
+    },
+    {
+      "pid": "u097",
+      "n_windows": 227,
+      "class_counts": [
+        44,
+        45,
+        44,
+        49,
+        45
+      ]
+    },
+    {
+      "pid": "u098",
+      "n_windows": 195,
+      "class_counts": [
+        49,
+        48,
+        0,
+        47,
+        51
+      ]
+    },
+    {
+      "pid": "u099",
+      "n_windows": 216,
+      "class_counts": [
+        43,
+        45,
+        46,
+        43,
+        39
+      ]
+    },
+    {
+      "pid": "u100",
+      "n_windows": 239,
+      "class_counts": [
+        45,
+        48,
+        46,
+        55,
+        45
+      ]
+    },
+    {
+      "pid": "u101",
+      "n_windows": 225,
+      "class_counts": [
+        45,
+        45,
+        44,
+        46,
+        45
+      ]
+    },
+    {
+      "pid": "u102",
+      "n_windows": 225,
+      "class_counts": [
+        46,
+        43,
+        45,
+        47,
+        44
+      ]
+    },
+    {
+      "pid": "u103",
+      "n_windows": 292,
+      "class_counts": [
+        45,
+        48,
+        46,
+        103,
+        50
+      ]
+    },
+    {
+      "pid": "u104",
+      "n_windows": 212,
+      "class_counts": [
+        39,
+        39,
+        47,
+        39,
+        48
+      ]
+    },
+    {
+      "pid": "u105",
+      "n_windows": 258,
+      "class_counts": [
+        51,
+        54,
+        44,
+        54,
+        55
+      ]
+    },
+    {
+      "pid": "u106",
+      "n_windows": 233,
+      "class_counts": [
+        45,
+        48,
+        45,
+        50,
+        45
+      ]
+    },
+    {
+      "pid": "u107",
+      "n_windows": 225,
+      "class_counts": [
+        44,
+        46,
+        45,
+        46,
+        44
+      ]
+    },
+    {
+      "pid": "u108",
+      "n_windows": 228,
+      "class_counts": [
+        44,
+        50,
+        44,
+        46,
+        44
+      ]
+    },
+    {
+      "pid": "u109",
+      "n_windows": 561,
+      "class_counts": [
+        92,
+        138,
+        45,
+        241,
+        45
+      ]
+    },
+    {
+      "pid": "u110",
+      "n_windows": 222,
+      "class_counts": [
+        43,
+        43,
+        43,
+        48,
+        45
+      ]
+    },
+    {
+      "pid": "u111",
+      "n_windows": 1054,
+      "class_counts": [
+        243,
+        242,
+        234,
+        291,
+        44
+      ]
+    },
+    {
+      "pid": "u112",
+      "n_windows": 217,
+      "class_counts": [
+        45,
+        43,
+        43,
+        43,
+        43
+      ]
+    },
+    {
+      "pid": "u113",
+      "n_windows": 227,
+      "class_counts": [
+        44,
+        48,
+        45,
+        45,
+        45
+      ]
+    },
+    {
+      "pid": "u114",
+      "n_windows": 232,
+      "class_counts": [
+        45,
+        44,
+        53,
+        45,
+        45
+      ]
+    },
+    {
+      "pid": "u115",
+      "n_windows": 230,
+      "class_counts": [
+        46,
+        47,
+        45,
+        46,
+        46
+      ]
+    },
+    {
+      "pid": "u116",
+      "n_windows": 230,
+      "class_counts": [
+        45,
+        48,
+        45,
+        47,
+        45
+      ]
+    },
+    {
+      "pid": "u117",
+      "n_windows": 292,
+      "class_counts": [
+        45,
+        48,
+        46,
+        103,
+        50
+      ]
+    },
+    {
+      "pid": "u118",
+      "n_windows": 233,
+      "class_counts": [
+        45,
+        49,
+        46,
+        48,
+        45
+      ]
+    },
+    {
+      "pid": "u119",
+      "n_windows": 420,
+      "class_counts": [
+        94,
+        93,
+        47,
+        93,
+        93
+      ]
+    },
+    {
+      "pid": "u120",
+      "n_windows": 235,
+      "class_counts": [
+        45,
+        53,
+        44,
+        47,
+        46
+      ]
+    }
+  ]
+}

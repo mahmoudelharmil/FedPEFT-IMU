@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------
+#  WISDM_FEDAIOT05 profile - the evaluation protocol (A) of the published WISDM-W results,
+#  so that our numbers can be compared with them directly:
+#    FedAIoT (Alam et al., arXiv 2310.00109, Sec. 4 and App. E): 45 subjects for training,
+#    6 unseen subjects for testing; the training windows are split into 80 clients by a
+#    Dirichlet(alpha = 0.5) partition over the labels; 10 % of the clients per round,
+#    batch 32, 400 rounds for the LSTM; metric = accuracy of the global model on ALL
+#    windows of the test subjects.
+#  Here: the test subjects are our held-out users (zero-shot, no adaptation data), and
+#  every Dirichlet client keeps 10 % of its windows for validation and 10 % as a local
+#  test part (not used by the published metric).
+#      python run_all.py --profile wisdm_fedaiot05 --from 4
+# ---------------------------------------------------------------------
+data:
+  dataset: wisdm
+split:
+  seeds: [0]
+  mode: dirichlet
+  heldout_users: 6                 # FedAIoT: 6 test subjects
+  heldout_frac: 0.0
+  pool_frac: 0.0
+  dirichlet_clients: 80
+  dirichlet_alpha: 0.5
+  dirichlet_fracs: [0.8, 0.1, 0.1] # train / validation / local test of every client
+  gap_windows: 0
+  heldout_adapt_frac: 0.0          # the test subjects are scored on ALL their windows
+  fewshot_shots: []                # no labels of the test subjects
+  transductive_report: false
+centralized:
+  epochs: 25
+  patience: 5
+  batch_size: 128
+fl:
+  rounds: 400                      # FedAIoT's schedule for every model (100 rounds left the encoders under-trained)
+  clients_per_round_frac: 0.10     # FedAIoT: 10 % of the clients per round (8 of 80)
+  local_epochs: 1
+  max_local_steps: 10
+  batch_size: 32                   # FedAIoT: batch 32
+  eval_every: 40
+  local_ft_steps: 20
+  final_personalization_steps: 20
+encoders:
+  ssl_wearables:
+    budget:
+      fl: {rounds: 400}              # the same schedule (the dataset file cuts it to 60 for protocol B)
+  lstm:
+    budget:                        # the reproduced baseline keeps FedAIoT's schedule
+      _replace: true
+      fl: {rounds: 400, local_epochs: 1, max_local_steps: 100, batch_size: 32, eval_every: 40}
+ablation:
+  encoder: limu_bert
+report:
+  compare_profiles: []
+  stage_labels: {}

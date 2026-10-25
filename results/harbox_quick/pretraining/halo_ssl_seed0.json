@@ -1,0 +1,28 @@
+{
+  "seed": 0,
+  "pool_users": [
+    "u009",
+    "u010",
+    "u011",
+    "u012",
+    "u038",
+    "u040",
+    "u053",
+    "u073",
+    "u084",
+    "u089",
+    "u106",
+    "u114"
+  ],
+  "n_windows": 2822,
+  "history": [
+    {
+      "epoch": 1,
+      "mae": 1.0565528740053591,
+      "contrastive": 4.536138581193012,
+      "elapsed_s": 9.811256899964064
+    }
+  ],
+  "checkpoint": "E:\\Masters\\Thesis2\\idea1\\weights\\halo\\harbox_quick_halo_seed0.pt",
+  "time_s": 9.878956499975175
+}

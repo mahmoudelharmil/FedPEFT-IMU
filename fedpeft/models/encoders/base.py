@@ -29,6 +29,10 @@ class InputSpec:
         return self.n_samples / self.rate_hz
 
 
+ACC = ("acc_x", "acc_y", "acc_z")
+GYRO = ("gyro_x", "gyro_y", "gyro_z")
+
+
 class BaseEncoder(nn.Module):
     """Base class: subclasses set `name`, `display_name`, `spec`, `feat_dim`."""
 
@@ -38,6 +42,9 @@ class BaseEncoder(nn.Module):
     pretrained_source: str = ""     # where the official weights come from
     spec: InputSpec
     feat_dim: int
+    # Meaning of every input channel, in order - the input adapter starts by copying the
+    # data channel of the same name (fedpeft/models/components.InputAdapter).
+    input_channels: tuple[str, ...] = ACC
 
     def lora_targets(self) -> list[str]:
         """Module names (relative to the encoder) that get a LoRA branch."""

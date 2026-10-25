@@ -1,0 +1,28 @@
+# ---------------------------------------------------------------------
+#  HARBOX_QUICK profile - smoke test of the HARBox pipeline (minutes).
+#      python run_all.py --profile harbox_quick
+# ---------------------------------------------------------------------
+data:
+  dataset: harbox
+split:
+  seeds: [0]
+centralized:
+  epochs: 2
+  patience: 1
+fl:
+  rounds: 4
+  clients_per_round_frac: 0.10
+  local_epochs: 1
+  max_local_steps: 3
+  batch_size: 32
+  eval_every: 2
+  local_ft_steps: 2
+  final_personalization_steps: 2
+halo_ssl:
+  epochs: 1
+report:
+  compare_profiles: []
+  stage_labels: {}
+encoders:
+  halo:
+    checkpoint: halo/harbox_quick_halo_seed{seed}.pt   # never overwrite the real checkpoint

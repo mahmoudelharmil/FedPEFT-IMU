@@ -24,6 +24,7 @@ def extra(p):
     p.add_argument("--encoders", help="comma separated subset of encoders")
     p.add_argument("--methods", help="comma separated subset of FL methods")
     p.add_argument("--rerun", action="store_true", help="re-run even if a result file exists")
+    p.add_argument("--tag", help="ablation tag appended to the result file name (use with config overrides)")
 
 
 def target_for(cfg, encoder: str, seed: int):
@@ -37,16 +38,21 @@ def target_for(cfg, encoder: str, seed: int):
 if __name__ == "__main__":
     cfg, device, log, args = setup("05_run_federated", __doc__, extra)
     encoders = csv_list(args.encoders, cfg.encoders.names)
-    methods = csv_list(args.methods, cfg.fl.methods)
     for seed in cfg.split.seeds:
         data = load_experiment_data(cfg, seed, device)
         for enc in encoders:
             target = target_for(cfg, enc, seed)
+            # An encoder may restrict its methods (the MLP baseline: from-scratch methods only).
+            restricted = cfg.encoders.get(enc, {}).get("methods")
+            methods = csv_list(args.methods, restricted or cfg.fl.methods)
+            if restricted:
+                methods = [m for m in methods if m in restricted]
             for method in methods:
-                out = Path(cfg.paths.results_dir) / cfg.profile / "federated" / f"{enc}__{method}__seed{seed}.json"
+                tag = f"__{args.tag}" if args.tag else ""
+                out = Path(cfg.paths.results_dir) / cfg.profile / "federated" / f"{enc}__{method}{tag}__seed{seed}.json"
                 if out.exists() and not args.rerun:
                     log.info(f"skip {out.name} (exists)")
                     continue
-                FederatedRun(cfg, data, enc, method, seed, device, target_f1=target).run()
+                FederatedRun(cfg, data, enc, method, seed, device, target_f1=target, tag=args.tag).run()
                 torch.cuda.empty_cache()
         del data

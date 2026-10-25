@@ -13,7 +13,8 @@ Architecture ("base_v1" config):
     output     (B, 120, 72) -> mean over time -> z in R^72
 
 LoRA targets (PDF default): the query and value projections.  Because the four
-layers share weights, the LoRA factors are shared as well.
+layers share weights, the LoRA factors are shared as well.  lora_scope="all" wraps every
+linear layer of the block instead (q, k, v, output projection and both FFN layers).
 
 Capture-24 only has an accelerometer, so the input adapter (component 2) maps the
 3 acc channels into the 6-channel input (acc -> acc identity, gyro rows start at 0).
@@ -21,6 +22,8 @@ Capture-24 only has an accelerometer, so the input adapter (component 2) maps th
 Window length: the official model sees 120 samples (6 s).  With `seq_len=200` it
 sees the whole 10-s window; the 120 pretrained position embeddings are linearly
 interpolated to 200 positions (the usual way to extend a Transformer's input).
+With a shorter window (HARBox: 2 s = 40 samples) the first 40 position embeddings
+are used unchanged.
 """
 
 from __future__ import annotations
@@ -31,7 +34,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .base import BaseEncoder, InputSpec
+from .base import ACC, GYRO, BaseEncoder, InputSpec
 
 
 def gelu(x: torch.Tensor) -> torch.Tensor:
@@ -122,9 +125,11 @@ class LimuBertEncoder(BaseEncoder):
     architecture = "Transformer, 4 shared layers, d=72, 4 heads"
     pretrained_source = "Official LIMU-BERT weights pretrained on HHAR (phones + smartwatches)"
     spec = InputSpec(rate_hz=20, n_samples=120, n_channels=6, acc_unit="g")   # pretraining format
+    input_channels = ACC + GYRO
 
-    def __init__(self, seq_len: int = 120):
+    def __init__(self, seq_len: int = 120, lora_scope: str = "qv"):
         super().__init__()
+        self.lora_scope = lora_scope
         self.spec = InputSpec(rate_hz=20, n_samples=seq_len, n_channels=6, acc_unit="g")
         self.transformer = Transformer(seq_len=seq_len)
         self.feat_dim = 72
@@ -134,6 +139,9 @@ class LimuBertEncoder(BaseEncoder):
         return h.mean(dim=1)                                 # temporal average -> (B, 72)
 
     def lora_targets(self) -> list[str]:
+        if self.lora_scope == "all":
+            return ["transformer.attn.proj_q", "transformer.attn.proj_k", "transformer.attn.proj_v",
+                    "transformer.proj", "transformer.pwff.fc1", "transformer.pwff.fc2"]
         return ["transformer.attn.proj_q", "transformer.attn.proj_v"]
 
     def load_pretrained(self, path: str) -> int:
@@ -144,7 +152,9 @@ class LimuBertEncoder(BaseEncoder):
         state = {k: v for k, v in state.items() if k.startswith("transformer.")}
         key = "transformer.embed.pos_embed.weight"
         n_pos = self.transformer.embed.pos_embed.weight.shape[0]
-        if key in state and state[key].shape[0] != n_pos:     # 120 -> e.g. 200 positions
+        if key in state and state[key].shape[0] > n_pos:      # shorter window (HARBox: 2 s = 40 samples):
+            state[key] = state[key][:n_pos].clone()           # the first positions are exactly those times
+        elif key in state and state[key].shape[0] < n_pos:    # longer window, e.g. 120 -> 200 positions
             pe = state[key].T.unsqueeze(0)                      # (1, 72, 120)
             state[key] = F.interpolate(pe, size=n_pos, mode="linear", align_corners=True)[0].T.contiguous()
         return self._load_matching(state)

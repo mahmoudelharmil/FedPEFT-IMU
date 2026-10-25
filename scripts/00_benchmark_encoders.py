@@ -21,16 +21,17 @@ import torch.nn.functional as F
 from _common import setup
 
 from fedpeft.config import encoder_config
+from fedpeft.data.store import load_data_spec
 from fedpeft.models.client_model import ClientModel
-from fedpeft.models.encoders import ENCODERS, build_encoder
+from fedpeft.models.encoders import build_encoder
 from fedpeft.training.engine import autocast, make_scaler
-from fedpeft.utils import save_json
+from fedpeft.utils import load_json, save_json
 
 
-def measure(model, params, device, batch, steps, amp, train=True):
+def measure(model, params, device, batch, steps, amp, train=True, shape=(3, 300), n_classes=6):
     """Windows per second and peak MB for `steps` iterations."""
-    x = torch.randn(batch, 3, 300, device=device).half()
-    y = torch.randint(0, 6, (batch,), device=device)
+    x = torch.randn(batch, *shape, device=device).half()   # one stored window of the dataset
+    y = torch.randint(0, n_classes, (batch,), device=device)
     opt = torch.optim.AdamW(params, lr=1e-4) if train else None
     scaler = make_scaler(device, amp)
     torch.cuda.synchronize()
@@ -59,18 +60,22 @@ def measure(model, params, device, batch, steps, amp, train=True):
 if __name__ == "__main__":
     cfg, device, log, _ = setup("00_benchmark_encoders", __doc__)
     out = {}
-    for name in ENCODERS:
+    data = load_data_spec(cfg.paths.processed_dir)
+    shape = (data.n_channels, data.n_samples)
+    for name in cfg.encoders.names:
         ecfg = encoder_config(cfg, name)
         batch = ecfg.fl.batch_size          # the batch size this encoder really trains with
-        enc = build_encoder(name, cfg, pretrained=False)
-        model = ClientModel(enc, 6, cfg.model.embed_dim).to(device)
+        enc = build_encoder(name, cfg, pretrained=False, data=data)
+        fit = cfg.encoders.get(name, {}).get("fit", "crop")
+        n_classes = len(load_json(Path(cfg.paths.processed_dir) / "meta.json")["schemes"][cfg.data.label_scheme])
+        model = ClientModel(enc, n_classes, cfg.model.embed_dim, data, fit).to(device)
         total = sum(p.numel() for p in enc.parameters())
         full_params = model.set_trainable({"encoder", "norm", "adapter", "shared_head", "head"})
-        full_tp, full_mem = measure(model, full_params, device, batch, 10, cfg.runtime.amp)
-        inf_tp, _ = measure(model, full_params, device, 4 * batch, 10, cfg.runtime.amp, train=False)
+        full_tp, full_mem = measure(model, full_params, device, batch, 10, cfg.runtime.amp, shape=shape, n_classes=n_classes)
+        inf_tp, _ = measure(model, full_params, device, 4 * batch, 10, cfg.runtime.amp, train=False, shape=shape, n_classes=n_classes)
         model.add_lora(8, 2.0, 0.0)
         lora_params = model.set_trainable({"lora", "shared_head", "head"})
-        lora_tp, lora_mem = measure(model, lora_params, device, batch, 10, cfg.runtime.amp)
+        lora_tp, lora_mem = measure(model, lora_params, device, batch, 10, cfg.runtime.amp, shape=shape, n_classes=n_classes)
         counts = model.count_by_role()
         out[name] = {
             "display_name": enc.display_name, "architecture": enc.architecture,

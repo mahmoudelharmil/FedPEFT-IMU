@@ -50,7 +50,9 @@ def train_local(model: nn.Module, X: torch.Tensor, y: torch.Tensor, idx: torch.T
                 generator: torch.Generator | None = None,
                 optimizer: torch.optim.Optimizer | None = None,
                 scaler: torch.amp.GradScaler | None = None,
-                logit_adj: torch.Tensor | None = None) -> dict:
+                logit_adj: torch.Tensor | None = None,
+                augment=None, global_head_weight: float = 0.0,
+                global_adj: torch.Tensor | None = None) -> dict:
     """Train `params` of `model` on windows X[idx], y[idx].
 
     A fresh AdamW optimiser is created unless one is passed in (the centralized
@@ -61,6 +63,11 @@ def train_local(model: nn.Module, X: torch.Tensor, y: torch.Tensor, idx: torch.T
     `logit_adj` (a vector tau * log(prior), see imbalance.py) is added to the logits
     inside the loss only - the "balanced softmax" that stops rare or locally absent
     classes from being pushed down.
+
+    `augment` (optional, see augment.py) transforms every training batch first.
+
+    `global_head_weight` > 0 adds  w * CE(ghead(e) + global_adj, y)  for models with a global head
+    (dual-head V5); `global_adj` is the client's balanced-softmax adjustment for that SHARED head.
 
     Returns a dict with the mean loss, number of steps / samples, wall-clock time
     and the peak GPU memory used by training (activations + gradients + optimiser).
@@ -88,6 +95,8 @@ def train_local(model: nn.Module, X: torch.Tensor, y: torch.Tensor, idx: torch.T
             if len(b) < 2:          # BatchNorm needs at least 2 samples
                 continue
             xb, yb = X[b], y[b]
+            if augment is not None:
+                xb = augment(xb)
             with autocast(device, amp):
                 logits, emb = model(xb, return_embedding=True)
                 logits = logits.float()
@@ -96,6 +105,11 @@ def train_local(model: nn.Module, X: torch.Tensor, y: torch.Tensor, idx: torch.T
                 loss = F.cross_entropy(logits, yb)
                 if proto_weight > 0 and protos is not None:
                     loss = loss + proto_weight * prototype_loss(emb, yb, protos, proto_present)
+                if global_head_weight > 0 and getattr(model, "ghead", None) is not None:
+                    g = model.global_logits(emb).float()
+                    if global_adj is not None:
+                        g = g + global_adj
+                    loss = loss + global_head_weight * F.cross_entropy(g, yb)
             if prox_mu > 0 and prox_ref:   # FedProx-style proximal term (optional ablation)
                 prox = sum(((named[k] - v) ** 2).sum() for k, v in prox_ref.items() if k in named)
                 loss = loss + 0.5 * prox_mu * prox

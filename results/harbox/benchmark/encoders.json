@@ -1,0 +1,162 @@
+{
+  "limu_bert": {
+    "display_name": "LIMU-BERT",
+    "architecture": "Transformer, 4 shared layers, d=72, 4 heads",
+    "pretrained_source": "Official LIMU-BERT weights pretrained on HHAR (phones + smartwatches)",
+    "input": {
+      "rate_hz": 20,
+      "n_samples": 40,
+      "n_channels": 6,
+      "seconds": 2.0,
+      "unit": "g"
+    },
+    "feat_dim": 72,
+    "encoder_params": 45792,
+    "lora_params_r8": 2304,
+    "lora_layers": 2,
+    "param_counts_r8": {
+      "encoder": 45360,
+      "lora": 2304,
+      "norm": 432,
+      "norm_stats": 0,
+      "adapter": 60,
+      "shared_head": 4816,
+      "head": 325,
+      "const": 0
+    },
+    "train_full_win_per_s": 1487.6182516498072,
+    "train_full_peak_mb": 88.551936,
+    "train_lora_win_per_s": 1412.100910290546,
+    "train_lora_peak_mb": 71.34464,
+    "inference_win_per_s": 23412.264368399727,
+    "batch_size": 64
+  },
+  "ssl_wearables": {
+    "display_name": "ssl-wearables",
+    "architecture": "ResNet-V2 1-D (harnet10), 5 stages, 64-1024 channels",
+    "pretrained_source": "Official Oxford harnet10 weights, self-supervised on UK-Biobank wrist data",
+    "input": {
+      "rate_hz": 30,
+      "n_samples": 300,
+      "n_channels": 3,
+      "seconds": 10.0,
+      "unit": "g"
+    },
+    "feat_dim": 1024,
+    "encoder_params": 10457408,
+    "lora_params_r8": 238712,
+    "lora_layers": 21,
+    "param_counts_r8": {
+      "encoder": 10445760,
+      "lora": 238712,
+      "norm": 11648,
+      "norm_stats": 11648,
+      "adapter": 30,
+      "shared_head": 67648,
+      "head": 325,
+      "const": 12800
+    },
+    "train_full_win_per_s": 715.8507591317466,
+    "train_full_peak_mb": 444.583424,
+    "train_lora_win_per_s": 708.9674299076836,
+    "train_lora_peak_mb": 413.397504,
+    "inference_win_per_s": 3379.3827025121877,
+    "batch_size": 64
+  },
+  "unimts": {
+    "display_name": "UniMTS",
+    "architecture": "ST-GCN, 10 graph blocks over a 22-joint skeleton, 64-512 channels",
+    "pretrained_source": "Official UniMTS weights (motion-capture-synthesised IMU aligned with text)",
+    "input": {
+      "rate_hz": 20,
+      "n_samples": 40,
+      "n_channels": 3,
+      "seconds": 2.0,
+      "unit": "m/s2"
+    },
+    "feat_dim": 512,
+    "encoder_params": 5179900,
+    "lora_params_r8": 182296,
+    "lora_layers": 20,
+    "param_counts_r8": {
+      "encoder": 5171320,
+      "lora": 182296,
+      "norm": 8580,
+      "norm_stats": 8580,
+      "adapter": 30,
+      "shared_head": 33856,
+      "head": 325,
+      "const": 1452
+    },
+    "train_full_win_per_s": 178.00744199050678,
+    "train_full_peak_mb": 1671.501312,
+    "train_lora_win_per_s": 186.419811882292,
+    "train_lora_peak_mb": 1096.428032,
+    "inference_win_per_s": 567.1398296581519,
+    "batch_size": 64
+  },
+  "halo": {
+    "display_name": "HALO",
+    "architecture": "Patch-channel Transformer, 8 alternating temporal/channel layers, d=192",
+    "pretrained_source": "Our re-implementation, self-supervised (MAE + patch contrastive) on the pool users",
+    "input": {
+      "rate_hz": 50.0,
+      "n_samples": 100,
+      "n_channels": 9,
+      "seconds": 2.0,
+      "unit": "g"
+    },
+    "feat_dim": 256,
+    "encoder_params": 4609346,
+    "lora_params_r8": 55296,
+    "lora_layers": 18,
+    "param_counts_r8": {
+      "encoder": 4600130,
+      "lora": 55296,
+      "norm": 9216,
+      "norm_stats": 0,
+      "adapter": 90,
+      "shared_head": 16960,
+      "head": 325,
+      "const": 12288
+    },
+    "train_full_win_per_s": 537.5166010874799,
+    "train_full_peak_mb": 494.738432,
+    "train_lora_win_per_s": 684.7754829696875,
+    "train_lora_peak_mb": 326.201344,
+    "inference_win_per_s": 1994.0640762052333,
+    "batch_size": 64
+  },
+  "mlp": {
+    "display_name": "MLP",
+    "architecture": "Flatten + one fully connected layer (300 units), as in ClusterFL / FedCHAR",
+    "pretrained_source": "None (trained from scratch only)",
+    "input": {
+      "rate_hz": 50.0,
+      "n_samples": 100,
+      "n_channels": 9,
+      "seconds": 2.0,
+      "unit": "m/s2"
+    },
+    "feat_dim": 300,
+    "encoder_params": 270300,
+    "lora_params_r8": 9600,
+    "lora_layers": 1,
+    "param_counts_r8": {
+      "encoder": 270300,
+      "lora": 9600,
+      "norm": 0,
+      "norm_stats": 0,
+      "adapter": 90,
+      "shared_head": 19864,
+      "head": 325,
+      "const": 0
+    },
+    "train_full_win_per_s": 11739.88811128337,
+    "train_full_peak_mb": 24.613888,
+    "train_lora_win_per_s": 14134.93114999915,
+    "train_lora_peak_mb": 23.246848,
+    "inference_win_per_s": 230724.1656772947,
+    "batch_size": 64
+  }
+}

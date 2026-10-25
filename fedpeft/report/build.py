@@ -29,6 +29,9 @@ def _plotly_js() -> str:
     return get_plotlyjs().replace("\ufffd", "\\uFFFD")
 
 
+DATASET_NAMES = {"capture24": "Capture-24", "harbox": "HARBox", "wisdm": "WISDM"}
+
+
 def _clean(obj):
     """Replace NaN / inf by None so the page receives valid JSON."""
     if isinstance(obj, float):
@@ -51,12 +54,16 @@ def build_report(cfg) -> Path:
     # "</" must not appear inside an inline <script> block.
     data_json = json.dumps(data, separators=(",", ":"), allow_nan=False, default=str).replace("</", "<\\/")
     plotly_js = _plotly_js()
+    # Page name: the Capture-24 reports keep their original name; other datasets are named.
+    dataset = str(cfg.data.get("dataset", "capture24"))
+    page_title = ("FedPEFT-IMU Results" if dataset == "capture24"
+                  else f"FedPEFT-IMU {DATASET_NAMES.get(dataset, dataset)} Results")
     # 1) Stand-alone file: a complete HTML document you can open from disk or e-mail.
     out = reports_dir / f"FedPEFT-IMU_report_{cfg.profile}.html"
-    out.write_text(template.render(plotly_js=plotly_js, data_json=data_json, standalone=True), encoding="utf-8")
+    out.write_text(template.render(plotly_js=plotly_js, data_json=data_json, standalone=True, page_title=page_title), encoding="utf-8")
     # 2) Web version: page content only (a hosting page supplies <html>/<head>/<body>).
     web = reports_dir / "web" / f"FedPEFT-IMU_report_{cfg.profile}.html"
     web.parent.mkdir(parents=True, exist_ok=True)
-    web.write_text(template.render(plotly_js=plotly_js, data_json=data_json, standalone=False), encoding="utf-8")
+    web.write_text(template.render(plotly_js=plotly_js, data_json=data_json, standalone=False, page_title=page_title), encoding="utf-8")
     log.info(f"report written to {out} ({out.stat().st_size / 1e6:.1f} MB); web version in {web.parent}")
     return out

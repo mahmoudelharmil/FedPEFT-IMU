@@ -1,0 +1,113 @@
+# =====================================================================
+#  WISDM-2019 dataset settings (merged right after default.yaml when
+#  data.dataset = wisdm; profiles may still override anything here).
+#
+#  WISDM Smartphone and Smartwatch Activity and Biometrics Dataset (Weiss, UCI #507,
+#  2019): 51 subjects, ~3 min per activity, smartwatch on the dominant wrist,
+#  accelerometer + gyroscope at 20 Hz.  We use the WATCH ("WISDM-W") and the 12
+#  classes of the FedAIoT benchmark, 10-s windows with a 5-s hop.  Prepare it with
+#      python scripts/01_prepare_data.py --profile wisdm
+# =====================================================================
+
+paths:
+  processed_dir: data/processed_wisdm_watch   # one npz per subject (10-s windows, 6 channels, raw units)
+
+data:
+  dataset: wisdm
+  wisdm_device: watch                   # watch (WISDM-W) or phone (WISDM-P, set processed_dir accordingly)
+  label_scheme: WISDM                   # the 12 FedAIoT classes
+  raw_rate_hz: 20
+  base_rate_hz: 20
+  window_s: 10
+  subsample_every: 1                    # keep every window
+
+# Leakage-free protocol (our default), as for HARBox: every activity of a user is split
+# in time, 80 % train / 20 % test, with one window dropped in between (consecutive
+# windows share 5 s).
+split:
+  mode: per_class_chronological
+  gap_windows: 1
+  train_time_frac: 0.80
+  heldout_frac: 0.20                    # 10 new users (zero-/few-shot)
+  pool_frac: 0.10                       # 5 validation users (model selection, HALO SSL)
+  heldout_adapt_frac: 0.50              # per activity: first half = labels may be drawn, rest = test
+  fewshot_shots: [1, 5, 10]             # labelled 10-s windows per activity for few-shot adaptation
+  fewshot_steps: 60
+  transductive_report: true             # V5 runs also report the transductive zero-shot rule (heldout_transductive)
+
+# Every activity is recorded in its own ~3-min session: no transitions to decode.
+decoding:
+  hmm: false
+
+fl:
+  new_user_local_init: average          # V5: new users start from the clients' average norm/adapter
+
+# The watch is worn on the dominant wrist in any orientation: random rotations and gains,
+# the same augmentation as for HARBox.
+augment:
+  enabled: true
+  rotation_deg: 30
+  scale_std: 0.10
+  jitter_std: 0.0
+  p: 0.8
+
+encoders:
+  names: [limu_bert, ssl_wearables, unimts, halo, lstm]
+  limu_bert:
+    seq_len: 200                        # the whole 10-s window at LIMU-BERT's 20 Hz (interpolated positions)
+    lora_scope: all                     # LoRA on every linear layer of the shared block (HARBox placement result)
+  # Compute budgets (6 GB GTX 1660 Ti); all methods of an encoder share its budget.
+  ssl_wearables:
+    budget:                             # 10 s at 30 Hz is harnet10's native input
+      centralized: {epochs: 20, patience: 5}
+      fl: {rounds: 60, max_local_steps: 6}
+  unimts:
+    n_samples: 200                      # 10 s at 20 Hz: UniMTS's native input
+    budget:                             # 22-joint graph network on 200 frames: the slowest encoder
+      _replace: true
+      centralized: {epochs: 8, patience: 3, batch_size: 16, max_train_windows: 6000, max_val_windows: 1500}
+      fl: {rounds: 30, max_local_steps: 4, batch_size: 16, eval_every: 10}
+      split: {fewshot_steps: 30, fewshot_batch: 16}
+      runtime: {eval_batch_size: 32}    # 200 frames x 22 joints: larger batches page the 16 GB host
+  halo:
+    rate_hz: 20
+    n_samples: 200
+    patch_s: 1.0                        # 10 patches of 1 s per window
+    in_channels: all                    # accelerometer + gyroscope (HALO is channel-independent)
+    checkpoint: halo/wisdm_halo_ssl_seed{seed}.pt
+    budget:
+      centralized: {epochs: 20, patience: 5}
+      fl: {rounds: 60, max_local_steps: 6}
+  lstm:
+    hidden: 6                           # the FedAIoT model: LSTM(6 -> 6) over 200 steps, flattened
+    modes: [scratch]                    # no pretrained weights
+    methods: [fedavg_scratch, local_scratch, ditto_scratch]
+
+halo_ssl:
+  epochs: 60                            # only 5 pool users: more passes over their unlabelled windows
+  subsample_every: 1
+  batch_size: 128
+
+# ---------------------------------------------------------------------
+#  Report: published WISDM-W results and the profile that reproduces their
+#  protocol (configs/profiles/wisdm_fedaiot.yaml) for a like-for-like table.
+# ---------------------------------------------------------------------
+report:
+  dataset_description: "smartwatch accelerometer + gyroscope (20 Hz), 12 activities"
+  sota_profiles: [wisdm_fedaiot, wisdm_fedaiot05]   # the published protocol with alpha = 0.1 and 0.5
+  sota_metric: heldout_accuracy         # FedAIoT scores the global model on unseen test subjects
+  sota_tags: {loraall: "LoRA on all layers"}
+  published:
+    # FedAIoT (Alam et al., "FedAIoT: A Federated Learning Benchmark for Artificial Intelligence of
+    # Things", arXiv 2310.00109), Table 5, WISDM-W: accuracy (%) of an LSTM on 6 unseen test subjects;
+    # 45 training subjects split into 80 clients by a Dirichlet(alpha) label partition.
+    - {method: "Centralized", short: "Central", model: "LSTM", accuracy: 0.7405, accuracy_std_note: "+-2.47",
+       source: "FedAIoT, Tab. 5"}
+    - {method: "FedAvg (alpha = 0.1)", short: "FedAvg", model: "LSTM", accuracy: 0.6851, accuracy_std_note: "+-2.21",
+       source: "FedAIoT, Tab. 5"}
+    - {method: "FedOPT (alpha = 0.1)", short: "FedOPT", model: "LSTM", accuracy: 0.6576, accuracy_std_note: "+-2.42",
+       source: "FedAIoT, Tab. 5"}
+    - {method: "FedAvg (alpha = 0.5)", short: "FedAvg", model: "LSTM", accuracy: 0.7003, accuracy_std_note: "+-0.13",
+       source: "FedAIoT, Tab. 5"}
+    - {method: "FedOPT (alpha = 0.5)", short: "FedOPT", model: "LSTM", accuracy: 0.7150, accuracy_std_note: "+-1.52",
+       source: "FedAIoT, Tab. 5"}

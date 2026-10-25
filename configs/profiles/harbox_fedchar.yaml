@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------
+#  HARBOX_FEDCHAR profile - the evaluation protocol (A) of the published HARBox
+#  results, so that our numbers can be compared with them directly:
+#    FedCHAR (Li et al., IMWUT 2023, Sec. 6.2): every user draws 50-500 random
+#    windows and splits them at random 72 / 8 / 20 % (train / validation / test);
+#    100 rounds, half of the users per round, 5 local epochs, batch 32;
+#    metric = mean test ACCURACY over users.
+#  All 120 users are clients (no held-out or pool users); the 8 % validation
+#  windows of the clients are used for model selection.
+#  NOTE: HARBox windows overlap by 50 %, so a random split places neighbours of
+#  most test windows in the training set (see profile "harbox" for the
+#  leakage-free protocol).
+#      python run_all.py --profile harbox_fedchar --from 4
+# ---------------------------------------------------------------------
+data:
+  dataset: harbox
+split:
+  seeds: [0]
+  mode: random
+  gap_windows: 0
+  heldout_frac: 0.0
+  pool_frac: 0.0
+  random_windows_per_user: [50, 500]
+  random_fracs: [0.72, 0.08, 0.20]
+centralized:
+  epochs: 25
+  patience: 5
+  batch_size: 128
+fl:
+  rounds: 100                      # FedCHAR: 100 rounds
+  clients_per_round_frac: 0.50     # FedCHAR: half of the users per round
+  local_epochs: 2                  # our methods: the same update size as in profile "harbox"
+  max_local_steps: 8
+  batch_size: 64
+  eval_every: 10
+  local_ft_steps: 20
+  final_personalization_steps: 20
+encoders:
+  mlp:
+    budget:                        # the reproduced baselines keep FedCHAR's local training
+      _replace: true
+      fl: {local_epochs: 5, max_local_steps: 100, batch_size: 32}
+ablation:
+  encoder: limu_bert
+report:
+  compare_profiles: []
+  stage_labels: {}

@@ -28,7 +28,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from ..data.store import WindowStore
-from ..models.encoders import checkpoint_path
+from ..models.components import Preprocessor
+from ..models.encoders import build_encoder, checkpoint_path
 from ..models.encoders.halo import HaloEncoder
 from ..utils import get_logger, save_json, seed_everything
 from .engine import autocast, make_scaler
@@ -87,7 +88,11 @@ def pretrain_halo(cfg, split: dict, seed: int, device: torch.device) -> dict:
     seed_everything(seed)
     h = cfg.halo_ssl
     store = WindowStore(cfg.paths.processed_dir, split["pool"], cfg.data.label_scheme, h.subsample_every, device)
-    encoder = HaloEncoder().to(device)
+    # The encoder is configured for the dataset (Capture-24: 3 acc axes at 30 Hz, 1-s
+    # patches; HARBox: 9 axes at 50 Hz, 0.4-s patches) and sees exactly what it will
+    # see later: the stored windows after the same unit conversion / resampling.
+    encoder = build_encoder("halo", cfg, pretrained=False, seed=seed, data=store.spec).to(device)
+    preprocess = Preprocessor(encoder.spec, store.spec, cfg.encoders.halo.get("fit", "crop")).to(device)
     model = HaloPretrainer(encoder).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=h.lr, weight_decay=1e-5)
     scaler = make_scaler(device, cfg.runtime.amp)
@@ -106,7 +111,7 @@ def pretrain_halo(cfg, split: dict, seed: int, device: torch.device) -> dict:
             lr = h.lr * 0.5 * (1 + math.cos(math.pi * step / total))       # cosine schedule
             for g in opt.param_groups:
                 g["lr"] = lr
-            x = store.X[order[i * h.batch_size:(i + 1) * h.batch_size]].float()
+            x = preprocess(store.X[order[i * h.batch_size:(i + 1) * h.batch_size]])
             with autocast(device, cfg.runtime.amp):
                 mae = model.mae_loss(x, h.mask_ratio)
                 con = model.contrastive_loss(augment(x), augment(x), h.temperature)

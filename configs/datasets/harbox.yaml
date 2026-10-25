@@ -1,0 +1,106 @@
+# =====================================================================
+#  HARBox dataset settings (merged right after default.yaml when
+#  data.dataset = harbox; profiles may still override anything here).
+#
+#  HARBox (Ouyang et al., MobiSys 2021): 121 users, 77 smartphone models,
+#  5 activities (call, hop, typing, walk, wave), 9-axis IMU at 50 Hz,
+#  2-s windows that overlap by 50 %.  Prepare it with
+#      python scripts/01_prepare_data.py --profile harbox
+# =====================================================================
+
+paths:
+  processed_dir: data/processed_harbox   # one npz per user (2-s windows, 9 channels, raw units)
+
+data:
+  dataset: harbox
+  label_scheme: HARBox                  # Call, Hop, Typing, Walk, Wave
+  raw_rate_hz: 50
+  base_rate_hz: 50
+  window_s: 2
+  subsample_every: 1                    # keep every window
+
+# Leakage-free protocol (our default): every activity of a user is split in time,
+# the first 80 % for training and the last 20 % for testing, with one window
+# dropped in between - consecutive windows share 1 s, so without the gap the
+# first test window would repeat half of the last training window.
+split:
+  mode: per_class_chronological
+  gap_windows: 1
+  train_time_frac: 0.80
+  heldout_frac: 0.20                    # 24 new users (zero-/few-shot)
+  pool_frac: 0.10                       # 12 validation users (model selection, HALO SSL)
+  heldout_adapt_frac: 0.50              # per activity: first half = labels may be drawn, rest = test
+  fewshot_shots: [1, 5, 10]             # labelled 2-s windows per activity for few-shot adaptation
+  fewshot_steps: 60
+
+# Every activity is recorded in its own session, so an HMM over a user's windows
+# would only learn "the label never changes" - temporal decoding is not used here.
+decoding:
+  hmm: false
+
+fl:
+  new_user_local_init: average          # V5: new users start from the clients' average norm/adapter
+
+# 77 phone models and free hand-held use: random grip rotations and gains.
+augment:
+  enabled: true
+  rotation_deg: 30
+  scale_std: 0.10
+  jitter_std: 0.0
+  p: 0.8
+
+encoders:
+  limu_bert:
+    seq_len: 40                         # 2 s at LIMU-BERT's 20 Hz (first 40 position embeddings)
+  # Compute budgets (6 GB GTX 1660 Ti): the large encoders are 5-15x slower per step than
+  # LIMU-BERT on HARBox, so they train fewer rounds / smaller updates.  All methods of an
+  # encoder share its budget and remain comparable with each other (the report says so).
+  ssl_wearables:
+    fit: tile                           # harnet10 needs 300 samples (10 s at 30 Hz): repeat the 2-s window
+    budget:
+      centralized: {epochs: 20, patience: 5}
+      fl: {rounds: 60, max_local_steps: 6}
+  unimts:
+    n_samples: 40                       # 2 s at 20 Hz
+    budget:                             # 22-joint graph network: ~15x slower per step than LIMU-BERT
+      _replace: true
+      centralized: {epochs: 15, patience: 4, batch_size: 64, max_train_windows: 8000}
+      fl: {rounds: 40, max_local_steps: 4}
+      split: {fewshot_steps: 30}
+      runtime: {eval_batch_size: 128}
+  halo:
+    rate_hz: 50
+    n_samples: 100
+    patch_s: 0.4                        # 5 patches of 0.4 s per 2-s window
+    in_channels: all                    # acc + gyro + mag (HALO is channel-independent)
+    checkpoint: halo/harbox_halo_ssl_seed{seed}.pt
+    budget:
+      centralized: {epochs: 20, patience: 5}
+      fl: {rounds: 60, max_local_steps: 6}
+  names: [limu_bert, ssl_wearables, unimts, halo, mlp]
+  mlp:
+    hidden: 300                         # the FedCHAR / ClusterFL model: 900 -> 300 -> classes
+    modes: [scratch]                    # no pretrained weights
+    methods: [fedavg_scratch, local_scratch, ditto_scratch]   # the baselines of the published results
+
+halo_ssl:
+  epochs: 40                            # the pool users are few (12), so more passes
+  subsample_every: 1
+  batch_size: 128
+
+# ---------------------------------------------------------------------
+#  Report: published HARBox results and the profile that reproduces their
+#  protocol (configs/profiles/harbox_fedchar.yaml) for a like-for-like table.
+# ---------------------------------------------------------------------
+report:
+  dataset_description: "crowd-sourced smartphone IMU, 9 axes, 77 phone models"
+  sota_profile: harbox_fedchar
+  sota_tags: {loraall: "LoRA on all layers"}   # tagged runs of that profile shown in the table
+  published:
+    # FedCHAR (Li, Wang, An; Proc. ACM IMWUT 7(1), 2023), Table 4, benign column, HARBox:
+    # mean per-user test accuracy, MLP with one hidden layer of 300 units,
+    # 50-500 random windows per user split 72/8/20 % at random.
+    - {method: "FedAvg", short: "FedAvg", model: "MLP (300)", accuracy: 0.694, accuracy_std_note: "var .0335",
+       source: "FedCHAR, IMWUT 2023, Tab. 4"}
+    - {method: "FedCHAR (hierarchical clustering + Ditto)", short: "FedCHAR", model: "MLP (300)", accuracy: 0.917,
+       accuracy_std_note: "var .0076", source: "FedCHAR, IMWUT 2023, Tab. 4"}

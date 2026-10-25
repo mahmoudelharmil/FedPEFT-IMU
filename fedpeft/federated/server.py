@@ -29,8 +29,10 @@ class Server:
         # Dense federated tensors (LoRA factors are handled separately).
         self.dense_keys = [k for k, r in roles.items() if r in method.federated and r != "lora"]
         # The shared classifier's class rows are averaged class-wise (see aggregation.py).
-        self.class_row_keys = ([k for k in self.dense_keys if k.startswith("head.fc.")]
-                               if classwise_head and "head" in method.federated else [])
+        self.class_row_keys = ([k for k in self.dense_keys
+                                if (k.startswith("head.fc.") and "head" in method.federated)
+                                or (k.startswith("ghead.fc.") and "global_head" in method.federated)]
+                               if classwise_head else [])
         self.dense = {k: state[k].detach().clone() for k in self.dense_keys}
         # LoRA: global factors and the (residual-updated) frozen base weights.
         self.lora_names = list(model.lora_layers)

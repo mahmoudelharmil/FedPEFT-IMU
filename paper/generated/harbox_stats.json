@@ -1,0 +1,73 @@
+{
+  "users": 120,
+  "windows": 34115,
+  "classes": [
+    "Call",
+    "Hop",
+    "Typing",
+    "Walk",
+    "Wave"
+  ],
+  "class_windows": [
+    6514,
+    6857,
+    6453,
+    8089,
+    6202
+  ],
+  "class_pct": [
+    19.094240070350285,
+    20.09966290488055,
+    18.915433093946945,
+    23.710977575846403,
+    18.179686354975818
+  ],
+  "users_with_class": [
+    117,
+    119,
+    118,
+    120,
+    117
+  ],
+  "windows_per_user": {
+    "min": 115,
+    "median": 230.0,
+    "max": 1054,
+    "mean": 284.2916666666667,
+    "cv": 0.5306195656441473
+  },
+  "windows_per_user_class_median": 46.0,
+  "minutes_per_user_class_median": 0.7666666666666667,
+  "classes_per_user_hist": {
+    "3": 1,
+    "4": 7,
+    "5": 112
+  },
+  "sessions_per_user_median": 5.0,
+  "signal_hours": 9.47638888888889,
+  "jsd_user_global": 0.013637811695387355,
+  "protocol_b": {
+    "clients": 84,
+    "heldout": 24,
+    "pool": 12,
+    "train": 19408,
+    "val": 0,
+    "test": 4614,
+    "heldout_windows": 6740,
+    "pool_windows": 2822
+  },
+  "protocol_a": {
+    "clients": 120,
+    "heldout": 0,
+    "pool": 0,
+    "train": 16637,
+    "val": 1848,
+    "test": 4624,
+    "heldout_windows": 0,
+    "pool_windows": 0
+  },
+  "leakage_pct": {
+    "protocol_a": 79.69290657439446,
+    "protocol_b": 0.0
+  }
+}
