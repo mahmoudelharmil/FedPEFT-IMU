@@ -28,19 +28,19 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
 | WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete except UniMTS; protocol A (published FedAIoT protocol) partly done | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
-| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | data prepared, all runs queued | `reports/FedPEFT-IMU_report_ucihar.html` (after the runs) |
+| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol queued | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
 The online reports are private links; share them from the page's Share menu.
 
 **Running now** (`scripts/tools/queues/all_final.cmd`, one job at a time; progress in
 `logs/ucihar/queue.out` and `logs/wisdm/final.out`; finished runs are skipped, so the queue can be
-restarted at any time):
-1. UCI HAR, our protocol B: HALO pretraining, centralized references, all federated methods;
-2. UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0);
-3. WISDM, the published protocol (FedAIoT, 400 rounds), draw 0 first, then two more draws of the
+restarted at any time). Every FedAvg / V0–V5 grid is completed first:
+1. ~~UCI HAR, our protocol B, all encoders~~ (done);
+2. WISDM, our protocol B: UniMTS (the last missing V0–V5 grid; slowest encoder, 10-s windows);
+3. UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0);
+4. WISDM, the published protocol (FedAIoT, 400 rounds), draw 0 first, then two more draws of the
    test subjects;
-4. two more user splits of UCI HAR;
-5. UniMTS (slowest encoder): UCI HAR, then WISDM.
+5. two more user splits of UCI HAR.
 
 When it finishes: `python scripts/07_build_report.py --profile ucihar` (and `--profile wisdm`)
 rebuilds the reports (the online versions are then republished).
@@ -256,8 +256,31 @@ next window, a new recording starts, which the per-activity time split and the o
 Encoders: LIMU-BERT (20 Hz, 51 samples, LoRA on all layers), ssl-wearables (30 Hz, window tiled to
 10 s), UniMTS (20 Hz, 51 samples), HALO (50 Hz, 128 samples, 0.32-s patches, pretrained on the pool
 users) and, for the published baseline, a Conv-GRU model in the style of FedMultimodal (per-sensor
-convolutions + GRU(128), trained from scratch with FedAvg, Local and Ditto). Results will be added
-here when the queue has run.
+convolutions + GRU(128), trained from scratch with FedAvg, Local and Ditto).
+
+**HALO learning rate.** From scratch at the default 1e-3, HALO's training loss on UCI HAR only
+oscillated (1.10–1.26) and the validation F1 stayed at chance level, so on this dataset HALO trains
+from scratch with 3e-4 (its fine-tuning rate): centralized macro-F1 0.285 → 0.957. The choice was made
+on the training curve and validation users, not on test data.
+
+**Results** (protocol B, user split 0, mean user accuracy; shared classifiers after +FT):
+
+| Method | LIMU-BERT | ssl-wearables | UniMTS | HALO | Conv-GRU |
+|---|---|---|---|---|---|
+| FedAvg (scratch) | 0.834 | 0.909 | 0.860 | 0.552 | 0.888 |
+| Local training | – | – | – | – | 0.909 |
+| Ditto | – | – | – | – | 0.911 |
+| V0 full fine-tuning | 0.872 | 0.916 | 0.889 | 0.674 | – |
+| Ditto (pretrained) | 0.898 | – | – | – | – |
+| V3 LoRA exact | 0.865 | 0.889 | 0.890 | 0.742 | – |
+| **V5 FedPEFT-IMU** | **0.924** | **0.949** | **0.912** | **0.847** | – |
+| Centralized, pretrained (not private) | 0.871 | 0.894 | 0.889 | 0.964 | – |
+| V5 uplink saving vs V0 | 6× | 56× | 40× | 102× | |
+| Worst-10 % accuracy, V0 → V5 | 0.67 → 0.80 | 0.68 → 0.86 | 0.64 → 0.80 | 0.50 → 0.74 | |
+
+V5 is the best federated method on every encoder and beats Ditto on the pretrained LIMU-BERT
+(0.924 vs 0.898) with 5.6× less uplink. HALO is the exception to "federated ≥ centralized": its
+centralized pretrained model (0.964) stays well ahead of every federated HALO run.
 
 ## Client participation and device tiers
 

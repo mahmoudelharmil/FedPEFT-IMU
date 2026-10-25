@@ -70,9 +70,9 @@ encoders:
     patch_s: 0.32                       # 8 patches of 0.32 s (16 samples) per window
     in_channels: all                    # accelerometer + gyroscope
     checkpoint: halo/ucihar_halo_ssl_seed{seed}.pt
-    budget:
-      centralized: {epochs: 20, patience: 5}
-      fl: {rounds: 60, max_local_steps: 6}
+    budget:                             # few windows: from scratch at lr 1e-3 the training loss of HALO only
+      centralized: {epochs: 40, patience: 12, lr_scratch: 3.0e-4}   # oscillated (1.10-1.26, val-F1 <= 0.28);
+      fl: {rounds: 60, max_local_steps: 6, lr_scratch: 3.0e-4}       # 3e-4 = the fine-tuning rate
   convgru:
     hidden: 128                         # the FedMultimodal-style model: per-sensor conv + GRU(128)
     modes: [scratch]
