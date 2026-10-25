@@ -288,6 +288,29 @@ def test_wisdm_mixed_rates_and_repeated_rows_are_resampled_to_20hz():
     assert np.allclose(out["X"][0, 0].astype(np.float32), np.sin(t), atol=2e-2)   # interpolated, not stretched
 
 
+def test_ucihar_recordings_follow_the_window_overlap():
+    import numpy as np
+    from fedpeft.data.ucihar import subject_arrays
+    signal = np.arange(64 * 6, dtype=np.float32)                   # one continuous recording, 6 hops
+    win = lambda s0: np.tile(signal[s0:s0 + 128], (6, 1))          # (6 channels, 128 samples)
+    X = np.stack([win(0), win(64), win(128), win(0), win(64)])     # 3 continuous windows, then a restart
+    y = np.array([0, 0, 0, 0, 1])                                  # ...and a new activity at the end
+    out = subject_arrays(X, y)
+    assert out["seg"].tolist() == [0, 0, 0, 1, 2]
+    assert np.diff(out["t"]).tolist() == [1280, 1280, 60_000, 60_000]
+
+
+def test_dirichlet_partition_per_subject_keeps_small_clients_testable():
+    import numpy as np
+    from fedpeft.data.store import dirichlet_partition
+    y = np.repeat(np.arange(6), 55)                                 # one UCI HAR subject (~330 windows)
+    parts = dirichlet_partition(y, 5, 0.1, np.random.default_rng(3), min_size=5)
+    assert len(parts) == 5 and min(len(p) for p in parts) >= 5
+    for p in parts:                                                 # the split rule of mode dirichlet_per_user
+        n_va, n_te = max(1, round(0.1 * len(p))), max(1, round(0.1 * len(p)))
+        assert len(p) - n_va - n_te >= 3
+
+
 def test_transductive_refinement_moves_prototypes_to_the_user():
     from fedpeft.training.heldout import refine_prototypes
     torch.manual_seed(0)

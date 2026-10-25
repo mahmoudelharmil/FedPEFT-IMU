@@ -4,7 +4,7 @@
 
 This project implements, runs and measures the complete *Idea 1* research plan
 (`FedPEFT-IMU_Idea1_Complete.pdf`), first on the **Capture-24** dataset and then on
-**HARBox** (the paper's benchmark) and **WISDM-2019** (an HTML results report):
+**HARBox** (the paper's benchmark), **WISDM-2019** and **UCI HAR** (HTML results reports):
 
 1. **Phase 1: centralized proof of concept.** The four IMU encoders (LIMU-BERT,
    ssl-wearables, UniMTS, HALO) are trained **from scratch**, and also fine-tuned from
@@ -28,18 +28,22 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
 | WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete except UniMTS; protocol A (published FedAIoT protocol) partly done | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
+| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | data prepared, all runs queued | `reports/FedPEFT-IMU_report_ucihar.html` (after the runs) |
 
 The online reports are private links; share them from the page's Share menu.
 
-**Running now** (`scripts/tools/queues/wisdm_final.cmd`, one job at a time; progress in
-`logs/wisdm/final.out`, about 15 h in total):
-1. the last component ablations of V5 on WISDM (LoRA on W_q/W_v only, no augmentation, no prototypes);
-2. the published WISDM protocol (FedAIoT, 400 rounds) with LIMU-BERT, ssl-wearables and the LSTM,
-   on three random draws of the 6 test subjects (α = 0.1 and 0.5);
-3. UniMTS on WISDM (slowest encoder, last).
+**Running now** (`scripts/tools/queues/all_final.cmd`, one job at a time; progress in
+`logs/ucihar/queue.out` and `logs/wisdm/final.out`; finished runs are skipped, so the queue can be
+restarted at any time):
+1. UCI HAR, our protocol B: HALO pretraining, centralized references, all federated methods;
+2. UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0);
+3. WISDM, the published protocol (FedAIoT, 400 rounds), draw 0 first, then two more draws of the
+   test subjects;
+4. two more user splits of UCI HAR;
+5. UniMTS (slowest encoder): UCI HAR, then WISDM.
 
-When it finishes: `python scripts/07_build_report.py --profile wisdm` rebuilds the WISDM report
-(the online version is then republished).
+When it finishes: `python scripts/07_build_report.py --profile ucihar` (and `--profile wisdm`)
+rebuilds the reports (the online versions are then republished).
 
 **Paper** (`paper/`, IEEE format, HARBox only): methodology, dataset and results sections are
 written; the abstract, introduction, related work and conclusion are still placeholders.
@@ -219,6 +223,42 @@ data. Repeated rows are removed and both sensors are interpolated onto one 20-Hz
   reaches 0.761 against FedAIoT's best 0.715. The α = 0.1 runs and the extra test-subject draws are
   running. Our re-run of FedAIoT's LSTM (0.592 at α = 0.1 on one draw) is below their 0.685.
 
+## UCI HAR (fourth dataset, HTML report only)
+
+[UCI HAR](https://archive.ics.uci.edu/dataset/240/human+activity+recognition+using+smartphones)
+(Anguita et al., 2013): 30 subjects wore a smartphone on the waist and performed six activities
+(walking, upstairs, downstairs, sitting, standing, lying) twice in a fixed sequence. Accelerometer
+and gyroscope at 50 Hz, released as 2.56-s windows (128 samples) with 50 % overlap and an official
+split into 21 training and 9 test subjects. We use the accelerometer **with gravity**
+(`total_acc`, in g) and the gyroscope (rad/s): 10,299 windows, 281–409 per subject, classes balanced.
+The windows are stored in recording order; where a window's second half does not continue into the
+next window, a new recording starts, which the per-activity time split and the one-window gap use.
+
+```powershell
+.venv\Scripts\python scripts/01_prepare_data.py --profile ucihar            # download (~60 MB) + convert
+.venv\Scripts\python scripts/03_pretrain_halo.py --profile ucihar           # HALO SSL on the 3 pool users
+.venv\Scripts\python scripts/04_run_centralized.py --profile ucihar
+.venv\Scripts\python scripts/05_run_federated.py --profile ucihar           # leakage-free protocol (B)
+.venv\Scripts\python scripts/05_run_federated.py --profile ucihar_fedmm     # published protocol (A), alpha 0.1
+.venv\Scripts\python scripts/05_run_federated.py --profile ucihar_fedmm5    # published protocol (A), alpha 5.0
+.venv\Scripts\python scripts/07_build_report.py --profile ucihar            # the HTML report
+```
+
+| | Protocol A (`ucihar_fedmm`, `ucihar_fedmm5`) | Protocol B (`ucihar`, ours) |
+|---|---|---|
+| Purpose | comparison with FedMultimodal (KDD 2023) | all other results |
+| Clients | each of the 21 official training subjects split into 5 clients by a Dirichlet label partition (α = 0.1 or 5.0): 105 clients | 21 subjects = 21 clients |
+| New users | the 9 official test subjects (all their windows) | 6 held-out + 3 pool subjects |
+| Rounds, clients per round | 200 rounds, 10 % per round, batch 16, 1 local epoch (FedMultimodal) | 100 rounds, 20 % (4) per round |
+| Metric | macro-F1 of the global model on the test subjects | per-user accuracy, macro-F1, fairness, new users, bytes |
+| Published (F1) | FedAvg 0.775 / 0.788, FedOpt (attention fusion) 0.798 / 0.852 for α = 0.1 / 5.0 | – |
+
+Encoders: LIMU-BERT (20 Hz, 51 samples, LoRA on all layers), ssl-wearables (30 Hz, window tiled to
+10 s), UniMTS (20 Hz, 51 samples), HALO (50 Hz, 128 samples, 0.32-s patches, pretrained on the pool
+users) and, for the published baseline, a Conv-GRU model in the style of FedMultimodal (per-sensor
+convolutions + GRU(128), trained from scratch with FedAvg, Local and Ditto). Results will be added
+here when the queue has run.
+
 ## Client participation and device tiers
 
 This section explains which users become clients, how many clients train in each round and how
@@ -311,6 +351,69 @@ rank (8) for everybody.
   small capacity cost of low ranks can appear on harder, more imbalanced data.
 - **Limitation.** The tiers are simulated. Assigning them from real device capabilities (for
   example the memory of HARBox's phone models) would be a more realistic test and is left open.
+
+## How the uplink saving is calculated (e.g. ~40× for UniMTS)
+
+`scripts/tools/uplink_breakdown.py --profile harbox` rebuilds every number below from the
+parameter counts in the result files and checks it against the bytes measured during training
+(`fedpeft/federated/comm.py` adds up every tensor that leaves a device). Formula and measurement
+agree to the byte (the only extra bytes are the class counts and the sample count n_k).
+
+**What one client update contains** (every value is a 32-bit float = 4 bytes):
+
+- **V0 (full fine-tuning)** sends everything it trained: the encoder Ω, the normalisation layers
+  (incl. BatchNorm statistics), the input adapter, the shared head g and the classifier h.
+- **V5 (FedPEFT-IMU)** sends only the LoRA factors of its rank r, the shared head g and the class
+  prototypes (C classes × 64 values + C counts). The frozen encoder W₀ is never sent (every device
+  already has the same pretrained weights), and the norms, adapter and classifier stay on the device.
+
+**LoRA size.** A layer with input size d_in and output size d_out (for a convolution, d_in = input
+channels × kernel size) has d_in × d_out weights. LoRA replaces its update by B·A with
+A ∈ ℝ^{r×d_in} and B ∈ ℝ^{d_out×r}, i.e. r × (d_in + d_out) values. Example from UniMTS: the temporal
+convolution `st_gcn_networks.9.tcn.2` has 512 × 512 × 9 = **2,359,296** weights; at rank 8 its LoRA
+has 8 × (512·9) + 512 × 8 = 36,864 + 4,096 = **40,960** values (1.7 %). Over UniMTS's 20 adapted
+layers (4.98 M weights) LoRA at rank 8 has **182,296** values, and |LoRA_r| = (r/8) × 182,296.
+
+**Worked example: UniMTS on HARBox (37.6× ≈ 40×)**
+
+| | Values | × 4 bytes |
+|---|---|---|
+| V0: encoder 5,171,320 + norm 8,580 + BN statistics 8,580 + adapter 30 + g 33,856 + h 325 | 5,222,691 | **20.891 MB** |
+| V5, rank 8: LoRA 182,296 + g 33,856 + prototypes 325 | 216,477 | 0.866 MB (24.1× less) |
+| V5, rank 4: LoRA 91,148 + g 33,856 + prototypes 325 | 125,329 | 0.501 MB (41.7× less) |
+| V5, rank 2: LoRA 45,574 + g 33,856 + prototypes 325 | 79,755 | 0.319 MB (65.5× less) |
+
+V5 clients have rank 2, 4 or 8 (31 / 23 / 30 of the 84 clients). The average upload is therefore
+(31 × 0.319 + 23 × 0.501 + 30 × 0.866) / 84 = **0.564 MB** expected; weighted by how often each tier
+was actually drawn it is **0.555 MB**. Hence
+
+> **20.891 MB / 0.555 MB = 37.6×** less uplink per client update.
+
+Per round (17 clients) that is 355 MB for V0 against 9.4 MB for V5; over the 40 rounds, 14.2 GB
+against 0.38 GB.
+
+**All encoders** (HARBox, user split 0; WISDM gives the same picture):
+
+| Encoder | V0 per update | V5 rank 2 / 4 / 8 | Ratio rank 2 / 4 / 8 | V5 average (tier mix) | **Measured ratio** |
+|---|---|---|---|---|---|
+| HALO | 18.51 MB | 124 / 180 / 290 kB | 149 / 103 / 64× | 194 kB | **95×** |
+| ssl-wearables | 42.15 MB | 511 / 749 / 1,227 kB | 83 / 56 / 34× | 811 kB | **52×** |
+| UniMTS | 20.89 MB | 319 / 501 / 866 kB | 66 / 42 / 24× | 555 kB | **38×** |
+| LIMU-BERT | 204 kB | 23 / 25 / 30 kB | 8.9 / 8.1 / 6.8× | 26 kB | **8×** |
+
+**Why the ratio differs between encoders, and why ~40× is plausible.** The ratio is roughly
+(size of the encoder) / (LoRA + g + prototypes). LoRA adds only 1–4 % of the encoder's weights on
+the large encoders (HALO 1.2 %, ssl-wearables 2.3 %, UniMTS 3.5 %), so their ratio reaches 38–95×;
+the remaining upload is dominated by the shared head g (34–68 k values), which is the same for
+every rank. LIMU-BERT has only 45 k encoder weights, so g (4.8 k values) is already a tenth of the
+model and the saving stops at ~8× (~6× on WISDM with LoRA on all layers). A saving of one to two
+orders of magnitude is what one expects from sending rank-8 factors instead of the full weights
+of a multi-million-parameter network.
+
+**What it does not cover.** This is the **uplink**. Exact aggregation (V3–V5) changes the frozen
+weights, and our accounting charges the full dense residual at every download, so the downlink of
+V5 is close to that of V0 (UniMTS: 339 vs 355 MB per round); a factored encoding of the residual
+would be needed to save downlink as well.
 
 ## Capture-24 headline results (`enhanced` profile, seed 0)
 
@@ -436,38 +539,68 @@ config override as `key.sub=value` (for example `fl.rounds=100`).
 idea1/
 ├── configs/
 │   ├── default.yaml            every setting, commented (the single source of truth)
-│   └── profiles/               quick | standard | full  (deep-merged over default.yaml)
+│   ├── datasets/               per-dataset settings, merged right after default.yaml
+│   │   ├── harbox.yaml           2-s windows, 9 axes, encoder inputs, published FedCHAR numbers
+│   │   ├── wisdm.yaml            10-s smartwatch windows, 12 classes, published FedAIoT numbers
+│   │   └── ucihar.yaml           2.56-s waist-phone windows, 6 classes, published FedMultimodal numbers
+│   └── profiles/               one file per experiment, deep-merged last (CLI overrides win)
+│       ├── quick | baseline | standard | enhanced | full    Capture-24
+│       ├── harbox | harbox_quick | harbox_fedchar            HARBox: ours (B) / published protocol (A)
+│       ├── wisdm | wisdm_fedaiot | wisdm_fedaiot05           WISDM: ours (B) / FedAIoT, alpha 0.1 / 0.5 (A)
+│       └── ucihar | ucihar_fedmm | ucihar_fedmm5             UCI HAR: ours (B) / FedMultimodal, alpha 0.1 / 5.0 (A)
 ├── fedpeft/                    the Python package
-│   ├── config.py               YAML + profile + CLI overrides, per-encoder budgets
-│   ├── utils.py                seeding, timing, JSON, robust downloads
+│   ├── config.py               default -> dataset -> profile -> CLI, per-encoder budgets (_replace)
+│   ├── utils.py                seeding, timing, JSON, resumable downloads
 │   ├── data/
 │   │   ├── capture24.py        raw CSV -> 10-s windows (anti-aliased 100 -> 30 Hz)
-│   │   ├── splits.py           user split (clients / held-out / pool) + time split
-│   │   └── store.py            all windows on the GPU, index tensors per user/part
+│   │   ├── harbox.py           authors' archive -> 2-s windows, recording sessions
+│   │   ├── wisdm.py            UCI #507 -> watch acc+gyro on a 20-Hz grid (duplicates removed)
+│   │   ├── ucihar.py           UCI #240 -> total acc + gyro windows, official 21/9 subject split
+│   │   ├── splits.py           user split (clients / held-out / pool), saved per seed
+│   │   └── store.py            all windows on the GPU; time, per-activity, random and
+│   │                           Dirichlet (per dataset or per subject) client splits; few-shot budgets
 │   ├── models/
-│   │   ├── components.py       1 preprocessor · 2 input adapter · 6 shared head · 7 personal head · 8 prototypes
+│   │   ├── components.py       1 preprocessor (units, rate, crop/tile) · 2 input adapter (by channel name)
+│   │   │                       · 6 shared head · 7 personal head · 8 prototypes
 │   │   ├── lora.py             4 LoRA for Linear / Conv1d / Conv2d (+ merged inference)
 │   │   ├── client_model.py     the full 8-component model and the ROLE of every tensor
-│   │   └── encoders/           3 limu_bert · ssl_wearables · unimts · halo
+│   │   └── encoders/           3 pretrained: limu_bert · ssl_wearables · unimts · halo
+│   │                             published baselines (scratch only): mlp (HARBox) · lstm (WISDM)
+│   │                             · convgru (UCI HAR)
 │   ├── training/
-│   │   ├── engine.py           local training loop (CE + λ·L_proto), prediction, prototypes
-│   │   ├── metrics.py          macro-F1, accuracy, worst-10 %, std, confusion
-│   │   ├── heldout.py          zero-/few-shot evaluation of new users
+│   │   ├── engine.py           local training loop (CE + λ·L_proto, proximal term), prediction
+│   │   ├── augment.py          random 3-D rotations of every sensor triplet + gains
+│   │   ├── imbalance.py        balanced softmax, logit adjustment, class priors
+│   │   ├── decoding.py, hmm.py window decisions and HMM smoothing (Capture-24)
+│   │   ├── metrics.py          macro-F1, accuracy, per-user accuracy, worst-10 %, std, confusion
+│   │   ├── heldout.py          new users: zero-shot (AdaBN, prototypes, transductive), few-shot
 │   │   ├── centralized.py      phase 1 runner
-│   │   └── ssl_halo.py         HALO MAE + patch-contrastive pretraining
+│   │   └── ssl_halo.py         HALO MAE + patch-contrastive pretraining on the pool users
 │   ├── federated/
-│   │   ├── methods.py          FedAvg, V0-V5 as data: what is trained / sent / kept local
+│   │   ├── methods.py          FedAvg, Local, Ditto, V0-V5 (+ ablations) as data: trained / sent / kept
 │   │   ├── aggregation.py      FedAvg, LoRA naive / exact (FedEx) / exact-SVD, prototypes
-│   │   ├── server.py           global state + streaming aggregation
+│   │   ├── server.py           global state + streaming, class-wise head aggregation
 │   │   ├── comm.py             byte accounting of every message
-│   │   └── simulation.py       the FL round loop and all KPIs
-│   └── report/                 collect.py (KPIs) -> build.py -> template.html (Plotly)
-├── scripts/                    numbered entry points (see table above)
-│   └── tools/paper_dataset_stats.py   every dataset number / table / figure used in the paper
-├── paper/                      journal manuscript (IEEEtran): methodology + dataset sections,
-│                               TikZ architecture figures; build with python paper/build.py
-├── tests/test_core.py          LoRA and aggregation maths (python -m pytest tests)
-├── data/  weights/  results/  reports/  logs/     created by the pipeline
+│   │   └── simulation.py       the FL round loop: client sampling, rank tiers, personalisation,
+│   │                           all KPIs; saves the new-user model of every run
+│   └── report/                 collect.py (KPIs, published comparison, user splits) -> build.py
+│                               -> template.html (Plotly; standalone + web version)
+├── scripts/                    numbered entry points 00-07 (see the table above)
+│   └── tools/
+│       ├── reeval_heldout.py         re-run the new-user tests of a saved model (no re-training)
+│       ├── uplink_breakdown.py       rebuild every upload size from parameter counts (V0 vs V5)
+│       ├── paper_*_stats.py, paper_results_tables.py   numbers, tables and figures of the paper
+│       └── queues/                   .cmd run queues (one job at a time), e.g. all_final.cmd
+├── paper/                      IEEE manuscript (HARBox): methodology, dataset, results;
+│                               generated/ tables and macros; build with python paper/build.py
+├── tests/test_core.py          LoRA/aggregation maths, splits, loaders, augmentation (21 tests)
+├── data/
+│   ├── raw/                    downloaded archives (capture24, harbox, wisdm, ucihar)
+│   └── processed*/             one .npz per user + meta.json, per dataset
+├── weights/                    pretrained checkpoints (+ our HALO SSL checkpoints per dataset)
+├── results/<profile>/          centralized/ federated/ (one JSON per run) models/ logits/ splits/
+├── reports/                    FedPEFT-IMU_report_<profile>.html (+ web/ version, report_data_*.json)
+├── logs/<dataset>/             logs of the run queues
 └── run_all.py
 ```
 
@@ -570,6 +703,8 @@ tensor for tensor:
 | `harbox_fedchar` | HARBox, published protocol A (FedCHAR) | 50–500 random windows / user | 100 | 1 | a few hours |
 | `wisdm` | WISDM-2019 watch, leakage-free protocol B | all 10-s windows | 100 (ssl-wearables, HALO 60; UniMTS 30) | 1 (+2 for LIMU-BERT, LSTM) | ~1 day |
 | `wisdm_fedaiot`, `wisdm_fedaiot05` | WISDM-2019 watch, published protocol A (FedAIoT), α = 0.1 / 0.5 | all 10-s windows | 400 | 3 test-subject draws | ~10 h |
+| `ucihar` | UCI HAR, leakage-free protocol B | all 2.56-s windows | 100 (ssl-wearables, HALO 60; UniMTS 40) | 1 (+2 for LIMU-BERT, Conv-GRU) | ~6 h |
+| `ucihar_fedmm`, `ucihar_fedmm5` | UCI HAR, published protocol A (FedMultimodal), α = 0.1 / 5.0 | all 2.56-s windows | 200 | 1 (official test subjects) | ~3 h |
 
 ### Running faster on one GPU
 
