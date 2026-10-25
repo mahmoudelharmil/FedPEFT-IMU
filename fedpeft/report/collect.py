@@ -292,16 +292,52 @@ def collect_sota(cfg) -> dict | None:
             "protocols": protocols, "rows": rows, "metric": metric}
 
 
+def collect_splits(all_fed_runs: dict) -> list[dict]:
+    """Methods evaluated on several user splits (seeds): mean and standard deviation of the
+    enrolled-client and new-user metrics.  Shared classifiers are scored after local
+    fine-tuning (+FT), V5 new users with the transductive rule when it was stored."""
+    rows = []
+    for (enc, method, tag), runs in sorted(all_fed_runs.items()):
+        seeds = sorted({int(r.get("seed", 0)) for r in runs})
+        if len(seeds) < 2 or tag:
+            continue
+        scored = [r.get("final_ft") or r["final"] for r in runs]
+
+        def stats(vals):
+            vals = [v for v in vals if v is not None]
+            return (float(np.mean(vals)), float(np.std(vals, ddof=1)) if len(vals) > 1 else None) if vals else (None, None)
+
+        def held(r, key):
+            h = r.get("heldout_transductive") or r.get("heldout") or {}
+            return (h.get(key) or {}).get("mean_user_f1")
+        fs = [b["key"] for b in ((runs[0].get("heldout") or {}).get("protocol") or {}).get("fewshot", [])]
+        big = fs[-1] if fs else None
+        acc, f1, w10 = (stats([s.get(k) for s in scored]) for k in ("client_acc_mean", "macro_f1", "worst10_acc"))
+        zs, few = stats([held(r, "zero_shot") for r in runs]), stats([held(r, big) for r in runs]) if big else (None, None)
+        r0 = runs[0]
+        rows.append({"encoder": enc, "encoder_display": r0["encoder_display"], "method": method, "short": r0["method_short"],
+                     "label": r0["method_label"], "slot": r0["method_slot"], "n": len(seeds), "seeds": seeds,
+                     "acc": acc[0], "acc_std": acc[1], "f1": f1[0], "f1_std": f1[1], "w10": w10[0], "w10_std": w10[1],
+                     "zero": zs[0], "zero_std": zs[1], "few": few[0], "few_std": few[1],
+                     "few_label": next((b["label"] for b in r0["heldout"]["protocol"]["fewshot"] if b["key"] == big), None)
+                     if big else None,
+                     "transductive": any(r.get("heldout_transductive") for r in runs),
+                     "uplink_mb_client_round": r0["comm"]["uplink_mb_per_client_round"]})
+    return rows
+
+
 def collect(cfg) -> dict:
     base = Path(cfg.paths.results_dir) / cfg.profile
     meta = load_json(Path(cfg.paths.processed_dir) / "meta.json")
     class_names = meta["schemes"][cfg.data.label_scheme]
 
     # ------------------------------------------------------------ centralized
+    seeds = set(int(x) for x in cfg.split.seeds)          # the main grid uses the configured split(s)
     central_runs = defaultdict(list)
     for p in sorted((base / "centralized").glob("*.json")):
         r = load_json(p)
-        central_runs[(r["encoder"], r["mode"])].append(r)
+        if int(r.get("seed", 0)) in seeds:
+            central_runs[(r["encoder"], r["mode"])].append(r)
     centralized = []
     scratch_f1 = {}
     for (enc, mode), runs in sorted(central_runs.items()):
@@ -333,10 +369,12 @@ def collect(cfg) -> dict:
             scratch_f1[enc] = entry["macro_f1"]
 
     # ------------------------------------------------------------- federated
-    fed_runs = defaultdict(list)
+    fed_runs, all_fed_runs = defaultdict(list), defaultdict(list)
     for p in sorted((base / "federated").glob("*.json")):
         r = load_json(p)
-        fed_runs[(r["encoder"], r["method"], r.get("tag", ""))].append(r)
+        all_fed_runs[(r["encoder"], r["method"], r.get("tag", ""))].append(r)
+        if int(r.get("seed", 0)) in seeds:
+            fed_runs[(r["encoder"], r["method"], r.get("tag", ""))].append(r)
     federated, ablation, components = [], [], []
     v0_uplink = {}
     for (enc, method, tag), runs in fed_runs.items():
@@ -486,6 +524,7 @@ def collect(cfg) -> dict:
         "components": components,
         "baseline": collect_baseline(cfg),
         "sota": collect_sota(cfg),
+        "repeated_splits": collect_splits(all_fed_runs),
         "stages": collect_stages(cfg),
         "window_ablation": collect_window_ablation(cfg),
         "stage_label": cfg.get("report", {}).get("stage_labels", {}).get(cfg.profile, cfg.profile),

@@ -255,6 +255,7 @@
       <a href="#central">Phase 1 · Centralized</a>
       <a href="#federated">Phase 2 · Federated</a>
       <a href="#fairness">Fairness</a>
+      <a href="#splits" id="navSplits" hidden>User splits</a>
       <a href="#newusers">New users</a>
       <a href="#resources">Cost</a>
       <a href="#ablation">Ablations</a>
@@ -291,7 +292,7 @@
     <h2><span class="num">★</span>Comparison with published results</h2>
     <p class="section-lede" id="sotaLede"></p>
     <div class="grid">
-      <div class="card span-2"><div class="head"><h3>Mean per-user test accuracy, same protocol</h3><span class="tag" id="sotaTag"></span></div>
+      <div class="card span-2"><div class="head"><h3 id="sotaTitle">Mean per-user test accuracy, same protocol</h3><span class="tag" id="sotaTag"></span></div>
         <p class="desc" id="sotaDesc"></p>
         <div class="plot" id="c_sota" style="min-height:420px"></div><details class="data"><summary>Data table</summary><div class="tbl-wrap" id="t_sota_data"></div></details></div>
       <div class="card span-2"><div class="head"><h3>Leaderboard</h3><span class="tag">click a column to sort</span></div>
@@ -444,6 +445,19 @@
       <div class="card span-2"><div class="head"><h3>Weak and strong devices together</h3><span class="tag">V4 / V5 · rank tiers</span></div>
         <p class="desc">Mean client F1, training memory and uplink per device tier (LoRA rank 2 / 4 / 8). A good method serves low-tier devices without excluding them.</p>
         <div class="plot" id="c_tiers"></div><details class="data"><summary>Data table</summary><div class="tbl-wrap" id="t_tiers"></div></details></div>
+    </div>
+  </section>
+
+  <!-- ========================= REPEATED USER SPLITS ======================== -->
+  <section id="splits" hidden>
+    <h2><span class="num">4b</span>Robustness across user splits</h2>
+    <p class="section-lede" id="splitsLede"></p>
+    <div class="grid">
+      <div class="card span-2"><div class="head"><h3>Mean user accuracy over user splits</h3><span class="tag" id="splitsTag"></span></div>
+        <p class="desc">Bar: mean over the user splits; whisker: one standard deviation. Shared classifiers are scored after every client fine-tuned its classifier (+FT).</p>
+        <div class="plot" id="c_splits"></div></div>
+      <div class="card span-2"><div class="head"><h3>All metrics, mean ± std</h3><span class="tag">click a column to sort</span></div>
+        <div class="tbl-wrap" id="t_splits"></div></div>
     </div>
   </section>
 
@@ -1178,6 +1192,10 @@ function heldoutAll() {
     Object.fromEntries(mins.map((m) => ["m" + m, (c.heldout[m] || {}).mean_user_f1])))));
   D.federated.forEach((f) => rows.push(Object.assign({ enc: f.encoder_display, encoder: f.encoder, who: f.label, order: METHOD_ORDER.indexOf(f.method), slot: f.slot },
     Object.fromEntries(mins.map((m) => ["m" + m, (f.heldout[m] || {}).mean_user_f1])))));
+  // the same V5 model with the transductive zero-shot rule (prototypes refined on the user's unlabelled windows)
+  D.federated.filter((f) => f.heldout_transductive && !f.tag).forEach((f) => rows.push(Object.assign(
+    { enc: f.encoder_display, encoder: f.encoder, who: f.label + " · transductive", order: METHOD_ORDER.indexOf(f.method) + 0.5, slot: f.slot },
+    Object.fromEntries(mins.map((m) => ["m" + m, (f.heldout_transductive[m] || {}).mean_user_f1])))));
   rows.sort((a, b) => ENC_ORDER.indexOf(a.encoder) - ENC_ORDER.indexOf(b.encoder) || a.order - b.order);
   table("t_heldout_all", [{ label: "Encoder", key: "enc", align: "l" }, { label: "Model", key: "who", align: "l", render: (r) => keyed(r.slot, r.who, true) }]
     .concat(mins.map((m) => ({ label: fsLabel(m), key: "m" + m, fmt: f3 }))), rows.filter((r) => mins.some((m) => isNum(r["m" + m]))));
@@ -1206,7 +1224,11 @@ function ablations() {
     const enc = Cp[0].encoder;
     const full = D.federated.find((f) => f.encoder === enc && f.method === "v5_proposed");
     const v4 = D.federated.find((f) => f.encoder === enc && f.method === "v4_hetero_rank");
-    const name = (c) => c.tag ? `V5 ${c.tag.replace(/^__/, "").replace("noproto", "−prototypes").replace("noaug", "−augmentation")}${c.method === "v5_proposed" ? "" : " (" + c.short + ")"}` : c.label;
+    const TAGS = { noproto: "− prototype alignment", noaug: "− training augmentation", loraqv: "LoRA on W_q, W_v only",
+      loraall: "+ LoRA on all linear layers", pretrainedinit: "− averaged local parts for new users",
+      avghead: "+ average personal classifier for new users", dualhead: "+ federated global classifier",
+      persnoaug: "− augmentation in the last personal update", plora: "+ private LoRA copy", plora60: "+ private LoRA copy, 60 steps" };
+    const name = (c) => c.tag ? `V5 ${TAGS[c.tag.replace(/^__/, "")] || c.tag.replace(/^__/, "")}${c.method === "v5_proposed" ? "" : " (" + c.short + ")"}` : c.label;
     const rows = [full && Object.assign({ name: "V5 (complete)" }, full)].concat(Cp.map((c) => Object.assign({ name: name(c) }, c)))
       .concat(v4 ? [Object.assign({ name: "V4 (no local parts, no prototypes)" }, v4)] : []).filter(Boolean)
       .map((r) => Object.assign({ d: full ? r.macro_f1 - full.macro_f1 : null, h0: (r.heldout["0"] || {}).mean_user_f1 }, r));
@@ -1266,7 +1288,21 @@ function sota() {
   $("sota").hidden = false; $("navSota").hidden = false;
   const P = S.protocol || {};
   const pub = S.rows.filter((r) => r.kind === "published");
-  $("sotaLede").textContent =
+  const HELD = S.metric === "heldout_accuracy";
+  const accName = HELD ? "accuracy on the unseen test subjects" : "mean test accuracy over users";
+  const draws = Math.max(1, ...S.rows.map((r) => r.n_seeds || 1));
+  if (HELD) {
+    const settings = (S.protocols || []).map((q) => q.setting).filter(Boolean);
+    $("sotaTitle").textContent = "Accuracy on unseen test subjects, same protocol";
+    $("sotaLede").textContent =
+      `The published ${DS_NAME} results train on ${P.dirichlet_clients || "many"} clients formed by a Dirichlet label partition of the ` +
+      `training subjects (${settings.join(" and ") || "label skew"}) and report the accuracy of the global model on all windows of ` +
+      `${P.heldout_users || "a few"} subjects that never took part in training (${P.rounds} rounds, ` +
+      `${Math.round(100 * (P.clients_per_round_frac || 0))} % of the clients per round). The profiles ` +
+      `${(S.protocols || []).map((q) => "“" + q.profile + "”").join(" and ")} re-run our models under that protocol` +
+      (draws > 1 ? `; our bars are the mean over ${draws} random draws of the test subjects, because with so few test subjects one atypical subject moves the accuracy by several points` : "") +
+      `. A client here mixes many subjects, so per-user personalisation has nothing to act on: this protocol measures how well the global model transfers to new people.`;
+  } else $("sotaLede").textContent =
     `Published ${DS_NAME} results report the mean test accuracy over users under their own protocol` +
     (P.split_mode === "random" ? ` (${(P.windows_per_user || []).join("–")} random windows per user, split ${(P.fracs || []).map((x) => Math.round(100 * x)).join("/")} % at random; ` +
       `${P.rounds} rounds, ${Math.round(100 * (P.clients_per_round_frac || 0))} % of users per round)` : "") +
@@ -1274,32 +1310,78 @@ function sota() {
     `Because the windows overlap by 50 %, a random split lets most test windows share half their samples with training windows; ` +
     `the leakage-free results of this report (per-activity time split) are therefore lower and are the ones to use for new claims.`;
   $("sotaTag").textContent = pub.length ? `published: ${[...new Set(pub.map((r) => r.source))].join("; ")}` : "";
-  $("sotaDesc").textContent = "Grey bars: numbers copied from the papers. Coloured bars: our runs under the same protocol (personalised models are scored on each user's own model). Hover for details.";
+  $("sotaDesc").textContent = HELD
+    ? "Grey bars: numbers copied from the paper. Coloured bars: our federated runs; dark bars: our centralized references (not private). Whiskers: standard deviation over the test-subject draws. Hover for details."
+    : "Grey bars: numbers copied from the papers. Coloured bars: our runs under the same protocol (personalised models are scored on each user's own model). Hover for details.";
   const ours = S.rows.filter((r) => r.kind !== "published" && isNum(r.accuracy));
-  const rows = pub.map((r) => Object.assign({ name: `${r.short || r.method} · ${r.model}`, color: "pub" }, r))
-    .concat(ours.map((r) => Object.assign({ name: `${r.short} · ${r.model}${r.kind === "ours_central" ? " (central)" : ""}` }, r)))
+  const tail = (r) => (r.setting ? ` · ${r.setting}` : "");
+  const rows = pub.map((r) => Object.assign({ name: `${r.short || r.method} · ${r.model}${tail(r)}`, color: "pub" }, r))
+    .concat(ours.map((r) => Object.assign({ name: `${r.short} · ${r.model}${tail(r)}${r.kind === "ours_central" ? " (central)" : ""}` }, r)))
     .sort((a, b) => a.accuracy - b.accuracy);
   const best = Math.max(...pub.map((r) => r.accuracy), -1);
   chart("c_sota", (t) => ({
     data: [{ type: "bar", orientation: "h", y: rows.map((r) => r.name), x: rows.map((r) => r.accuracy),
       marker: { color: rows.map((r) => (r.kind === "published" ? t.muted : r.kind === "ours_central" ? t.ink2 : t.slot(r.slot || 1))),
         line: { color: rows.map((r) => (r.kind === "published" ? t.ink2 : t.surface)), width: rows.map((r) => (r.kind === "published" ? 1.5 : 1)) } },
+      error_x: { type: "data", array: rows.map((r) => (r.kind !== "published" && isNum(r.accuracy_std) && HELD ? r.accuracy_std : 0)), visible: HELD, color: t.ink2, thickness: 1.2, width: 3 },
       text: rows.map((r) => r.accuracy.toFixed(3) + (r.kind === "published" ? "  (published)" : "")), textposition: "outside", cliponaxis: false,
       textfont: { color: t.ink2, size: 11.5 }, customdata: rows.map((r) => [r.method, r.model, r.source || "", isNum(r.macro_f1) ? r.macro_f1.toFixed(3) : "—"]),
-      hovertemplate: "<b>%{x:.3f}</b> mean user accuracy<br>%{customdata[0]} · %{customdata[1]}<br>macro-F1 %{customdata[3]}<br>%{customdata[2]}<extra></extra>" }],
+      hovertemplate: "<b>%{x:.3f}</b> " + accName + "<br>%{customdata[0]} · %{customdata[1]}<br>macro-F1 %{customdata[3]}<br>%{customdata[2]}<extra></extra>" }],
     layout: baseLayout(t, { height: 120 + 26 * rows.length, margin: { l: 8, r: 120, t: 8, b: 8 }, bargap: 0.3,
-      xaxis: { title: { text: "mean test accuracy over users" }, range: [Math.max(0, Math.min(...rows.map((r) => r.accuracy)) - 0.08), 1.0] },
+      xaxis: { title: { text: accName }, range: [Math.max(0, Math.min(...rows.map((r) => r.accuracy)) - 0.08), 1.0] },
       shapes: best > 0 ? [{ type: "line", x0: best, x1: best, yref: "paper", y0: 0, y1: 1, line: { color: t.ink2, width: 1.5, dash: "dot" } }] : [],
       annotations: best > 0 ? [{ x: best, yref: "paper", y: 1.02, text: "best published", showarrow: false, font: { size: 11, color: t.ink2 } }] : [] }),
   }));
-  const cols = [
+  const cols = HELD ? [
+    { label: "Method", key: "method", align: "l", render: (r) => (r.kind === "published" ? el("span", {}, r.method) : keyed(r.slot || 7, r.method, true)) },
+    { label: "Model", key: "model", align: "l" }, { label: "Setting", key: "setting", align: "l" },
+    { label: "Test-subject acc", key: "accuracy", fmt: f3 },
+    { label: "± std", key: "accuracy_std", fmt: (x) => (isNum(x) ? f3(x) : "—") },
+    { label: "Draws", key: "n_seeds", fmt: (x) => (x == null ? "—" : String(x)) },
+    { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb },
+    { label: "Source", key: "source", align: "l" }] : [
     { label: "Method", key: "method", align: "l", render: (r) => (r.kind === "published" ? el("span", {}, r.method) : keyed(r.slot || 7, r.method, true)) },
     { label: "Model", key: "model", align: "l" }, { label: "Mean user acc", key: "accuracy", fmt: f3 },
     { label: "Worst-10 % acc", key: "worst10_acc", fmt: f3 }, { label: "Macro-F1", key: "macro_f1", fmt: f3 },
     { label: "+FT user acc", key: "accuracy_ft", fmt: f3 }, { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb },
     { label: "Source", key: "source", align: "l" }];
   table("t_sota", cols, [...rows].reverse(), { best: { accuracy: Math.max(...rows.map((r) => r.accuracy)) } });
-  table("t_sota_data", [{ label: "Model", key: "name", align: "l" }, { label: "Mean user acc", key: "accuracy", fmt: f3 }, { label: "Kind", key: "kind", align: "l" }], [...rows].reverse());
+  table("t_sota_data", [{ label: "Model", key: "name", align: "l" }, { label: HELD ? "Test-subject acc" : "Mean user acc", key: "accuracy", fmt: f3 }, { label: "Kind", key: "kind", align: "l" }], [...rows].reverse());
+}
+
+/* ======================== REPEATED USER SPLITS ======================== */
+function splits() {
+  const R = D.repeated_splits || [];
+  if (!R.length) return;
+  $("splits").hidden = false; $("navSplits").hidden = false;
+  const n = Math.max(...R.map((r) => r.n));
+  const encs = [...new Set(R.map((r) => r.encoder_display))];
+  $("splitsLede").textContent =
+    `The main grid uses one assignment of users to clients, new users and pool users. These models were repeated on ${n} different ` +
+    `assignments (seeds), each with its own users in every role, so the spread shows how much a result depends on who happens to be a client ` +
+    `or a new user. New users: mean per-user macro-F1 zero-shot${R.some((r) => r.transductive) ? " (V5: transductive rule)" : ""} and with the largest label budget.`;
+  $("splitsTag").textContent = `${n} user splits · ${encs.join(", ")}`;
+  const rows = [...R].sort((a, b) => ENC_ORDER.indexOf(a.encoder) - ENC_ORDER.indexOf(b.encoder) || a.acc - b.acc);
+  chart("c_splits", (t) => ({
+    data: [{ type: "bar", orientation: "h", y: rows.map((r) => `${r.short} · ${r.encoder_display}`), x: rows.map((r) => r.acc),
+      error_x: { type: "data", array: rows.map((r) => r.acc_std || 0), color: t.ink2, thickness: 1.2, width: 3 },
+      marker: { color: rows.map((r) => t.slot(r.slot || 1)) },
+      text: rows.map((r) => `${f3(r.acc)} ± ${isNum(r.acc_std) ? f3(r.acc_std) : "—"}`), textposition: "outside", cliponaxis: false,
+      textfont: { color: t.ink2, size: 11.5 },
+      hovertemplate: "<b>%{x:.3f}</b> mean user accuracy<br>%{y}<extra></extra>" }],
+    layout: baseLayout(t, { height: 110 + 30 * rows.length, margin: { l: 8, r: 120, t: 8, b: 8 }, bargap: 0.3,
+      xaxis: { title: { text: "mean user accuracy (enrolled clients)" }, range: [Math.max(0, Math.min(...rows.map((r) => r.acc)) - 0.1), 1.0] } }),
+  }));
+  const pm = (k) => (r) => (isNum(r[k]) ? `${f3(r[k])}${isNum(r[k + "_std"]) ? " ± " + f3(r[k + "_std"]) : ""}` : "—");
+  const fewLabel = (R.find((r) => r.few_label) || {}).few_label;
+  table("t_splits", [
+    { label: "Method", key: "label", align: "l", render: (r) => keyed(r.slot || 1, r.label, true) },
+    { label: "Encoder", key: "encoder_display", align: "l" }, { label: "Splits", key: "n" },
+    { label: "Client acc", key: "acc", render: pm("acc") }, { label: "Macro-F1", key: "f1", render: pm("f1") },
+    { label: "Worst-10 % acc", key: "w10", render: pm("w10") }, { label: "New users, zero-shot", key: "zero", render: pm("zero") },
+    { label: `New users, ${fewLabel || "few-shot"}`, key: "few", render: pm("few") },
+    { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb }], rows.reverse(),
+    { best: { acc: Math.max(...R.map((r) => r.acc)) } });
 }
 
 /* ============================ IMPROVEMENTS ============================ */
@@ -1509,7 +1591,7 @@ function themeToggle() {
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
 }
 
-header(); kpis(); rqTable(); sota(); improvements(); budgetNotes(); setup(); centralized(); federatedStatic(); federatedScoped(); scopedTables(); heldoutAll(); ablations(); repro();
+header(); kpis(); rqTable(); sota(); splits(); improvements(); budgetNotes(); setup(); centralized(); federatedStatic(); federatedScoped(); scopedTables(); heldoutAll(); ablations(); repro();
 themeToggle(); renderAll();
 </script>
 {% if standalone %}</body>

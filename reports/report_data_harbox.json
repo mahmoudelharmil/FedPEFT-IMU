@@ -1,6 +1,6 @@
 {
   "title": "FedPEFT-IMU \u2014 Experimental Results",
-  "generated": "24 October 2026, 20:23",
+  "generated": "25 October 2026, 19:48",
   "profile": "harbox",
   "host": {
     "python": "3.13.7",
@@ -1238,21 +1238,19 @@
       "mode": "pretrained_ft",
       "mode_label": "Pretrained + fine-tuning",
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
-      "macro_f1": 0.829073667736752,
-      "macro_f1_std": 0.005048782916340129,
-      "accuracy": 0.8259136270378353,
-      "worst10_f1": 0.29850597630394843,
-      "client_f1_std": 0.21527526554340404,
+      "macro_f1": 0.8294798622152907,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8253142609449502,
+      "worst10_f1": 0.30403106090026605,
+      "client_f1_std": 0.20693217435564562,
       "per_class_f1": [
-        0.8506681254558094,
-        0.8324077983170856,
-        0.7853074447059845,
-        0.8063861223338288,
-        0.8705988478710519
+        0.8732718894009217,
+        0.8395784543325527,
+        0.7648578811369509,
+        0.7968476357267951,
+        0.8728434504792332
       ],
       "client_f1": [
         0.931656346749226,
@@ -1449,8 +1447,8 @@
           "samples_per_s": 2303.473029125932
         }
       ],
-      "train_time_s": 93.31649743331339,
-      "train_mem_mb": 140.01342266666666,
+      "train_time_s": 85.92367119994015,
+      "train_mem_mb": 140.019396,
       "trainable_params": 50993,
       "epochs_run": 10,
       "heldout": {
@@ -1491,9 +1489,9 @@
         "0.75": 0.8616405647227872,
         "1.0": 0.8620132329239049
       },
-      "client_acc_mean": 0.8117689417753073,
-      "client_acc_std": 0.18364362507229623,
-      "worst10_acc": 0.39614161114459406,
+      "client_acc_mean": 0.8141569813264843,
+      "client_acc_std": 0.1816581780295581,
+      "worst10_acc": 0.3852323753929052,
       "client_acc": [
         0.9411764705882353,
         0.7391304347826086,
@@ -1587,21 +1585,19 @@
       "mode": "scratch",
       "mode_label": "From scratch",
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
-      "macro_f1": 0.8361632300493942,
-      "macro_f1_std": 0.010585766773554835,
-      "accuracy": 0.8329910399939456,
-      "worst10_f1": 0.31294372278606103,
-      "client_f1_std": 0.21167935883298697,
+      "macro_f1": 0.8473560851777991,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8437364542696142,
+      "worst10_f1": 0.3327711145205735,
+      "client_f1_std": 0.2026239190481717,
       "per_class_f1": [
-        0.8499019516168196,
-        0.8344631086507962,
-        0.7907356577410424,
-        0.8090740407383975,
-        0.8966413914999153
+        0.8948879954049397,
+        0.8495370370370371,
+        0.7863974495217854,
+        0.8125,
+        0.8934579439252337
       ],
       "client_f1": [
         0.9527777777777778,
@@ -1847,8 +1843,8 @@
           "samples_per_s": 2531.005799158177
         }
       ],
-      "train_time_s": 155.97300913340464,
-      "train_mem_mb": 152.50895333333332,
+      "train_time_s": 132.05902710021473,
+      "train_mem_mb": 158.762692,
       "trainable_params": 50993,
       "epochs_run": 17,
       "heldout": {
@@ -1889,9 +1885,9 @@
         "0.75": 0.853851358711748,
         "1.0": 0.8542088857733097
       },
-      "client_acc_mean": 0.8199660652156862,
-      "client_acc_std": 0.18779268730261714,
-      "worst10_acc": 0.383647142558084,
+      "client_acc_mean": 0.8326353090164085,
+      "client_acc_std": 0.18184781933312796,
+      "worst10_acc": 0.4018900341270441,
       "client_acc": [
         0.9607843137254902,
         0.8260869565217391,
@@ -1985,21 +1981,19 @@
       "mode": "scratch",
       "mode_label": "From scratch",
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
-      "macro_f1": 0.8312847668569091,
-      "macro_f1_std": 0.00883446499089553,
-      "accuracy": 0.828749511355615,
-      "worst10_f1": 0.3182637949427334,
-      "client_f1_std": 0.2057026475525461,
+      "macro_f1": 0.8187918155682894,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8146944083224967,
+      "worst10_f1": 0.2864517198035488,
+      "client_f1_std": 0.20734912523349153,
       "per_class_f1": [
-        0.8600087159221294,
-        0.8206424960419123,
-        0.7963169709323258,
-        0.8112560436753885,
-        0.8681996077127887
+        0.8618850029638412,
+        0.8279124778237729,
+        0.7618100447538538,
+        0.7862629914143696,
+        0.8560885608856088
       ],
       "client_f1": [
         0.933939393939394,
@@ -2203,8 +2197,8 @@
           "samples_per_s": 23986.97722343037
         }
       ],
-      "train_time_s": 14.198896699978832,
-      "train_mem_mb": 201.90761733333332,
+      "train_time_s": 10.366170099936426,
+      "train_mem_mb": 7.538252,
       "trainable_params": 290579,
       "epochs_run": 11,
       "heldout": {
@@ -2245,9 +2239,9 @@
         "0.75": 0.8529132957822,
         "1.0": 0.8522465866972713
       },
-      "client_acc_mean": 0.8120076311094074,
-      "client_acc_std": 0.1835253258132525,
-      "worst10_acc": 0.3913625032369123,
+      "client_acc_mean": 0.7998352897652161,
+      "client_acc_std": 0.18380036263342886,
+      "worst10_acc": 0.3665677969722293,
       "client_acc": [
         0.9411764705882353,
         0.8043478260869565,
@@ -9586,9 +9580,7 @@
       "label": "Ditto on the pretrained encoder",
       "slot": 6,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -9617,18 +9609,18 @@
         "new_user_init_upload_mb": 0.0,
         "augment": true
       },
-      "macro_f1": 0.8824218221676308,
-      "macro_f1_std": 0.005225939954670682,
-      "accuracy": 0.8810561741152174,
-      "worst10_f1": 0.5378025722584607,
-      "client_f1_std": 0.14341594663027082,
-      "client_f1_mean": 0.867754324439403,
+      "macro_f1": 0.8765844776086379,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8745123537061118,
+      "worst10_f1": 0.5425933194956243,
+      "client_f1_std": 0.14002295520720598,
+      "client_f1_mean": 0.8639491671824446,
       "per_class_f1": [
-        0.9098261251693233,
-        0.8648711048719578,
-        0.8718199754716706,
-        0.8623998229979094,
-        0.9031920823272915
+        0.9127906976744186,
+        0.8558456299659478,
+        0.8637559179379274,
+        0.8482102401449932,
+        0.9023199023199023
       ],
       "client_f1": [
         0.894891640866873,
@@ -9767,17 +9759,17 @@
           "uplink_mb_per_update": 0.204
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 34.68336,
-      "time_to_target_s": 141.97384766666679,
+      "time_to_target_s": 188.7641051999999,
       "reached_target": true,
       "trainable_params": 50993.0,
       "train_state_mb": 0.611916,
       "client_mem_mb": 69.76928490352942,
       "client_mem_mb_max": 88.712388,
       "client_time_s": 0.42399568076470934,
-      "total_time_s": 1321.0919392333337,
+      "total_time_s": 1748.8657471999995,
       "tier_f1": {},
       "param_counts": {
         "encoder": 45360,
@@ -10637,9 +10629,9 @@
       "heldout_hmm": {},
       "heldout_transductive": null,
       "before_personalization": null,
-      "client_acc_mean": 0.8752231762910293,
-      "client_acc_std": 0.13335720370826873,
-      "worst10_acc": 0.5685175811154352,
+      "client_acc_mean": 0.8707097633249317,
+      "client_acc_std": 0.1313959668126819,
+      "worst10_acc": 0.5668945139710712,
       "client_acc": [
         0.9019607843137255,
         0.8913043478260869,
@@ -10736,9 +10728,7 @@
       "label": "FedAvg from scratch",
       "slot": 7,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -10767,18 +10757,18 @@
         "new_user_init_upload_mb": 0.0,
         "augment": true
       },
-      "macro_f1": 0.7841907202824058,
-      "macro_f1_std": 0.004390241463700887,
-      "accuracy": 0.7797163845161733,
-      "worst10_f1": 0.15879906213317274,
-      "client_f1_std": 0.24936229294910453,
-      "client_f1_mean": 0.7232043843392605,
+      "macro_f1": 0.7897084070414426,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.7852188990030342,
+      "worst10_f1": 0.16060996149620543,
+      "client_f1_std": 0.24719156059818956,
+      "client_f1_mean": 0.7362252754920744,
       "per_class_f1": [
-        0.8239230998511191,
-        0.7737707714491912,
-        0.7444245897276028,
-        0.7333324016084454,
-        0.8455027387756702
+        0.85456595264938,
+        0.7670206121174266,
+        0.7364764267990075,
+        0.7432131731197151,
+        0.8472658705216844
       ],
       "client_f1": [
         0.9291795665634675,
@@ -10917,17 +10907,17 @@
           "uplink_mb_per_update": 0.204
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 50.0,
       "mb_to_target": 173.40336,
-      "time_to_target_s": 350.47410256666626,
+      "time_to_target_s": 371.34747340000104,
       "reached_target": true,
       "trainable_params": 50993.0,
       "train_state_mb": 0.611916,
       "client_mem_mb": 70.41361943529412,
       "client_mem_mb_max": 70.624452,
       "client_time_s": 0.4089110711764721,
-      "total_time_s": 721.5293572999999,
+      "total_time_s": 723.1498687000003,
       "tier_f1": {},
       "param_counts": {
         "encoder": 45360,
@@ -11787,9 +11777,9 @@
       "heldout_hmm": {},
       "heldout_transductive": null,
       "before_personalization": null,
-      "client_acc_mean": 0.7572822876145756,
-      "client_acc_std": 0.21540633466324424,
-      "worst10_acc": 0.27012729659030715,
+      "client_acc_mean": 0.7663782637692429,
+      "client_acc_std": 0.21563774770068306,
+      "worst10_acc": 0.2635815468715049,
       "client_acc": [
         0.9411764705882353,
         0.782608695652174,
@@ -11876,10 +11866,10 @@
         0.9382716049382716,
         0.7954545454545454
       ],
-      "macro_f1_ft": 0.7957964239475098,
-      "accuracy_ft": 0.7913754123282346,
-      "worst10_f1_ft": 0.1614156260274833,
-      "client_acc_mean_ft": 0.7687981990179523,
+      "macro_f1_ft": 0.8029365474038981,
+      "accuracy_ft": 0.7982228001733853,
+      "worst10_f1_ft": 0.16335882821058942,
+      "client_acc_mean_ft": 0.7793251911218203,
       "macro_f1_ft_hmm": null
     },
     {
@@ -11891,9 +11881,7 @@
       "label": "V0 \u00b7 Full fine-tuning",
       "slot": 1,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -11922,18 +11910,18 @@
         "new_user_init_upload_mb": 0.0,
         "augment": true
       },
-      "macro_f1": 0.7944386995882123,
-      "macro_f1_std": 0.005682933711081605,
-      "accuracy": 0.7907867843115377,
-      "worst10_f1": 0.19875888779153786,
-      "client_f1_std": 0.23974318498807576,
-      "client_f1_mean": 0.7398491261293474,
+      "macro_f1": 0.8012335734001557,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.7980060684872128,
+      "worst10_f1": 0.1824360817734247,
+      "client_f1_std": 0.23833119219719295,
+      "client_f1_mean": 0.7540005037061066,
       "per_class_f1": [
-        0.8255547179559057,
-        0.7945547620425537,
-        0.7537950166137897,
-        0.7568972059746679,
-        0.8413917953541442
+        0.8428731762065096,
+        0.8050541516245487,
+        0.7429420505200595,
+        0.7800640146319159,
+        0.835234474017744
       ],
       "client_f1": [
         0.8323099415204677,
@@ -12072,17 +12060,17 @@
           "uplink_mb_per_update": 0.204
         }
       },
-      "target_f1": 0.7525469070444548,
-      "rounds_to_target": 33.333333333333336,
-      "mb_to_target": 115.60336000000001,
-      "time_to_target_s": 378.7793715333325,
+      "target_f1": 0.7626204766600192,
+      "rounds_to_target": 30.0,
+      "mb_to_target": 104.04336,
+      "time_to_target_s": 238.2624720999993,
       "reached_target": true,
       "trainable_params": 50993.0,
       "train_state_mb": 0.611916,
       "client_mem_mb": 70.41361943529412,
       "client_mem_mb_max": 70.624452,
       "client_time_s": 0.42807864094119447,
-      "total_time_s": 1042.0268335666667,
+      "total_time_s": 757.5790116000007,
       "tier_f1": {},
       "param_counts": {
         "encoder": 45360,
@@ -12942,9 +12930,9 @@
       "heldout_hmm": {},
       "heldout_transductive": null,
       "before_personalization": null,
-      "client_acc_mean": 0.7693698849093868,
-      "client_acc_std": 0.20437127738554825,
-      "worst10_acc": 0.31801010273137015,
+      "client_acc_mean": 0.7798645702612712,
+      "client_acc_std": 0.20491782499316635,
+      "worst10_acc": 0.29624502178304185,
       "client_acc": [
         0.8431372549019608,
         0.782608695652174,
@@ -13031,10 +13019,10 @@
         0.9506172839506173,
         0.8181818181818182
       ],
-      "macro_f1_ft": 0.8082231343026024,
-      "accuracy_ft": 0.8052995293841642,
-      "worst10_f1_ft": 0.20661754903445026,
-      "client_acc_mean_ft": 0.783899800377239,
+      "macro_f1_ft": 0.8129404156850233,
+      "accuracy_ft": 0.8103597745990464,
+      "worst10_f1_ft": 0.17921915055649348,
+      "client_acc_mean_ft": 0.7925088944842374,
       "macro_f1_ft_hmm": null
     },
     {
@@ -13220,7 +13208,7 @@
           "uplink_mb_per_update": 0.020592
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": null,
       "mb_to_target": null,
       "time_to_target_s": null,
@@ -14367,10 +14355,10 @@
           "uplink_mb_per_update": 0.029808
         }
       },
-      "target_f1": 0.7525469070444548,
-      "rounds_to_target": 60.0,
-      "mb_to_target": 30.40752,
-      "time_to_target_s": 276.154092800105,
+      "target_f1": 0.7626204766600192,
+      "rounds_to_target": 80.0,
+      "mb_to_target": 40.54224,
+      "time_to_target_s": 368.59371110005304,
       "reached_target": true,
       "trainable_params": 7445.0,
       "train_state_mb": 0.08934,
@@ -15340,9 +15328,7 @@
       "label": "V3 \u00b7 LoRA, exact avg",
       "slot": 3,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -15371,18 +15357,18 @@
         "new_user_init_upload_mb": 0.0,
         "augment": true
       },
-      "macro_f1": 0.7662704692979334,
-      "macro_f1_std": 0.004704078751312192,
-      "accuracy": 0.7626497921439331,
-      "worst10_f1": 0.1772809403324402,
-      "client_f1_std": 0.24103308457720293,
-      "client_f1_mean": 0.7075405234319313,
+      "macro_f1": 0.7666156597947046,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.763762462071955,
+      "worst10_f1": 0.17543039256480852,
+      "client_f1_std": 0.23195539368279,
+      "client_f1_mean": 0.7197874089029502,
       "per_class_f1": [
-        0.8231516895466773,
-        0.7567469125311628,
-        0.7323692707156182,
-        0.7168532983304489,
-        0.8022311753657599
+        0.8421052631578947,
+        0.755421686746988,
+        0.7236328125,
+        0.7327466419638722,
+        0.7791718946047679
       ],
       "client_f1": [
         0.8232231219073324,
@@ -15521,17 +15507,17 @@
           "uplink_mb_per_update": 0.029808
         }
       },
-      "target_f1": 0.7525469070444548,
-      "rounds_to_target": 66.66666666666667,
-      "mb_to_target": 33.78576,
-      "time_to_target_s": 499.6447988333336,
+      "target_f1": 0.7626204766600192,
+      "rounds_to_target": 80.0,
+      "mb_to_target": 40.54224,
+      "time_to_target_s": 436.8347076000009,
       "reached_target": true,
       "trainable_params": 7445.0,
       "train_state_mb": 0.08934,
       "client_mem_mb": 53.20518830117646,
       "client_mem_mb_max": 53.227204,
       "client_time_s": 0.3088339147647136,
-      "total_time_s": 708.8337742333333,
+      "total_time_s": 548.2171094000005,
       "tier_f1": {},
       "param_counts": {
         "encoder": 45360,
@@ -16391,9 +16377,9 @@
       "heldout_hmm": {},
       "heldout_transductive": null,
       "before_personalization": null,
-      "client_acc_mean": 0.7402990114392515,
-      "client_acc_std": 0.2066496476061387,
-      "worst10_acc": 0.29194851284631923,
+      "client_acc_mean": 0.7483263023933922,
+      "client_acc_std": 0.19897719904923547,
+      "worst10_acc": 0.2910742666122867,
       "client_acc": [
         0.8431372549019608,
         0.782608695652174,
@@ -16480,10 +16466,10 @@
         0.8888888888888888,
         0.75
       ],
-      "macro_f1_ft": 0.7842207956294561,
-      "accuracy_ft": 0.7811994060167481,
-      "worst10_f1_ft": 0.18597059366228583,
-      "client_acc_mean_ft": 0.75862460447132,
+      "macro_f1_ft": 0.7863184885854663,
+      "accuracy_ft": 0.7839185088859991,
+      "worst10_f1_ft": 0.17892859748816267,
+      "client_acc_mean_ft": 0.7666968569303149,
       "macro_f1_ft_hmm": null
     },
     {
@@ -16685,7 +16671,7 @@
           "uplink_mb_per_update": 0.029808
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": null,
       "mb_to_target": null,
       "time_to_target_s": null,
@@ -17671,9 +17657,7 @@
       "label": "V5 \u00b7 FedPEFT-IMU (proposed)",
       "slot": 2,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -17706,18 +17690,18 @@
         "new_user_init_upload_mb": 0.165312,
         "augment": true
       },
-      "macro_f1": 0.8713218360585446,
-      "macro_f1_std": 0.008553338674020642,
-      "accuracy": 0.8704817182960726,
-      "worst10_f1": 0.5345540116392848,
-      "client_f1_std": 0.14331346145875945,
-      "client_f1_mean": 0.8593321305539595,
+      "macro_f1": 0.8626851475657441,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8608582574772432,
+      "worst10_f1": 0.5099195156143943,
+      "client_f1_std": 0.14923850145557058,
+      "client_f1_mean": 0.8553375372402859,
       "per_class_f1": [
-        0.8965702978738638,
-        0.8432256416512458,
-        0.8669082990417539,
-        0.8596884858517183,
-        0.8902164558741408
+        0.894460641399417,
+        0.8321085358959864,
+        0.8474399164054337,
+        0.8444846292947559,
+        0.8949320148331273
       ],
       "client_f1": [
         0.911190855927698,
@@ -17868,17 +17852,17 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
-      "mb_to_target": 4.396088,
-      "time_to_target_s": 117.55104843333235,
+      "mb_to_target": 4.482104,
+      "time_to_target_s": 94.24280099999851,
       "reached_target": true,
       "trainable_params": 6977.0,
       "train_state_mb": 0.083724,
       "client_mem_mb": 62.94932714352941,
       "client_mem_mb_max": 81.06362,
       "client_time_s": 0.42185189105885534,
-      "total_time_s": 899.0237487999997,
+      "total_time_s": 815.5957866999997,
       "tier_f1": {
         "r2": {
           "mean_f1": 0.8785298153620491,
@@ -18786,9 +18770,9 @@
         "client_f1_std": 0.14320401403228483,
         "client_acc_mean": 0.8570239144751467
       },
-      "client_acc_mean": 0.8675979579958656,
-      "client_acc_std": 0.1320616754428233,
-      "worst10_acc": 0.5681428150419809,
+      "client_acc_mean": 0.8612315664930105,
+      "client_acc_std": 0.14090524324572198,
+      "worst10_acc": 0.5332466782540852,
       "client_acc": [
         0.9215686274509803,
         0.9130434782608695,
@@ -18885,9 +18869,7 @@
       "label": "Ditto (personalised FL)",
       "slot": 8,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -18915,18 +18897,18 @@
         "new_user_init_upload_mb": 0.0,
         "augment": true
       },
-      "macro_f1": 0.8769989604323927,
-      "macro_f1_std": 0.002543113769290266,
-      "accuracy": 0.8761773448757612,
-      "worst10_f1": 0.5069717794602592,
-      "client_f1_std": 0.15733926956388775,
-      "client_f1_mean": 0.8529077875313602,
+      "macro_f1": 0.8748376890897316,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8740788903337668,
+      "worst10_f1": 0.4993212402246644,
+      "client_f1_std": 0.15945032976173143,
+      "client_f1_mean": 0.8517577772812823,
       "per_class_f1": [
-        0.9044399533342657,
-        0.8434052797562143,
-        0.862518994715357,
-        0.8718880497081618,
-        0.9027425246479641
+        0.9159318048206937,
+        0.8340323547034152,
+        0.8634222919937206,
+        0.8659070990359334,
+        0.8948948948948949
       ],
       "client_f1": [
         0.8883735184663977,
@@ -19065,17 +19047,17 @@
           "uplink_mb_per_update": 1.162344
         }
       },
-      "target_f1": 0.7481562901712182,
+      "target_f1": 0.7369126340114605,
       "rounds_to_target": 10.0,
       "mb_to_target": 197.60184,
-      "time_to_target_s": 23.285128133333274,
+      "time_to_target_s": 24.176235599999927,
       "reached_target": true,
       "trainable_params": 290579.0,
       "train_state_mb": 3.486948,
       "client_mem_mb": 4.968383651764707,
       "client_mem_mb_max": 5.992524,
       "client_time_s": 0.04154516323530622,
-      "total_time_s": 220.21799270000005,
+      "total_time_s": 221.58725210000011,
       "tier_f1": {},
       "param_counts": {
         "encoder": 270300,
@@ -19935,9 +19917,9 @@
       "heldout_hmm": {},
       "heldout_transductive": null,
       "before_personalization": null,
-      "client_acc_mean": 0.8676500893365446,
-      "client_acc_std": 0.13631432568150106,
-      "worst10_acc": 0.5674196642392538,
+      "client_acc_mean": 0.8675051890976934,
+      "client_acc_std": 0.13542756738043957,
+      "worst10_acc": 0.5684758978983191,
       "client_acc": [
         0.9019607843137255,
         0.7391304347826086,
@@ -20034,9 +20016,7 @@
       "label": "FedAvg from scratch",
       "slot": 7,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -20064,18 +20044,18 @@
         "new_user_init_upload_mb": 0.0,
         "augment": true
       },
-      "macro_f1": 0.7634002676081538,
-      "macro_f1_std": 0.007975460060201498,
-      "accuracy": 0.7572353184721464,
-      "worst10_f1": 0.17622146388667603,
-      "client_f1_std": 0.2502299716735239,
-      "client_f1_mean": 0.7005235947703836,
+      "macro_f1": 0.7742545879419308,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.7683138274815778,
+      "worst10_f1": 0.16860152503395356,
+      "client_f1_std": 0.24730776336387583,
+      "client_f1_mean": 0.7209487186581495,
       "per_class_f1": [
-        0.8098774332263444,
-        0.7715827300670716,
-        0.7067581058246338,
-        0.6985477887281536,
-        0.8302352801945664
+        0.8368715083798882,
+        0.7574039067422811,
+        0.7097674418604651,
+        0.7220149253731343,
+        0.8452151573538856
       ],
       "client_f1": [
         0.8504939813763344,
@@ -20214,17 +20194,17 @@
           "uplink_mb_per_update": 1.162344
         }
       },
-      "target_f1": 0.7481562901712182,
-      "rounds_to_target": 73.33333333333333,
-      "mb_to_target": 1449.0588799999998,
-      "time_to_target_s": 63.600501066666766,
+      "target_f1": 0.7369126340114605,
+      "rounds_to_target": 50.0,
+      "mb_to_target": 987.99576,
+      "time_to_target_s": 44.563703000000714,
       "reached_target": true,
       "trainable_params": 290579.0,
       "train_state_mb": 3.486948,
       "client_mem_mb": 4.827884828235294,
       "client_mem_mb_max": 5.992524,
       "client_time_s": 0.04408662399999069,
-      "total_time_s": 86.6059480999999,
+      "total_time_s": 88.57223250000061,
       "tier_f1": {},
       "param_counts": {
         "encoder": 270300,
@@ -21084,9 +21064,9 @@
       "heldout_hmm": {},
       "heldout_transductive": null,
       "before_personalization": null,
-      "client_acc_mean": 0.733982551073464,
-      "client_acc_std": 0.21571136997615625,
-      "worst10_acc": 0.2854242773464782,
+      "client_acc_mean": 0.749692989098341,
+      "client_acc_std": 0.21284441238722954,
+      "worst10_acc": 0.2807207312587513,
       "client_acc": [
         0.8627450980392157,
         0.717391304347826,
@@ -21173,10 +21153,10 @@
         0.9012345679012346,
         0.9090909090909091
       ],
-      "macro_f1_ft": 0.7759219174929594,
-      "accuracy_ft": 0.7706503906536514,
-      "worst10_f1_ft": 0.1760716218559082,
-      "client_acc_mean_ft": 0.7454452151138291,
+      "macro_f1_ft": 0.7928997190344134,
+      "accuracy_ft": 0.7882531426094495,
+      "worst10_f1_ft": 0.16960309945486063,
+      "client_acc_mean_ft": 0.7660606810864518,
       "macro_f1_ft_hmm": null
     },
     {
@@ -21188,9 +21168,7 @@
       "label": "Local training (no FL)",
       "slot": 8,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -21218,18 +21196,18 @@
         "new_user_init_upload_mb": 0.03024,
         "augment": true
       },
-      "macro_f1": 0.8343037058813539,
-      "macro_f1_std": 0.010778317790669243,
-      "accuracy": 0.8326452807122747,
-      "worst10_f1": 0.49722743395847413,
-      "client_f1_std": 0.15605933785560985,
-      "client_f1_mean": 0.811288508308123,
+      "macro_f1": 0.8242634955800311,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8220632856523624,
+      "worst10_f1": 0.5110727483570098,
+      "client_f1_std": 0.15249175684601485,
+      "client_f1_mean": 0.8067912951362824,
       "per_class_f1": [
-        0.8864745670467981,
-        0.7704429486136283,
-        0.8121280577352415,
-        0.8297636681352825,
-        0.8727092878758187
+        0.8815165876777251,
+        0.7538904899135447,
+        0.8074291300097751,
+        0.8118993135011442,
+        0.866581956797967
       ],
       "client_f1": [
         0.791656346749226,
@@ -21368,17 +21346,17 @@
           "uplink_mb_per_update": 8e-06
         }
       },
-      "target_f1": 0.7481562901712182,
-      "rounds_to_target": 20.0,
-      "mb_to_target": 0.0060799999999999995,
-      "time_to_target_s": 17.181875500000086,
+      "target_f1": 0.7369126340114605,
+      "rounds_to_target": 10.0,
+      "mb_to_target": 0.00472,
+      "time_to_target_s": 8.599852300000748,
       "reached_target": true,
       "trainable_params": 290579.0,
       "train_state_mb": 3.486948,
       "client_mem_mb": 4.86058355764706,
       "client_mem_mb_max": 5.992524,
       "client_time_s": 0.041408551470563264,
-      "total_time_s": 82.81669746666678,
+      "total_time_s": 80.77629400000023,
       "tier_f1": {},
       "param_counts": {
         "encoder": 270300,
@@ -22215,9 +22193,9 @@
         "client_f1_std": 0.1479215455256679,
         "client_acc_mean": 0.8304042664440663
       },
-      "client_acc_mean": 0.8283101765540705,
-      "client_acc_std": 0.13661311282222646,
-      "worst10_acc": 0.5505011477065572,
+      "client_acc_mean": 0.8235625990865169,
+      "client_acc_std": 0.13296945673834765,
+      "worst10_acc": 0.5621407018099781,
       "client_acc": [
         0.803921568627451,
         0.8913043478260869,
@@ -33116,7 +33094,7 @@
           "uplink_mb_per_update": 0.022896
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": null,
       "mb_to_target": null,
       "time_to_target_s": null,
@@ -34270,11 +34248,11 @@
           "uplink_mb_per_update": 0.0252
         }
       },
-      "target_f1": 0.7525469070444548,
-      "rounds_to_target": 80.0,
-      "mb_to_target": 34.27536,
-      "time_to_target_s": 317.0233073999989,
-      "reached_target": true,
+      "target_f1": 0.7626204766600192,
+      "rounds_to_target": null,
+      "mb_to_target": null,
+      "time_to_target_s": null,
+      "reached_target": false,
       "trainable_params": 6293.0,
       "train_state_mb": 0.075516,
       "client_mem_mb": 53.19238830117646,
@@ -35245,9 +35223,7 @@
       "label": "V3 \u00b7 LoRA, exact avg",
       "slot": 3,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -35276,18 +35252,18 @@
         "new_user_init_upload_mb": 0.0,
         "augment": true
       },
-      "macro_f1": 0.7662704692979334,
-      "macro_f1_std": 0.004704078751312192,
-      "accuracy": 0.7626497921439331,
-      "worst10_f1": 0.1772809403324402,
-      "client_f1_std": 0.24103308457720293,
-      "client_f1_mean": 0.7075405234319313,
+      "macro_f1": 0.7666156597947046,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.763762462071955,
+      "worst10_f1": 0.17543039256480852,
+      "client_f1_std": 0.23195539368279,
+      "client_f1_mean": 0.7197874089029502,
       "per_class_f1": [
-        0.8231516895466773,
-        0.7567469125311628,
-        0.7323692707156182,
-        0.7168532983304489,
-        0.8022311753657599
+        0.8421052631578947,
+        0.755421686746988,
+        0.7236328125,
+        0.7327466419638722,
+        0.7791718946047679
       ],
       "client_f1": [
         0.8232231219073324,
@@ -35426,17 +35402,17 @@
           "uplink_mb_per_update": 0.029808
         }
       },
-      "target_f1": 0.7525469070444548,
-      "rounds_to_target": 66.66666666666667,
-      "mb_to_target": 33.78576,
-      "time_to_target_s": 499.6447988333336,
+      "target_f1": 0.7626204766600192,
+      "rounds_to_target": 80.0,
+      "mb_to_target": 40.54224,
+      "time_to_target_s": 436.8347076000009,
       "reached_target": true,
       "trainable_params": 7445.0,
       "train_state_mb": 0.08934,
       "client_mem_mb": 53.20518830117646,
       "client_mem_mb_max": 53.227204,
       "client_time_s": 0.3088339147647136,
-      "total_time_s": 708.8337742333333,
+      "total_time_s": 548.2171094000005,
       "tier_f1": {},
       "param_counts": {
         "encoder": 45360,
@@ -36296,9 +36272,9 @@
       "heldout_hmm": {},
       "heldout_transductive": null,
       "before_personalization": null,
-      "client_acc_mean": 0.7402990114392515,
-      "client_acc_std": 0.2066496476061387,
-      "worst10_acc": 0.29194851284631923,
+      "client_acc_mean": 0.7483263023933922,
+      "client_acc_std": 0.19897719904923547,
+      "worst10_acc": 0.2910742666122867,
       "client_acc": [
         0.8431372549019608,
         0.782608695652174,
@@ -36385,10 +36361,10 @@
         0.8888888888888888,
         0.75
       ],
-      "macro_f1_ft": 0.7842207956294561,
-      "accuracy_ft": 0.7811994060167481,
-      "worst10_f1_ft": 0.18597059366228583,
-      "client_acc_mean_ft": 0.75862460447132,
+      "macro_f1_ft": 0.7863184885854663,
+      "accuracy_ft": 0.7839185088859991,
+      "worst10_f1_ft": 0.17892859748816267,
+      "client_acc_mean_ft": 0.7666968569303149,
       "macro_f1_ft_hmm": null,
       "rank": 8
     },
@@ -36580,10 +36556,10 @@
           "uplink_mb_per_update": 0.039024
         }
       },
-      "target_f1": 0.7525469070444548,
-      "rounds_to_target": 40.0,
-      "mb_to_target": 26.53968,
-      "time_to_target_s": 167.55409689999942,
+      "target_f1": 0.7626204766600192,
+      "rounds_to_target": 50.0,
+      "mb_to_target": 33.17376,
+      "time_to_target_s": 207.53544070000135,
       "reached_target": true,
       "trainable_params": 9749.0,
       "train_state_mb": 0.116988,
@@ -37735,7 +37711,7 @@
           "uplink_mb_per_update": 0.204
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 30.0,
       "mb_to_target": 104.04336,
       "time_to_target_s": 428.4945405000003,
@@ -38888,7 +38864,7 @@
           "uplink_mb_per_update": 0.052848
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 20.0,
       "mb_to_target": 17.97168,
       "time_to_target_s": 124.69120320000002,
@@ -40038,7 +40014,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 5.06732,
       "time_to_target_s": 108.48902049986646,
@@ -41204,10 +41180,10 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
-      "rounds_to_target": 20.0,
-      "mb_to_target": 8.877904,
-      "time_to_target_s": 155.1410502998624,
+      "target_f1": 0.7626204766600192,
+      "rounds_to_target": 30.0,
+      "mb_to_target": 13.23684,
+      "time_to_target_s": 228.16154840006493,
       "reached_target": true,
       "trainable_params": 6485.0,
       "train_state_mb": 0.07782,
@@ -42383,7 +42359,7 @@
           "uplink_mb_per_update": 0.031108
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.706504,
       "time_to_target_s": 109.84904329990968,
@@ -43568,7 +43544,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.482104,
       "time_to_target_s": 119.6377771999687,
@@ -44749,7 +44725,7 @@
           "uplink_mb_per_update": 0.031108
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.706504,
       "time_to_target_s": 128.56844379985705,
@@ -45737,9 +45713,7 @@
       "label": "V5 \u00b7 FedPEFT-IMU (proposed) [loraall]",
       "slot": 2,
       "seeds": [
-        0,
-        1,
-        2
+        0
       ],
       "config": {
         "rounds": 100,
@@ -45772,18 +45746,18 @@
         "new_user_init_upload_mb": 0.165312,
         "augment": true
       },
-      "macro_f1": 0.8830692660150804,
-      "macro_f1_std": 0.011076560116591997,
-      "accuracy": 0.8814845187664915,
-      "worst10_f1": 0.5470290222252534,
-      "client_f1_std": 0.14140300020003882,
-      "client_f1_mean": 0.8696461684929964,
+      "macro_f1": 0.8732779161598139,
+      "macro_f1_std": 0.0,
+      "accuracy": 0.8706111833550065,
+      "worst10_f1": 0.5311173876584854,
+      "client_f1_std": 0.14389962846375612,
+      "client_f1_mean": 0.8647350581561243,
       "per_class_f1": [
-        0.9049489142257383,
-        0.8638620866137176,
-        0.8688965456416332,
-        0.8653458180353119,
-        0.9122929655590014
+        0.9090909090909091,
+        0.8579643473260494,
+        0.8479747501315097,
+        0.8452066842568162,
+        0.906152889993785
       ],
       "client_f1": [
         0.8901382243487508,
@@ -45934,17 +45908,17 @@
           "uplink_mb_per_update": 0.052828
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
-      "mb_to_target": 6.634808,
-      "time_to_target_s": 101.83183833333412,
+      "mb_to_target": 6.935864,
+      "time_to_target_s": 135.34439120000025,
       "reached_target": true,
       "trainable_params": 10337.0,
       "train_state_mb": 0.124044,
       "client_mem_mb": 70.17492081882354,
       "client_mem_mb_max": 88.97402,
       "client_time_s": 0.9750366539411762,
-      "total_time_s": 1122.0273251000017,
+      "total_time_s": 1895.9379685000004,
       "tier_f1": {
         "r2": {
           "mean_f1": 0.8912802170522661,
@@ -46852,9 +46826,9 @@
         "client_f1_std": 0.15001131617992391,
         "client_acc_mean": 0.8644445579305526
       },
-      "client_acc_mean": 0.8770404755479246,
-      "client_acc_std": 0.12951298288238725,
-      "worst10_acc": 0.5808992372848469,
+      "client_acc_mean": 0.8701754902340264,
+      "client_acc_std": 0.13550732499633442,
+      "worst10_acc": 0.5521495840844719,
       "client_acc": [
         0.9019607843137255,
         0.9130434782608695,
@@ -47145,7 +47119,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.482104,
       "time_to_target_s": 103.73363369999993,
@@ -48327,7 +48301,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.482104,
       "time_to_target_s": 122.24425129999997,
@@ -49509,7 +49483,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.482104,
       "time_to_target_s": 186.41096319999997,
@@ -50692,7 +50666,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.482104,
       "time_to_target_s": 79.46284980000019,
@@ -51875,7 +51849,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.482104,
       "time_to_target_s": 91.27256269999998,
@@ -53057,7 +53031,7 @@
           "uplink_mb_per_update": 0.029788
         }
       },
-      "target_f1": 0.7525469070444548,
+      "target_f1": 0.7626204766600192,
       "rounds_to_target": 10.0,
       "mb_to_target": 4.482104,
       "time_to_target_s": 137.27113800000006,
@@ -54042,6 +54016,7 @@
     "profile": "harbox_fedchar",
     "protocol": {
       "profile": "harbox_fedchar",
+      "setting": "",
       "split_mode": "random",
       "windows_per_user": [
         50,
@@ -54055,8 +54030,34 @@
       "rounds": 100,
       "clients_per_round_frac": 0.5,
       "local_epochs": 2,
-      "batch_size": 64
+      "batch_size": 64,
+      "dirichlet_alpha": null,
+      "dirichlet_clients": null,
+      "heldout_users": null
     },
+    "protocols": [
+      {
+        "profile": "harbox_fedchar",
+        "setting": "",
+        "split_mode": "random",
+        "windows_per_user": [
+          50,
+          500
+        ],
+        "fracs": [
+          0.72,
+          0.08,
+          0.2
+        ],
+        "rounds": 100,
+        "clients_per_round_frac": 0.5,
+        "local_epochs": 2,
+        "batch_size": 64,
+        "dirichlet_alpha": null,
+        "dirichlet_clients": null,
+        "heldout_users": null
+      }
+    ],
     "rows": [
       {
         "method": "FedAvg",
@@ -54065,7 +54066,8 @@
         "accuracy": 0.694,
         "accuracy_std_note": "var .0335",
         "source": "FedCHAR, IMWUT 2023, Tab. 4",
-        "kind": "published"
+        "kind": "published",
+        "setting": ""
       },
       {
         "method": "FedCHAR (hierarchical clustering + Ditto)",
@@ -54074,12 +54076,14 @@
         "accuracy": 0.917,
         "accuracy_std_note": "var .0076",
         "source": "FedCHAR, IMWUT 2023, Tab. 4",
-        "kind": "published"
+        "kind": "published",
+        "setting": ""
       },
       {
         "kind": "ours",
         "method": "Ditto on the pretrained encoder",
         "short": "Ditto-FT",
+        "setting": "",
         "slot": 6,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
@@ -54097,6 +54101,7 @@
         "kind": "ours",
         "method": "FedAvg from scratch",
         "short": "FedAvg",
+        "setting": "",
         "slot": 7,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
@@ -54114,6 +54119,7 @@
         "kind": "ours",
         "method": "V0 \u00b7 Full fine-tuning",
         "short": "V0",
+        "setting": "",
         "slot": 1,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
@@ -54131,6 +54137,7 @@
         "kind": "ours",
         "method": "V5 \u00b7 FedPEFT-IMU (proposed), LoRA on all layers",
         "short": "V5",
+        "setting": "",
         "slot": 2,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
@@ -54148,6 +54155,7 @@
         "kind": "ours",
         "method": "V5 \u00b7 FedPEFT-IMU (proposed)",
         "short": "V5",
+        "setting": "",
         "slot": 2,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
@@ -54165,6 +54173,7 @@
         "kind": "ours",
         "method": "Ditto (personalised FL)",
         "short": "Ditto",
+        "setting": "",
         "slot": 8,
         "model": "MLP",
         "encoder": "mlp",
@@ -54182,6 +54191,7 @@
         "kind": "ours",
         "method": "FedAvg from scratch",
         "short": "FedAvg",
+        "setting": "",
         "slot": 7,
         "model": "MLP",
         "encoder": "mlp",
@@ -54199,6 +54209,7 @@
         "kind": "ours",
         "method": "Local training (no FL)",
         "short": "Local",
+        "setting": "",
         "slot": 8,
         "model": "MLP",
         "encoder": "mlp",
@@ -54219,8 +54230,10 @@
         "slot": 7,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
+        "setting": "",
         "accuracy": 0.895594274209486,
         "accuracy_std": 0.13462900771598976,
+        "n_seeds": 1,
         "worst10_acc": 0.58719349535913,
         "macro_f1": 0.9034338765943195,
         "personal": false,
@@ -54233,8 +54246,10 @@
         "slot": 7,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
+        "setting": "",
         "accuracy": 0.891871180026078,
         "accuracy_std": 0.14227246226501436,
+        "n_seeds": 1,
         "worst10_acc": 0.5721221026251505,
         "macro_f1": 0.8991040931158791,
         "personal": false,
@@ -54247,8 +54262,10 @@
         "slot": 7,
         "model": "MLP",
         "encoder": "mlp",
+        "setting": "",
         "accuracy": 0.8808023391652964,
         "accuracy_std": 0.13209931783116022,
+        "n_seeds": 1,
         "worst10_acc": 0.5637774568451644,
         "macro_f1": 0.8936526313413999,
         "personal": false,
@@ -54257,6 +54274,224 @@
     ],
     "metric": "client_accuracy"
   },
+  "repeated_splits": [
+    {
+      "encoder": "limu_bert",
+      "encoder_display": "LIMU-BERT",
+      "method": "ditto_ft",
+      "short": "Ditto-FT",
+      "label": "Ditto on the pretrained encoder",
+      "slot": 6,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.8752231762910293,
+      "acc_std": 0.008427077188507924,
+      "f1": 0.8824218221676308,
+      "f1_std": 0.0064004431576833104,
+      "w10": 0.5685175811154352,
+      "w10_std": 0.03801217966301949,
+      "zero": 0.7445711586709113,
+      "zero_std": 0.051304252717616926,
+      "few": 0.8341587805174348,
+      "few_std": 0.012517887767179606,
+      "few_label": "10 windows (20 s)",
+      "transductive": false,
+      "uplink_mb_client_round": 0.2040019764705883
+    },
+    {
+      "encoder": "limu_bert",
+      "encoder_display": "LIMU-BERT",
+      "method": "fedavg_scratch",
+      "short": "FedAvg",
+      "label": "FedAvg from scratch",
+      "slot": 7,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.7687981990179523,
+      "acc_std": 0.011805228515058481,
+      "f1": 0.7957964239475098,
+      "f1_std": 0.006183938098122022,
+      "w10": 0.27482177428220084,
+      "w10_std": 0.01128168798126675,
+      "zero": 0.7288819606105496,
+      "zero_std": 0.051429350951392915,
+      "few": 0.8403258483328923,
+      "few_std": 0.013087873125116506,
+      "few_label": "10 windows (20 s)",
+      "transductive": false,
+      "uplink_mb_client_round": 0.2040019764705883
+    },
+    {
+      "encoder": "limu_bert",
+      "encoder_display": "LIMU-BERT",
+      "method": "v0_full_ft",
+      "short": "V0",
+      "label": "V0 \u00b7 Full fine-tuning",
+      "slot": 1,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.783899800377239,
+      "acc_std": 0.013074583029094047,
+      "f1": 0.8082231343026024,
+      "f1_std": 0.005542799626684225,
+      "w10": 0.3279670170926078,
+      "w10_std": 0.0402335802388961,
+      "zero": 0.7425368386191199,
+      "zero_std": 0.0477797193878738,
+      "few": 0.839823306703583,
+      "few_std": 0.014169705448679152,
+      "few_label": "10 windows (20 s)",
+      "transductive": false,
+      "uplink_mb_client_round": 0.2040019764705883
+    },
+    {
+      "encoder": "limu_bert",
+      "encoder_display": "LIMU-BERT",
+      "method": "v3_lora_exact",
+      "short": "V3",
+      "label": "V3 \u00b7 LoRA, exact avg",
+      "slot": 3,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.75862460447132,
+      "acc_std": 0.007377943007619763,
+      "f1": 0.7842207956294561,
+      "f1_std": 0.005009400585913147,
+      "w10": 0.3038340577991352,
+      "w10_std": 0.00793203315247,
+      "zero": 0.7270076531396646,
+      "zero_std": 0.04552040770404783,
+      "few": 0.827177368552694,
+      "few_std": 0.01975712875979952,
+      "few_label": "10 windows (20 s)",
+      "transductive": false,
+      "uplink_mb_client_round": 0.029809976470588237
+    },
+    {
+      "encoder": "limu_bert",
+      "encoder_display": "LIMU-BERT",
+      "method": "v5_proposed",
+      "short": "V5",
+      "label": "V5 \u00b7 FedPEFT-IMU (proposed)",
+      "slot": 2,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.8675979579958656,
+      "acc_std": 0.011827526284343215,
+      "f1": 0.8713218360585446,
+      "f1_std": 0.010475657674282116,
+      "w10": 0.5681428150419809,
+      "w10_std": 0.05245882950743105,
+      "zero": 0.6990199827999767,
+      "zero_std": 0.06332760140076657,
+      "few": 0.8490162757575116,
+      "few_std": 0.021912788999593973,
+      "few_label": "10 windows (20 s)",
+      "transductive": true,
+      "uplink_mb_client_round": 0.025870465882352943
+    },
+    {
+      "encoder": "mlp",
+      "encoder_display": "MLP",
+      "method": "ditto_scratch",
+      "short": "Ditto",
+      "label": "Ditto (personalised FL)",
+      "slot": 8,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.8676500893365446,
+      "acc_std": 0.004539489317975283,
+      "f1": 0.8769989604323927,
+      "f1_std": 0.0031146655463035865,
+      "w10": 0.5674196642392538,
+      "w10_std": 0.0178701985879897,
+      "zero": 0.7283261572251712,
+      "zero_std": 0.04128235340581332,
+      "few": 0.8371339182825411,
+      "few_std": 0.006398337274763799,
+      "few_label": "10 windows (20 s)",
+      "transductive": false,
+      "uplink_mb_client_round": 1.1623459764705888
+    },
+    {
+      "encoder": "mlp",
+      "encoder_display": "MLP",
+      "method": "fedavg_scratch",
+      "short": "FedAvg",
+      "label": "FedAvg from scratch",
+      "slot": 7,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.7454452151138291,
+      "acc_std": 0.01808850455771526,
+      "f1": 0.7759219174929594,
+      "f1_std": 0.015358165222627496,
+      "w10": 0.28363789500454034,
+      "w10_std": 0.007329380638991035,
+      "zero": 0.7197548466831966,
+      "zero_std": 0.04546513248355314,
+      "few": 0.8319712921662817,
+      "few_std": 0.012813837453308613,
+      "few_label": "10 windows (20 s)",
+      "transductive": false,
+      "uplink_mb_client_round": 1.1623459764705888
+    },
+    {
+      "encoder": "mlp",
+      "encoder_display": "MLP",
+      "method": "local_scratch",
+      "short": "Local",
+      "label": "Local training (no FL)",
+      "slot": 8,
+      "n": 3,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "acc": 0.8283101765540705,
+      "acc_std": 0.01199748536225362,
+      "f1": 0.8343037058813539,
+      "f1_std": 0.013200689436350877,
+      "w10": 0.5505011477065572,
+      "w10_std": 0.02872758164996277,
+      "zero": null,
+      "zero_std": null,
+      "few": null,
+      "few_std": null,
+      "few_label": null,
+      "transductive": false,
+      "uplink_mb_client_round": 9.976470588235293e-06
+    }
+  ],
   "stages": [],
   "window_ablation": [],
   "stage_label": "harbox",
@@ -54658,16 +54893,16 @@
   ],
   "findings": [
     "Under the published protocol, our best federated model (Ditto-FT, LIMU-BERT) reaches a mean user accuracy of 0.950, against 0.917 for the best published federated result (FedCHAR, IMWUT 2023, Tab. 4). Purely local training without any federation already reaches 0.878 under this protocol, consistent with the train/test overlap of its random split. Our re-run of the published FedAvg + MLP baseline scores 0.797 (published 0.694).",
-    "Centralized from scratch, ssl-wearables is the strongest architecture (macro-F1 0.840). Starting from the pretrained weights changes the macro-F1 of each encoder by: LIMU-BERT -0.007, ssl-wearables +0.017, UniMTS +0.024, HALO +0.125 macro-F1.",
-    "Training from scratch in the federation (non-IID users, 20 % participation) loses LIMU-BERT 0.052, ssl-wearables 0.050, UniMTS 0.082, HALO 0.130, MLP 0.068 macro-F1 against centralized training from scratch. This is the gap the pretrained encoders are meant to close.",
-    "FedPEFT-IMU (V5) against full fine-tuning (V0), macro-F1: LIMU-BERT 0.871 vs 0.794 with 8x less uplink; ssl-wearables 0.879 vs 0.817 with 52x less uplink; UniMTS 0.827 vs 0.811 with 38x less uplink; HALO 0.813 vs 0.716 with 95x less uplink.",
-    "Federated LoRA without personalisation (best of V2/V3) against V0: LIMU-BERT V2 0.766 vs V0 0.794; ssl-wearables V3 0.828 vs V0 0.817; UniMTS V3 0.814 vs V0 0.811; HALO V3 0.699 vs V0 0.716. LoRA matches or beats full fine-tuning for ssl-wearables, UniMTS; for LIMU-BERT, HALO the frozen features need more than a low-rank update in this round budget.",
-    "Exact LoRA aggregation (V3) versus naive averaging (V2), macro-F1 difference: LIMU-BERT -0.000, ssl-wearables +0.004, UniMTS +0.007, HALO +0.001. On average the two rules are within 0.01 macro-F1 here: the naive error is small (see the aggregation-error chart). Exact aggregation must ship the dense residual to every client: downlink per round is LIMU-BERT 2x, ssl-wearables 34x, UniMTS 23x, HALO 10x that of V2.",
-    "LoRA rank (LIMU-BERT, V3): r=2 0.745, r=4 0.762, r=8 0.766, r=16 0.783. The best rank is r=16 at 0.04 MB per client-round.",
-    "Highest worst-10 % client F1 per encoder: LIMU-BERT Ditto-FT 0.538 (V5 0.535); ssl-wearables V5 0.531; UniMTS V5 0.283; HALO V5 0.381; MLP Ditto 0.507.",
+    "Centralized from scratch, LIMU-BERT is the strongest architecture (macro-F1 0.847). Starting from the pretrained weights changes the macro-F1 of each encoder by: LIMU-BERT -0.018, ssl-wearables +0.017, UniMTS +0.024, HALO +0.125 macro-F1.",
+    "Training from scratch in the federation (non-IID users, 20 % participation) loses LIMU-BERT 0.058, ssl-wearables 0.050, UniMTS 0.082, HALO 0.130, MLP 0.045 macro-F1 against centralized training from scratch. This is the gap the pretrained encoders are meant to close.",
+    "FedPEFT-IMU (V5) against full fine-tuning (V0), macro-F1: LIMU-BERT 0.863 vs 0.801 with 8x less uplink; ssl-wearables 0.879 vs 0.817 with 52x less uplink; UniMTS 0.827 vs 0.811 with 38x less uplink; HALO 0.813 vs 0.716 with 95x less uplink.",
+    "Federated LoRA without personalisation (best of V2/V3) against V0: LIMU-BERT V3 0.767 vs V0 0.801; ssl-wearables V3 0.828 vs V0 0.817; UniMTS V3 0.814 vs V0 0.811; HALO V3 0.699 vs V0 0.716. LoRA matches or beats full fine-tuning for ssl-wearables, UniMTS; for LIMU-BERT, HALO the frozen features need more than a low-rank update in this round budget.",
+    "Exact LoRA aggregation (V3) versus naive averaging (V2), macro-F1 difference: LIMU-BERT +0.000, ssl-wearables +0.004, UniMTS +0.007, HALO +0.001. On average the two rules are within 0.01 macro-F1 here: the naive error is small (see the aggregation-error chart). Exact aggregation must ship the dense residual to every client: downlink per round is LIMU-BERT 2x, ssl-wearables 34x, UniMTS 23x, HALO 10x that of V2.",
+    "LoRA rank (LIMU-BERT, V3): r=2 0.745, r=4 0.762, r=8 0.767, r=16 0.783. The best rank is r=16 at 0.04 MB per client-round.",
+    "Highest worst-10 % client F1 per encoder: LIMU-BERT Ditto-FT 0.543 (V5 0.510); ssl-wearables V5 0.531; UniMTS V5 0.283; HALO V5 0.381; MLP Local 0.511.",
     "New users, zero-shot (V5 = nearest global prototype; BatchNorm encoders first estimate their norm statistics from the new user's unlabelled windows): LIMU-BERT V5 0.591 vs V3 0.675; ssl-wearables V5 0.775 vs V3 0.788; UniMTS V5 0.715 vs V3 0.762; HALO V5 0.534 vs V3 0.527. On average the shared classifier of V3 transfers better to brand-new users than V5's prototype rule (-0.034); V5's advantage is on the devices that trained with it.",
     "Transductive zero-shot (V5's prototypes first refined on the new user's unlabelled windows, no labels and no communication): LIMU-BERT 0.591 -> 0.626; ssl-wearables 0.775 -> 0.776; UniMTS 0.715 -> 0.732; HALO 0.534 -> 0.554.",
-    "Budget note: ssl-wearables, UniMTS, HALO ran with a reduced compute budget (see the callouts), so compare its methods with each other.",
+    "Budget note: ssl-wearables, HALO, UniMTS ran with a reduced compute budget (see the callouts), so compare its methods with each other.",
     "All numbers come from one user split (seed 0). Differences of a few F1 points should be confirmed with the 'full' profile (3 held-out lists) before they are claimed."
   ]
 }
