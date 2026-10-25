@@ -2,11 +2,13 @@
 rem Remaining runs of UCI HAR and WISDM, strictly ONE job at a time (16 GB host). Finished runs are
 rem skipped automatically, so this queue can be restarted at any time. Order: complete every
 rem FedAvg / V0-V5 grid first, then the published-protocol comparisons, then extra user splits.
-rem   1. UCI HAR protocol B: all encoders incl. UniMTS
-rem   2. WISDM protocol B: UniMTS
-rem   3. UCI HAR published protocol (FedMultimodal, alpha 0.1 and 5.0)
+rem   1. UCI HAR protocol B: all encoders incl. UniMTS (done)
+rem   2. UCI HAR published protocol (FedMultimodal, alpha 0.1 and 5.0)
+rem   3. WISDM protocol B: UniMTS (the last FedAvg / V0-V5 grid)
 rem   4. WISDM published protocol (FedAIoT): draw 0, then draws 1-2
 rem   5. extra user splits of UCI HAR
+rem Saved with CRLF line endings: with LF only, cmd can skip a line that crosses a
+rem 512-byte read boundary (it silently skipped the WISDM UniMTS step once).
 cd /d E:\Masters\Thesis2\idea1
 set PYTHONIOENCODING=utf-8
 set U=logs\ucihar\queue.out
@@ -20,14 +22,14 @@ set P=.venv\Scripts\python.exe
 %P% scripts\05_run_federated.py --profile ucihar --encoders halo >> %U% 2>&1
 %P% scripts\04_run_centralized.py --profile ucihar --encoders unimts >> %U% 2>&1
 %P% scripts\05_run_federated.py --profile ucihar --encoders unimts >> %U% 2>&1
-%P% scripts\04_run_centralized.py --profile wisdm --encoders unimts >> %W% 2>&1
-%P% scripts\05_run_federated.py --profile wisdm --encoders unimts >> %W% 2>&1
 %P% scripts\04_run_centralized.py --profile ucihar_fedmm --encoders convgru,limu_bert,ssl_wearables >> %U% 2>&1
 %P% scripts\05_run_federated.py --profile ucihar_fedmm --encoders convgru --methods fedavg_scratch >> %U% 2>&1
 %P% scripts\05_run_federated.py --profile ucihar_fedmm5 --encoders convgru --methods fedavg_scratch >> %U% 2>&1
 %P% scripts\05_run_federated.py --profile ucihar_fedmm --encoders limu_bert,ssl_wearables --methods fedavg_scratch,v0_full_ft,v5_proposed >> %U% 2>&1
 %P% scripts\05_run_federated.py --profile ucihar_fedmm5 --encoders limu_bert,ssl_wearables --methods fedavg_scratch,v0_full_ft,v5_proposed >> %U% 2>&1
 echo ucihar main done >> %U%
+%P% scripts\04_run_centralized.py --profile wisdm --encoders unimts >> %W% 2>&1
+%P% scripts\05_run_federated.py --profile wisdm --encoders unimts >> %W% 2>&1
 %P% scripts\05_run_federated.py --profile wisdm_fedaiot --encoders ssl_wearables --methods v0_full_ft,v3_lora_exact,v5_proposed >> %W% 2>&1
 %P% scripts\05_run_federated.py --profile wisdm_fedaiot --encoders limu_bert --methods fedavg_scratch,v0_full_ft,v5_proposed >> %W% 2>&1
 %P% scripts\05_run_federated.py --profile wisdm_fedaiot05 --encoders ssl_wearables --methods v0_full_ft >> %W% 2>&1

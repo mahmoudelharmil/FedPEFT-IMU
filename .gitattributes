@@ -1,0 +1,2 @@
+# Windows batch queues must keep CRLF line endings: with LF only, cmd.exe can skip lines
+*.cmd text eol=crlf

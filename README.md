@@ -28,16 +28,16 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
 | WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete except UniMTS; protocol A (published FedAIoT protocol) partly done | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
-| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol queued | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
+| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; 2 extra user splits queued | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
 The online reports are private links; share them from the page's Share menu.
 
 **Running now** (`scripts/tools/queues/all_final.cmd`, one job at a time; progress in
 `logs/ucihar/queue.out` and `logs/wisdm/final.out`; finished runs are skipped, so the queue can be
-restarted at any time). Every FedAvg / V0–V5 grid is completed first:
+restarted at any time; the file must keep CRLF line endings, see below):
 1. ~~UCI HAR, our protocol B, all encoders~~ (done);
-2. WISDM, our protocol B: UniMTS (the last missing V0–V5 grid; slowest encoder, 10-s windows);
-3. UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0);
+2. ~~UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0)~~ (done);
+3. WISDM, our protocol B: UniMTS (the last missing V0–V5 grid; slowest encoder, 10-s windows);
 4. WISDM, the published protocol (FedAIoT, 400 rounds), draw 0 first, then two more draws of the
    test subjects;
 5. two more user splits of UCI HAR.
@@ -51,7 +51,9 @@ written; the abstract, introduction, related work and conclusion are still place
 **Lessons for running on this machine** (6 GB GTX 1660 Ti, 16 GB RAM): run at most one heavy
 job at a time. Two concurrent jobs plus desktop applications filled the RAM, Windows paged the
 jobs out and they made almost no progress for 19 hours. Queues are `.cmd` files started
-detached (`Invoke-CimMethod Win32_Process Create`), so they survive closing the terminal.
+detached (`Invoke-CimMethod Win32_Process Create`), so they survive closing the terminal. Save them
+with CRLF line endings and never edit one while it runs: with LF-only lines, `cmd` silently skipped
+a whole step once (the WISDM UniMTS grid).
 
 ## HARBox (second dataset, the paper's main benchmark)
 
@@ -281,6 +283,25 @@ on the training curve and validation users, not on test data.
 V5 is the best federated method on every encoder and beats Ditto on the pretrained LIMU-BERT
 (0.924 vs 0.898) with 5.6× less uplink. HALO is the exception to "federated ≥ centralized": its
 centralized pretrained model (0.964) stays well ahead of every federated HALO run.
+
+**Published protocol** (FedMultimodal: 105 Dirichlet clients from the 21 training subjects, macro-F1
+of the global model on the 9 official test subjects; one run each):
+
+| Model | α = 0.1 | α = 5.0 | Source |
+|---|---|---|---|
+| FedAvg, Conv-GRU (concatenation / attention fusion) | 0.775 / 0.767 | 0.788 / 0.778 | FedMultimodal, Tab. 4 |
+| FedOpt, Conv-GRU, attention fusion (best published) | 0.798 | 0.852 | FedMultimodal, Tab. 4 |
+| FedAvg, Conv-GRU (our re-run) | **0.899** | 0.904 | ours |
+| FedAvg / V0 / V5, LIMU-BERT | 0.772 / 0.850 / 0.808 | 0.827 / 0.882 / 0.857 | ours |
+| FedAvg / V0 / V5, ssl-wearables | 0.769 / 0.782 / 0.705 | 0.885 / **0.928** / 0.910 | ours |
+| Centralized, ssl-wearables pretrained (not private) | 0.945 | 0.945 | ours |
+
+Our best federated models beat the best published result under both label skews (0.899 vs 0.798 and
+0.928 vs 0.852). Part of this comes from our training recipe (AdamW, augmentation, input
+normalisation, label-skew handling): our re-run of the published FedAvg + Conv-GRU baseline already
+scores 0.899 / 0.904 against the published 0.775 / 0.788. As on WISDM, this protocol scores only
+brand-new subjects, so V5's per-user parts cannot help and a shared classifier (V0) transfers
+better: V5 is 0.02–0.08 macro-F1 below V0 (at 5–50× less uplink), most under the strong skew α = 0.1.
 
 ## Client participation and device tiers
 
