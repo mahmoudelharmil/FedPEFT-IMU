@@ -368,6 +368,10 @@
       <div class="card span-2"><div class="head"><h3>Methods compared</h3><span class="tag">PDF p. 4</span></div>
         <p class="desc">Each method is defined only by which parts of the model are <span class="pill tr">trained</span>, <span class="pill fed">sent to the server</span> or <span class="pill loc">kept on the device</span>.</p>
         <div class="tbl-wrap" id="t_methods"></div></div>
+      <div class="card span-2"><div class="head"><h3>Who trains each round, and on which device tier</h3><span class="tag">client sampling · rank tiers</span></div>
+        <p class="desc" id="partHow"></p>
+        <p class="desc" id="partTier"></p>
+        <div class="tbl-wrap" id="t_participation"></div></div>
     </div>
   </section>
 
@@ -1349,6 +1353,53 @@ function sota() {
   table("t_sota_data", [{ label: "Model", key: "name", align: "l" }, { label: HELD ? "Test-subject acc" : "Mean user acc", key: "accuracy", fmt: f3 }, { label: "Kind", key: "kind", align: "l" }], [...rows].reverse());
 }
 
+/* =================== CLIENT SAMPLING AND DEVICE TIERS =================== */
+function participation() {
+  const p = D.protocol;
+  const byEnc = {};
+  D.federated.filter((f) => !f.tag && f.participation).forEach((f) => {
+    const prev = byEnc[f.encoder];
+    if (!prev || f.method === "v5_proposed") byEnc[f.encoder] = f;
+  });
+  const runs = Object.values(byEnc).sort((a, b) => ENC_ORDER.indexOf(a.encoder) - ENC_ORDER.indexOf(b.encoder));
+  if (!runs.length) return;
+  const c0 = runs[0].config || {};
+  const frac = Math.round(100 * (p.clients_per_round_frac || (c0.clients_per_round / c0.clients) || 0));
+  $("partHow").textContent =
+    `How many and how. Each round, ${frac} % of the ${c0.clients} clients (${c0.clients_per_round}) train: in cross-device FL only part of ` +
+    `the devices is available at any time, and ${frac} % keeps the average stable at an affordable cost` +
+    (frac === 20 ? " (the usual setting since FedAvg)" : " (the setting of the published protocol this profile reproduces)") +
+    `. The clients of a round are drawn uniformly at random without replacement, so no client is favoured for its amount of data, ` +
+    `its loss or its device. The random generator is seeded per user split and used for nothing else, so every method trains with ` +
+    `exactly the same clients in exactly the same rounds, and differences between methods are not due to luckier draws. ` +
+    `Every client takes part regularly (table), and evaluation always uses all clients.`;
+  $("partTier").textContent =
+    `Device tiers (V4, V5). Each client trains LoRA adapters of rank 2, 4 or 8, standing for low-, mid- and high-end devices. ` +
+    `The tier is drawn once per client, uniformly at random, and kept for the whole training; V4 and V5 get the same assignment. ` +
+    `The dataset records no device capability, so a random draw simulates a mixed fleet without inventing a proxy, and it keeps the ` +
+    `tier independent of the user's data: the per-tier scores then measure the cost of a lower rank, not of harder users on weaker devices. ` +
+    `A rank-r client uploads only rank-r factors (less bandwidth) and receives the r strongest directions of the global update. ` +
+    `Because a client keeps its tier for every encoder and method, a tier group that is ahead for V4 as well (table) simply holds easier ` +
+    `users; the clean test of the rank itself is to give every client rank 8 (the fixed-rank ablation).`;
+  const tiers = (f) => ["r2", "r4", "r8"].map((k) => (f.tier_f1 || {})[k]);
+  const v4 = (enc) => D.federated.find((g) => g.encoder === enc && g.method === "v4_hetero_rank" && !g.tag);
+  const rows = runs.map((f) => {
+    const t5 = tiers(f), w = v4(f.encoder), t4 = w ? tiers(w) : [null, null, null];
+    const up = f.comm_per_rank || {};
+    return { enc: f.encoder_display, encoder: f.encoder, clients: (f.config || {}).clients, per: (f.config || {}).clients_per_round,
+      rounds: (f.config || {}).rounds, part: `${f.participation.min} / ${f.participation.median} / ${f.participation.max}`,
+      never: f.participation.never,
+      fleet: t5.every((x) => x) ? t5.map((x) => x.n_clients).join(" / ") : "one rank (8)",
+      v5: t5.every((x) => x) ? t5.map((x) => f3(x.mean_f1)).join(" / ") : "—",
+      v4: t4.every((x) => x) ? t4.map((x) => f3(x.mean_f1)).join(" / ") : "—" };
+  });
+  table("t_participation", [{ label: "Encoder", key: "enc", align: "l" }, { label: "Clients", key: "clients" },
+    { label: "Per round", key: "per" }, { label: "Rounds", key: "rounds" },
+    { label: "Rounds per client (min / median / max)", key: "part", align: "l" }, { label: "Never drawn", key: "never" },
+    { label: "Clients at rank 2 / 4 / 8", key: "fleet", align: "l" },
+    { label: "V5 client F1, rank 2 / 4 / 8", key: "v5", align: "l" }, { label: "V4 client F1, rank 2 / 4 / 8", key: "v4", align: "l" }], rows);
+}
+
 /* ======================== REPEATED USER SPLITS ======================== */
 function splits() {
   const R = D.repeated_splits || [];
@@ -1591,7 +1642,7 @@ function themeToggle() {
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
 }
 
-header(); kpis(); rqTable(); sota(); splits(); improvements(); budgetNotes(); setup(); centralized(); federatedStatic(); federatedScoped(); scopedTables(); heldoutAll(); ablations(); repro();
+header(); kpis(); rqTable(); sota(); splits(); participation(); improvements(); budgetNotes(); setup(); centralized(); federatedStatic(); federatedScoped(); scopedTables(); heldoutAll(); ablations(); repro();
 themeToggle(); renderAll();
 </script>
 {% if standalone %}</body>

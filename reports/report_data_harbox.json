@@ -1,6 +1,6 @@
 {
   "title": "FedPEFT-IMU \u2014 Experimental Results",
-  "generated": "25 October 2026, 19:48",
+  "generated": "25 October 2026, 20:05",
   "profile": "harbox",
   "host": {
     "python": "3.13.7",
@@ -3895,6 +3895,12 @@
       "client_time_s": 1.2736064480387095,
       "total_time_s": 1383.9966504999902,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 4600130,
         "lora": 0,
@@ -4720,6 +4726,12 @@
       "client_time_s": 1.4204995204895443,
       "total_time_s": 1541.099096100079,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 4600130,
         "lora": 0,
@@ -5545,6 +5557,12 @@
       "client_time_s": 0.4523758183338442,
       "total_time_s": 502.0562457998749,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 4600130,
         "lora": 0,
@@ -6370,6 +6388,12 @@
       "client_time_s": 1.189831240094431,
       "total_time_s": 1289.0239315999206,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 4600130,
         "lora": 55296,
@@ -7197,6 +7221,12 @@
       "client_time_s": 1.063572943333334,
       "total_time_s": 1160.8676709000001,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 4600130,
         "lora": 55296,
@@ -8053,6 +8083,12 @@
           "mean_f1": 0.5924538292905754,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
       },
       "param_counts": {
         "encoder": 4600130,
@@ -8911,6 +8947,12 @@
           "mean_f1": 0.7939357364722878,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
       },
       "param_counts": {
         "encoder": 4600130,
@@ -9771,6 +9813,12 @@
       "client_time_s": 0.42399568076470934,
       "total_time_s": 1748.8657471999995,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 0,
@@ -10919,6 +10967,12 @@
       "client_time_s": 0.4089110711764721,
       "total_time_s": 723.1498687000003,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 0,
@@ -12072,6 +12126,12 @@
       "client_time_s": 0.42807864094119447,
       "total_time_s": 757.5790116000007,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 0,
@@ -13220,6 +13280,12 @@
       "client_time_s": 0.10931416899801287,
       "total_time_s": 200.37563889985904,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 0,
@@ -14367,6 +14433,12 @@
       "client_time_s": 0.2593390592912157,
       "total_time_s": 459.79248720011674,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -15519,6 +15591,12 @@
       "client_time_s": 0.3088339147647136,
       "total_time_s": 548.2171094000005,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -16695,6 +16773,12 @@
           "mean_f1": 0.6666322922460406,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
       },
       "param_counts": {
         "encoder": 45360,
@@ -17876,6 +17960,12 @@
           "mean_f1": 0.835156088032867,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
       },
       "param_counts": {
         "encoder": 45360,
@@ -19059,6 +19149,12 @@
       "client_time_s": 0.04154516323530622,
       "total_time_s": 221.58725210000011,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 270300,
         "lora": 0,
@@ -20206,6 +20302,12 @@
       "client_time_s": 0.04408662399999069,
       "total_time_s": 88.57223250000061,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 270300,
         "lora": 0,
@@ -21358,6 +21460,12 @@
       "client_time_s": 0.041408551470563264,
       "total_time_s": 80.77629400000023,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 270300,
         "lora": 0,
@@ -22480,6 +22588,12 @@
       "client_time_s": 1.2863419897050834,
       "total_time_s": 1367.9283827999607,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 10445760,
         "lora": 0,
@@ -23305,6 +23419,12 @@
       "client_time_s": 1.1510225349003176,
       "total_time_s": 1232.684732099995,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 10445760,
         "lora": 0,
@@ -24130,6 +24250,12 @@
       "client_time_s": 0.28740239294574543,
       "total_time_s": 318.5366791000124,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 10445760,
         "lora": 0,
@@ -24955,6 +25081,12 @@
       "client_time_s": 1.097629198240454,
       "total_time_s": 1182.0387341999449,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 10445760,
         "lora": 238712,
@@ -25780,6 +25912,12 @@
       "client_time_s": 1.089640902453011,
       "total_time_s": 1172.45217269985,
       "tier_f1": {},
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 10445760,
         "lora": 238712,
@@ -26635,6 +26773,12 @@
           "mean_f1": 0.7366330084386121,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
       },
       "param_counts": {
         "encoder": 10445760,
@@ -27494,6 +27638,12 @@
           "n_clients": 30
         }
       },
+      "participation": {
+        "min": 7,
+        "median": 12.0,
+        "max": 20,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 10445760,
         "lora": 238712,
@@ -28352,6 +28502,12 @@
       "client_time_s": 4.531247235588239,
       "total_time_s": 3149.5948303000005,
       "tier_f1": {},
+      "participation": {
+        "min": 4,
+        "median": 8.0,
+        "max": 15,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 5171320,
         "lora": 0,
@@ -29018,6 +29174,12 @@
       "client_time_s": 2.2406473519117514,
       "total_time_s": 1624.8759554999997,
       "tier_f1": {},
+      "participation": {
+        "min": 4,
+        "median": 8.0,
+        "max": 15,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 5171320,
         "lora": 0,
@@ -29684,6 +29846,12 @@
       "client_time_s": 0.7991960097059398,
       "total_time_s": 623.0416003000009,
       "tier_f1": {},
+      "participation": {
+        "min": 4,
+        "median": 8.0,
+        "max": 15,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 5171320,
         "lora": 0,
@@ -30350,6 +30518,12 @@
       "client_time_s": 3.075470645000041,
       "total_time_s": 2232.4962495,
       "tier_f1": {},
+      "participation": {
+        "min": 4,
+        "median": 8.0,
+        "max": 15,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 5171320,
         "lora": 182296,
@@ -31016,6 +31190,12 @@
       "client_time_s": 3.3397413900000013,
       "total_time_s": 2394.6953367000006,
       "tier_f1": {},
+      "participation": {
+        "min": 4,
+        "median": 8.0,
+        "max": 15,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 5171320,
         "lora": 182296,
@@ -31710,6 +31890,12 @@
           "mean_f1": 0.7111409890204521,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 4,
+        "median": 8.0,
+        "max": 15,
+        "never": 0
       },
       "param_counts": {
         "encoder": 5171320,
@@ -32406,6 +32592,12 @@
           "mean_f1": 0.7455699989863697,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 4,
+        "median": 8.0,
+        "max": 15,
+        "never": 0
       },
       "param_counts": {
         "encoder": 5171320,
@@ -33106,6 +33298,12 @@
       "client_time_s": 0.22302786041183187,
       "total_time_s": 395.9561255000008,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 576,
@@ -34260,6 +34458,12 @@
       "client_time_s": 0.2291709176471105,
       "total_time_s": 403.0086826000006,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 1152,
@@ -35414,6 +35618,12 @@
       "client_time_s": 0.3088339147647136,
       "total_time_s": 548.2171094000005,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -36568,6 +36778,12 @@
       "client_time_s": 0.23030372035293112,
       "total_time_s": 405.27611830000023,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 4608,
@@ -37723,6 +37939,12 @@
       "client_time_s": 0.8448589406470659,
       "total_time_s": 1500.2518534,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 0,
@@ -38876,6 +39098,12 @@
       "client_time_s": 0.33271749970586506,
       "total_time_s": 593.3154467000022,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 8064,
@@ -40026,6 +40254,12 @@
       "client_time_s": 0.5783028994711554,
       "total_time_s": 1109.4232282999437,
       "tier_f1": {},
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -41205,6 +41439,12 @@
           "n_clients": 30
         }
       },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -42383,6 +42623,12 @@
           "mean_f1": 0.8251522137445748,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
       },
       "param_counts": {
         "encoder": 45360,
@@ -43569,6 +43815,12 @@
           "n_clients": 30
         }
       },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -44749,6 +45001,12 @@
           "mean_f1": 0.8204223348091914,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
       },
       "param_counts": {
         "encoder": 45360,
@@ -45932,6 +46190,12 @@
           "mean_f1": 0.8396436243734599,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
       },
       "param_counts": {
         "encoder": 45360,
@@ -47144,6 +47408,12 @@
           "n_clients": 30
         }
       },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -48326,6 +48596,12 @@
           "n_clients": 30
         }
       },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -49507,6 +49783,12 @@
           "mean_f1": 0.8335254461240296,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
       },
       "param_counts": {
         "encoder": 45360,
@@ -50691,6 +50973,12 @@
           "n_clients": 30
         }
       },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -51874,6 +52162,12 @@
           "n_clients": 30
         }
       },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
+      },
       "param_counts": {
         "encoder": 45360,
         "lora": 2304,
@@ -53055,6 +53349,12 @@
           "mean_f1": 0.8369832267935097,
           "n_clients": 30
         }
+      },
+      "participation": {
+        "min": 14,
+        "median": 20.0,
+        "max": 29,
+        "never": 0
       },
       "param_counts": {
         "encoder": 45360,
@@ -54902,7 +55202,7 @@
     "Highest worst-10 % client F1 per encoder: LIMU-BERT Ditto-FT 0.543 (V5 0.510); ssl-wearables V5 0.531; UniMTS V5 0.283; HALO V5 0.381; MLP Local 0.511.",
     "New users, zero-shot (V5 = nearest global prototype; BatchNorm encoders first estimate their norm statistics from the new user's unlabelled windows): LIMU-BERT V5 0.591 vs V3 0.675; ssl-wearables V5 0.775 vs V3 0.788; UniMTS V5 0.715 vs V3 0.762; HALO V5 0.534 vs V3 0.527. On average the shared classifier of V3 transfers better to brand-new users than V5's prototype rule (-0.034); V5's advantage is on the devices that trained with it.",
     "Transductive zero-shot (V5's prototypes first refined on the new user's unlabelled windows, no labels and no communication): LIMU-BERT 0.591 -> 0.626; ssl-wearables 0.775 -> 0.776; UniMTS 0.715 -> 0.732; HALO 0.534 -> 0.554.",
-    "Budget note: ssl-wearables, HALO, UniMTS ran with a reduced compute budget (see the callouts), so compare its methods with each other.",
+    "Budget note: HALO, ssl-wearables, UniMTS ran with a reduced compute budget (see the callouts), so compare its methods with each other.",
     "All numbers come from one user split (seed 0). Differences of a few F1 points should be confirmed with the 'full' profile (3 held-out lists) before they are claimed."
   ]
 }

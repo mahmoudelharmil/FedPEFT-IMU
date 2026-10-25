@@ -418,6 +418,12 @@ def collect(cfg) -> dict:
             "client_time_s": r0["resources"]["client_time_s_mean"],
             "total_time_s": _mean([r["resources"]["total_time_s"] for r in runs]),
             "tier_f1": r0["tier_f1"],
+            # how often every client was drawn (uniform sampling without replacement per round)
+            "participation": ({"min": int(min(r0["participation"].values())),
+                               "median": float(np.median(list(r0["participation"].values()))),
+                               "max": int(max(r0["participation"].values())),
+                               "never": int(sum(v == 0 for v in r0["participation"].values()))}
+                              if r0.get("participation") else None),
             "param_counts": r0["param_counts"],
             "evals": r0["evals"],
             "rounds": [{"round": h["round"], "uplink_mb": h["uplink_mb"], "cum_uplink_mb": h["cum_uplink_mb"],

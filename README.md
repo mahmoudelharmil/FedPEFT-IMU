@@ -3,7 +3,8 @@
 **Parameter-efficient federated adaptation of pretrained inertial encoders for human activity recognition.**
 
 This project implements, runs and measures the complete *Idea 1* research plan
-(`FedPEFT-IMU_Idea1_Complete.pdf`) on the **Capture-24** dataset:
+(`FedPEFT-IMU_Idea1_Complete.pdf`), first on the **Capture-24** dataset and then on
+**HARBox** (the paper's benchmark) and **WISDM-2019** (an HTML results report):
 
 1. **Phase 1: centralized proof of concept.** The four IMU encoders (LIMU-BERT,
    ssl-wearables, UniMTS, HALO) are trained **from scratch**, and also fine-tuned from
@@ -19,6 +20,34 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Uplink MB / round, MB to target F1 | bytes of every upload, measured (`federated/comm.py`) |
 | Rounds to target, client memory, time | round loop (`federated/simulation.py`), peak GPU memory, wall-clock |
 | Zero-/few-shot F1 on held-out users | 0, 1 and 5 minutes of labels (`training/heldout.py`) |
+
+## Current status (25 October 2026)
+
+| Dataset | Role | Experiments | Results |
+|---|---|---|---|
+| Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
+| HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
+| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete except UniMTS; protocol A (published FedAIoT protocol) partly done | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
+
+The online reports are private links; share them from the page's Share menu.
+
+**Running now** (`scripts/tools/queues/wisdm_final.cmd`, one job at a time; progress in
+`logs/wisdm/final.out`, about 15 h in total):
+1. the last component ablations of V5 on WISDM (LoRA on W_q/W_v only, no augmentation, no prototypes);
+2. the published WISDM protocol (FedAIoT, 400 rounds) with LIMU-BERT, ssl-wearables and the LSTM,
+   on three random draws of the 6 test subjects (α = 0.1 and 0.5);
+3. UniMTS on WISDM (slowest encoder, last).
+
+When it finishes: `python scripts/07_build_report.py --profile wisdm` rebuilds the WISDM report
+(the online version is then republished).
+
+**Paper** (`paper/`, IEEE format, HARBox only): methodology, dataset and results sections are
+written; the abstract, introduction, related work and conclusion are still placeholders.
+
+**Lessons for running on this machine** (6 GB GTX 1660 Ti, 16 GB RAM): run at most one heavy
+job at a time. Two concurrent jobs plus desktop applications filled the RAM, Windows paged the
+jobs out and they made almost no progress for 19 hours. Queues are `.cmd` files started
+detached (`Invoke-CimMethod Win32_Process Create`), so they survive closing the terminal.
 
 ## HARBox (second dataset, the paper's main benchmark)
 
@@ -126,7 +155,164 @@ The transductive rule (below) and all-layer LoRA bring V5 to 0.727 ± 0.054, aga
 .venv\Scripts\python scripts/tools/reeval_heldout.py --profile harbox --encoder limu_bert --method v5_proposed --on-pool --zero-only split.zero_shot_refine_iters=10
 ```
 
-## Headline results (`enhanced` profile, seed 0)
+## WISDM-2019 (third dataset, HTML report only)
+
+[WISDM-2019](https://archive.ics.uci.edu/dataset/507/wisdm+smartphone+and+smartwatch+activity+and+biometrics+dataset)
+(Weiss, UCI #507): 51 subjects did 18 activities for about 3 minutes each, with a smartwatch on the
+dominant wrist (accelerometer + gyroscope, 20 Hz). As in the FedAIoT benchmark we use the
+**watch** and FedAIoT's **12 classes** (walking, jogging, stairs, sitting, standing, typing,
+brushing teeth, eating, drinking, writing, clapping, folding clothes; "eating" is the sandwich
+activity, as in FedAIoT's loader). Windows are 10 s with a 5-s hop.
+
+```powershell
+.venv\Scripts\python scripts/01_prepare_data.py --profile wisdm            # download (~310 MB) + convert
+.venv\Scripts\python scripts/03_pretrain_halo.py --profile wisdm           # HALO SSL on the 5 pool users
+.venv\Scripts\python scripts/04_run_centralized.py --profile wisdm
+.venv\Scripts\python scripts/05_run_federated.py --profile wisdm           # leakage-free protocol (B)
+.venv\Scripts\python scripts/05_run_federated.py --profile wisdm_fedaiot   # published protocol (A), alpha 0.1
+.venv\Scripts\python scripts/05_run_federated.py --profile wisdm_fedaiot05 # published protocol (A), alpha 0.5
+.venv\Scripts\python scripts/07_build_report.py --profile wisdm            # the HTML report
+```
+
+**Data cleaning** (`fedpeft/data/wisdm.py`). Two defects of the raw files are fixed:
+subject 1629's files contain every recording twice (duplicated windows could land in both
+training and test), and subjects 1637–1640 logged the accelerometer at ~50 Hz and the gyroscope
+at ~25 Hz, so pairing the sensors by identical timestamps (as FedAIoT does) drops most of their
+data. Repeated rows are removed and both sensors are interpolated onto one 20-Hz grid:
+20,577 windows, 340–412 per subject, classes balanced (8–9 % each).
+
+**Two protocols:**
+
+| | Protocol A (`wisdm_fedaiot`, `wisdm_fedaiot05`) | Protocol B (`wisdm`, ours) |
+|---|---|---|
+| Purpose | comparison with FedAIoT's published numbers | all other results |
+| Clients | 80 clients made by a Dirichlet label partition (α = 0.1 or 0.5) of 45 training subjects | 36 subjects = 36 clients |
+| New users | 6 unseen test subjects (3 random draws) | 10 held-out + 5 pool subjects |
+| Client split | random 80/10/10 per client | every activity split in time, 80/20, 1-window gap |
+| Rounds, clients per round | 400 rounds, 10 % (8) per round, batch 32 (FedAIoT) | 100 rounds, 20 % (7) per round |
+| Metric | accuracy of the global model on all windows of the test subjects | per-user accuracy, macro-F1, fairness, new users, bytes |
+
+**Results so far** (protocol B, user split 0, mean user accuracy; shared classifiers after +FT):
+
+| Method | LIMU-BERT | ssl-wearables | HALO | LSTM |
+|---|---|---|---|---|
+| FedAvg (scratch) | 0.763 | 0.735 | 0.465 | 0.708 |
+| Local training | – | – | – | 0.745 |
+| Ditto | – | – | – | 0.839 |
+| V0 full fine-tuning | 0.808 | 0.872 | 0.712 | – |
+| Ditto (pretrained) | 0.914 | – | – | – |
+| V3 LoRA exact | 0.805 | 0.871 | 0.743 | – |
+| **V5 FedPEFT-IMU** | 0.908 | **0.957** | **0.864** | – |
+| Centralized, pretrained (not private) | 0.875 | 0.941 | 0.886 | – |
+| V5 uplink saving vs V0 | 6× | 51× | 93× | |
+
+- **Three user splits (LIMU-BERT):** V5 0.911 ± 0.002 (worst-10 % 0.787) vs Ditto (pretrained)
+  0.908 ± 0.006 (0.759) vs V0 0.820 ± 0.018 (0.471), at 6× less uplink than Ditto.
+- **New users:** zero-shot, a shared classifier transfers better (V0 0.705 vs V5 0.653 macro-F1 on
+  LIMU-BERT); with one labelled window per activity V5 is ahead (0.852 vs 0.829), with ten it is the
+  best model (0.910 LIMU-BERT, 0.922 ssl-wearables).
+- **Ablation (LIMU-BERT):** LoRA on all linear layers 0.908 vs W_q/W_v only 0.885; without local
+  norm and adapter 0.894; a shared classifier fine-tuned by each client 0.916 (as on HARBox, the
+  local norms carry most of the personalisation).
+- **Published protocol (in progress):** centralized, our best model reaches 0.851 accuracy on the
+  unseen test subjects (ssl-wearables) against FedAIoT's 0.741; federated with α = 0.5, LIMU-BERT V0
+  reaches 0.761 against FedAIoT's best 0.715. The α = 0.1 runs and the extra test-subject draws are
+  running. Our re-run of FedAIoT's LSTM (0.592 at α = 0.1 on one draw) is below their 0.685.
+
+## Client participation and device tiers
+
+This section explains which users become clients, how many clients train in each round and how
+they are picked, and how each client gets its LoRA rank tier (V4, V5).
+
+### Which users are clients
+
+Users are assigned to roles once per user split, at random: `make_user_split`
+(`fedpeft/data/splits.py`) shuffles the user IDs with the split seed and takes 20 % as held-out
+(new) users, 10 % as pool users and the remaining ~70 % as FL clients. The assignment is random
+so that no property of a user (amount of data, activities, device) decides its role, and it is
+saved to `results/splits/` so every run of a split uses the same users. Repeating the experiments
+on seeds 1 and 2 (three different assignments) shows how much a result depends on who happens to
+be a client. In WISDM protocol A the 6 test subjects are drawn the same way, and the windows of
+the other 45 are dealt to 80 clients by a Dirichlet label partition (the FedAIoT protocol), so a
+client there is a mix of subjects, not a person.
+
+### How many clients train per round, and how they are chosen
+
+| Dataset / protocol | Clients | Per round | Rounds | Participations per client (min / median / max) |
+|---|---|---|---|---|
+| Capture-24 (`enhanced`) | 106 | 21 (20 %) | 80 | 8 / 15 / 26 |
+| HARBox B (`harbox`) | 84 | 17 (20 %) | 100 | 14 / 20 / 29 |
+| HARBox A (`harbox_fedchar`) | 120 | 60 (50 %) | 100 | 38 / 50 / 62 |
+| WISDM B (`wisdm`) | 36 | 7 (20 %) | 100 | 9 / 19 / 30 |
+| WISDM A (`wisdm_fedaiot*`) | 80 | 8 (10 %) | 400 | 28 / 40 / 54 |
+
+- **How many.** In cross-device FL only part of the devices is online and charging at any time,
+  so a round uses a fraction of the clients (`fl.clients_per_round_frac`). Our own protocols use
+  **20 %**, the usual setting since FedAvg (McMahan et al., 2017, used 10 %): enough clients per
+  round for a stable average, few enough that the simulation stays affordable on one GPU. When we
+  reproduce a published protocol we use **its** fraction: 50 % for FedCHAR (HARBox A) and 10 % for
+  FedAIoT (WISDM A), so the comparison with their numbers is like for like.
+- **How.** Every round draws `round(fraction × clients)` clients **uniformly at random without
+  replacement** (`FederatedRun.run`, `self.rng.choice(..., replace=False)`).
+- **Why uniform random.** It is the unbiased standard of FedAvg: no client is favoured for having
+  more data, a lower loss or a faster device, so the result is not tied to a selection heuristic
+  (power-of-choice, loss-based or resource-aware selection would change who trains and would mix
+  that effect into the method comparison). Over the rounds every client takes part regularly (no
+  client in any table above was never selected).
+- **Same clients for every method.** The generator is seeded with `seed + 2000` and is used for
+  nothing else, so for a given split every method trains with exactly the same clients in exactly
+  the same rounds. Differences between methods are therefore not due to luckier client draws.
+- **Evaluation** always uses **all** clients (each on its own test part), not only the ones that
+  trained in the last round.
+
+### How clients are assigned to rank tiers (V4, V5)
+
+V4 and V5 simulate a mixed fleet of devices: every client trains LoRA adapters of rank **2, 4 or
+8** (`model.lora.tiers`), standing for low-, mid- and high-end devices. All other methods use one
+rank (8) for everybody.
+
+- **How.** When a run starts, each client gets its tier **once, uniformly at random** from
+  {2, 4, 8}, with a generator seeded with `seed + 1000` (`FederatedRun.__init__`). The tier is
+  fixed for the whole training (a phone does not change hardware between rounds), and V4 and V5
+  get the same assignment, so they are compared on the same fleet.
+- **Why random.** None of the datasets records how capable a device is: Capture-24 uses one
+  Axivity sensor model, WISDM one smartwatch model, and HARBox names 77 phone models but without
+  memory or compute figures. A random assignment simulates a mixed fleet without inventing a
+  capability proxy. It also keeps the tier independent of the user's data: if the weakest devices
+  also had the hardest users, a lower score on rank-2 devices could not be told apart from the
+  users being hard. With random tiers, the per-tier scores measure the cost of a lower rank alone.
+  Studies of heterogeneous-rank LoRA in FL (e.g. HetLoRA, FlexLoRA) likewise give clients
+  simulated ranks or resource budgets.
+- **Resulting fleets** (split 0): HARBox B 31 / 23 / 30 clients at rank 2 / 4 / 8; WISDM B
+  15 / 10 / 11; HARBox A 44 / 33 / 43; WISDM A 30 / 21 / 29; Capture-24 37 / 29 / 40.
+- **What a tier changes.** A rank-r client trains and uploads only rank-r factors and receives the
+  r strongest directions of the global update (the server re-factorises the aggregate with an SVD).
+  Its update is aggregated in delta form, so a rank-2 client cannot erase the directions it never
+  received. The saving is mainly **communication**: per update, rank 2 / 4 / 8 upload 23 / 25 / 30 kB
+  (LIMU-BERT, HARBox) and 0.51 / 0.75 / 1.23 MB (ssl-wearables). Measured training memory is almost
+  the same for all tiers (e.g. 63 MB on LIMU-BERT, 353–355 MB on ssl-wearables), because the
+  activations of the frozen encoder dominate; on real devices a lower rank mainly saves
+  bandwidth, optimizer state and adapter storage.
+- **Low tiers are not penalised** (V5, mean client F1 per tier):
+
+  | Run | rank 2 | rank 4 | rank 8 |
+  |---|---|---|---|
+  | HARBox B, LIMU-BERT | 0.879 | 0.850 | 0.835 |
+  | WISDM B, LIMU-BERT | 0.895 | 0.912 | 0.888 |
+  | WISDM B, ssl-wearables | 0.950 | 0.952 | 0.965 |
+
+  A client keeps its tier for every encoder and method, so these columns compare **groups of
+  users** as much as ranks. On HARBox the rank-2 group happens to hold easier users: it is ahead for
+  V4 as well (0.756 vs 0.667 at rank 8) and for every encoder. The clean test of the rank itself is to
+  give every client rank 8 (`v5_abl_fixed_rank`, HARBox), which changes macro-F1 only from 0.863 to
+  0.866. The report shows this table for every encoder (Setup → "Who trains each round, and on which
+  device tier").
+  On Capture-24 the rank-8 clients were ahead (0.632 / 0.667 / 0.698 with ssl-wearables), so a
+  small capacity cost of low ranks can appear on harder, more imbalanced data.
+- **Limitation.** The tiers are simulated. Assigning them from real device capabilities (for
+  example the memory of HARBox's phone models) would be a more realistic test and is left open.
+
+## Capture-24 headline results (`enhanced` profile, seed 0)
 
 Macro-F1 on the last 20 % of every client's recording (6 classes, Capture-24, 106 clients).
 The complete set of KPIs is in `reports/FedPEFT-IMU_report_enhanced.html`; the earlier
@@ -322,6 +508,8 @@ minute, which preserves the 24-h class mix at a sixth of the compute.
 - Held-out users: the first 50 % supplies few-shot labels (1 or 5 minutes per activity) and the
   last 50 % is tested.
 - The user IDs of every split are written to `results/splits/` so they can be published.
+- How many clients train per round, how they are drawn and how V4/V5 assign LoRA rank tiers is
+  explained in [Client participation and device tiers](#client-participation-and-device-tiers).
 
 **Encoders** (component 3). Each is a faithful re-implementation, so its official weights load
 tensor for tensor:
@@ -378,6 +566,10 @@ tensor for tensor:
 | `enhanced` | **best results**: `standard` + FL as long as centralized, +FT scores, HALO pretrained on 2× data | 1 window / min | 80 (UniMTS 40) | 1 | ~10 h (two queues) |
 | `standard` | the delivered report | 1 window / min | 40 (UniMTS 25) | 1 | ~8 h (two parallel queues) |
 | `full` | paper-grade (PDF p. 12) | 1 window / 30 s | 200 | 3 | days |
+| `harbox` | HARBox, leakage-free protocol B | all 2-s windows | 100 (ssl-wearables, HALO 60; UniMTS 40) | 1 (+2 for LIMU-BERT, MLP) | ~1 day |
+| `harbox_fedchar` | HARBox, published protocol A (FedCHAR) | 50–500 random windows / user | 100 | 1 | a few hours |
+| `wisdm` | WISDM-2019 watch, leakage-free protocol B | all 10-s windows | 100 (ssl-wearables, HALO 60; UniMTS 30) | 1 (+2 for LIMU-BERT, LSTM) | ~1 day |
+| `wisdm_fedaiot`, `wisdm_fedaiot05` | WISDM-2019 watch, published protocol A (FedAIoT), α = 0.1 / 0.5 | all 10-s windows | 400 | 3 test-subject draws | ~10 h |
 
 ### Running faster on one GPU
 
