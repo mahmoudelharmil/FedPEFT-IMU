@@ -27,23 +27,24 @@ This project implements, runs and measures the complete *Idea 1* research plan
 |---|---|---|---|
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
-| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); protocol A (published FedAIoT protocol) partly done | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
-| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; 2 extra user splits queued | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
+| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); protocol A (published FedAIoT protocol) on 3 test-subject draws, the last 5 runs are running | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
+| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; 3 user splits for LIMU-BERT and Conv-GRU | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
 The online reports are private links; share them from the page's Share menu.
 
-**Running now** (`scripts/tools/queues/all_final.cmd`, one job at a time; progress in
-`logs/ucihar/queue.out` and `logs/wisdm/final.out`; finished runs are skipped, so the queue can be
-restarted at any time; the file must keep CRLF line endings, see below):
-1. ~~UCI HAR, our protocol B, all encoders~~ (done);
-2. ~~UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0)~~ (done);
-3. ~~WISDM, our protocol B: UniMTS~~ (done: every FedAvg / V0–V5 grid of all four datasets is complete);
-4. WISDM, the published protocol (FedAIoT, 400 rounds), draw 0 first, then two more draws of the
-   test subjects;
-5. two more user splits of UCI HAR.
+**Queue status.** `scripts/tools/queues/all_final.cmd` (one job at a time; finished runs are
+skipped, so a queue can be restarted at any time; the file must keep CRLF line endings, see below)
+is **done**:
+1. ~~UCI HAR, our protocol B, all encoders~~;
+2. ~~UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0)~~;
+3. ~~WISDM, our protocol B: UniMTS~~ (every FedAvg / V0–V5 grid of all four datasets is complete);
+4. ~~WISDM, the published protocol (FedAIoT, 400 rounds), three draws of the test subjects~~;
+5. ~~two more user splits of UCI HAR~~.
 
-When it finishes: `python scripts/07_build_report.py --profile ucihar` (and `--profile wisdm`)
-rebuilds the reports (the online versions are then republished).
+**Running now:** `scripts/tools/queues/all_final2.cmd` (log `logs/wisdm/final2.out`) fills the
+last WISDM published-protocol rows that have fewer than three draws: ssl-wearables V5 (α = 0.1
+draws 1–2, α = 0.5 draw 0) and LIMU-BERT FedAvg (α = 0.5 draws 1–2), about 1.5 h. Then
+`python scripts/07_build_report.py --profile wisdm` rebuilds the WISDM report.
 
 **Paper** (`paper/`, IEEE format, HARBox only): methodology, dataset and results sections are
 written; the abstract, introduction, related work and conclusion are still placeholders.
@@ -53,7 +54,9 @@ job at a time. Two concurrent jobs plus desktop applications filled the RAM, Win
 jobs out and they made almost no progress for 19 hours. Queues are `.cmd` files started
 detached (`Invoke-CimMethod Win32_Process Create`), so they survive closing the terminal. Save them
 with CRLF line endings and never edit one while it runs: with LF-only lines, `cmd` silently skipped
-a whole step once (the WISDM UniMTS grid).
+a whole step once (the WISDM UniMTS grid). Keep the machine from sleeping during a queue: on
+2026-10-26 it slept for 13 hours mid-run. The run resumed afterwards without harm, but the time
+was lost and the run's logged duration includes the sleep.
 
 ## HARBox (second dataset, the paper's main benchmark)
 
@@ -220,10 +223,33 @@ data. Repeated rows are removed and both sensors are interpolated onto one 20-Hz
 - **Ablation (LIMU-BERT):** LoRA on all linear layers 0.908 vs W_q/W_v only 0.885; without local
   norm and adapter 0.894; a shared classifier fine-tuned by each client 0.916 (as on HARBox, the
   local norms carry most of the personalisation).
-- **Published protocol (in progress):** centralized, our best model reaches 0.851 accuracy on the
-  unseen test subjects (ssl-wearables) against FedAIoT's 0.741; federated with α = 0.5, LIMU-BERT V0
-  reaches 0.761 against FedAIoT's best 0.715. The α = 0.1 runs and the extra test-subject draws are
-  running. Our re-run of FedAIoT's LSTM (0.592 at α = 0.1 on one draw) is below their 0.685.
+
+**Published protocol** (FedAIoT: 80 Dirichlet clients from 45 subjects, 400 rounds; accuracy of the
+global model on all windows of the 6 unseen test subjects, mean ± std over 3 random draws of
+those subjects):
+
+| Model | α = 0.1 | α = 0.5 | Source |
+|---|---|---|---|
+| FedAvg, LSTM | 0.685 | 0.700 | FedAIoT, Tab. 5 |
+| FedOPT, LSTM (best published at α = 0.5) | 0.658 | 0.715 | FedAIoT, Tab. 5 |
+| Centralized, LSTM | 0.741 | | FedAIoT, Tab. 5 |
+| FedAvg, LSTM (our re-run) | 0.537 ± 0.097 | 0.599 ± 0.124 | ours |
+| FedAvg / V0 / V5, LIMU-BERT | 0.656 / 0.670 / 0.616 | 0.737¹ / 0.713 / 0.690 | ours |
+| V0 / V3 / V5, ssl-wearables | 0.713 / **0.767** / 0.715¹ | **0.816** / – / 0.798² | ours |
+| Centralized, LSTM (our re-run) | 0.640 ± 0.119 | | ours |
+| Centralized, ssl-wearables pretrained (not private) | 0.833 ± 0.097 | | ours |
+
+¹ one draw so far, ² draws 1–2; the missing draws are running (`all_final2.cmd`).
+
+- Our best federated model beats FedAIoT's best published result under both label skews:
+  ssl-wearables V3 0.767 vs 0.685 (α = 0.1) and V0 0.816 vs 0.715 (α = 0.5). The gain comes from
+  the pretrained encoder, not from our training recipe: our re-run of FedAIoT's LSTM scores
+  *below* their numbers (0.537 vs 0.685 federated, 0.640 vs 0.741 centralized).
+- The test-subject draw matters more than the method: on draw 2 every model drops by 0.15–0.35
+  (centralized ssl-wearables 0.706 vs 0.942 on draw 1), so single-draw comparisons are unreliable.
+- As on UCI HAR, this protocol only scores brand-new subjects, so V5's per-user parts cannot help.
+  For ssl-wearables at α = 0.5, V5 is close to V0 (draws 1–2: 0.798 vs 0.806) at 52× less uplink.
+  For LIMU-BERT, V5 is 0.02–0.05 below V0 at 6× less uplink.
 
 ## UCI HAR (fourth dataset, HTML report only)
 
@@ -283,6 +309,24 @@ on the training curve and validation users, not on test data.
 V5 is the best federated method on every encoder and beats Ditto on the pretrained LIMU-BERT
 (0.924 vs 0.898) with 5.6× less uplink. HALO is the exception to "federated ≥ centralized": its
 centralized pretrained model (0.964) stays well ahead of every federated HALO run.
+
+**Three user splits** (splits 0–2, mean ± std; mean user accuracy, shared classifiers after +FT;
+new users = macro-F1 on the held-out users without labels):
+
+| Model, method | Accuracy | Worst-10 % | New users, zero-shot | Uplink (MB/client/round) |
+|---|---|---|---|---|
+| LIMU-BERT, **V5 FedPEFT-IMU** | 0.908 ± 0.017 | **0.802** | 0.874 | **0.037** |
+| LIMU-BERT, Ditto (pretrained) | 0.896 ± 0.002 | 0.755 | 0.891 | 0.207 |
+| LIMU-BERT, V0 full fine-tuning | 0.870 ± 0.011 | 0.692 | 0.874 | 0.207 |
+| LIMU-BERT, FedAvg (scratch) | 0.839 ± 0.010 | 0.587 | 0.816 | 0.207 |
+| Conv-GRU, Ditto (scratch) | **0.916 ± 0.004** | 0.777 | 0.939 | 1.003 |
+| Conv-GRU, Local training | 0.907 ± 0.008 | 0.789 | – | 0 |
+| Conv-GRU, FedAvg (scratch) | 0.890 ± 0.005 | 0.679 | **0.947** | 1.003 |
+
+V5 stays the best LIMU-BERT method over three splits (+0.012 over Ditto, +0.038 over V0) and has
+the best worst-10 % of all models. The small Conv-GRU trained from scratch is level with it on this
+easy six-class dataset: with Ditto 0.916 vs 0.908, within V5's spread, at 27× more uplink; it also
+transfers best to new users. The strongest V5 (ssl-wearables, 0.949) was run on split 0 only.
 
 **Published protocol** (FedMultimodal: 105 Dirichlet clients from the 21 training subjects, macro-F1
 of the global model on the 9 official test subjects; one run each):
