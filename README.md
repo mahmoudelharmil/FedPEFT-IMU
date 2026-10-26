@@ -27,7 +27,7 @@ This project implements, runs and measures the complete *Idea 1* research plan
 |---|---|---|---|
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
-| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); protocol A (published FedAIoT protocol) on 3 test-subject draws, the last 5 runs are running | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
+| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); protocol A (published FedAIoT protocol) complete on 3 test-subject draws | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
 | UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; 3 user splits for LIMU-BERT and Conv-GRU | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
 The online reports are private links; share them from the page's Share menu.
@@ -41,10 +41,9 @@ is **done**:
 4. ~~WISDM, the published protocol (FedAIoT, 400 rounds), three draws of the test subjects~~;
 5. ~~two more user splits of UCI HAR~~.
 
-**Running now:** `scripts/tools/queues/all_final2.cmd` (log `logs/wisdm/final2.out`) fills the
-last WISDM published-protocol rows that have fewer than three draws: ssl-wearables V5 (α = 0.1
-draws 1–2, α = 0.5 draw 0) and LIMU-BERT FedAvg (α = 0.5 draws 1–2), about 1.5 h. Then
-`python scripts/07_build_report.py --profile wisdm` rebuilds the WISDM report.
+`scripts/tools/queues/all_final2.cmd` then filled the last WISDM published-protocol rows that had
+fewer than three draws (ssl-wearables V5, LIMU-BERT FedAvg at α = 0.5); it is **done** too. **No
+runs are pending**; every report is built from the complete results.
 
 **Paper** (`paper/`, IEEE format, HARBox only): methodology, dataset and results sections are
 written; the abstract, introduction, related work and conclusion are still placeholders.
@@ -234,12 +233,12 @@ those subjects):
 | FedOPT, LSTM (best published at α = 0.5) | 0.658 | 0.715 | FedAIoT, Tab. 5 |
 | Centralized, LSTM | 0.741 | | FedAIoT, Tab. 5 |
 | FedAvg, LSTM (our re-run) | 0.537 ± 0.097 | 0.599 ± 0.124 | ours |
-| FedAvg / V0 / V5, LIMU-BERT | 0.656 / 0.670 / 0.616 | 0.737¹ / 0.713 / 0.690 | ours |
-| V0 / V3 / V5, ssl-wearables | 0.713 / **0.767** / 0.715¹ | **0.816** / – / 0.798² | ours |
+| FedAvg / V0 / V5, LIMU-BERT | 0.656 / 0.670 / 0.616 | 0.686 / 0.713 / 0.690 | ours |
+| V0 / V3 / V5, ssl-wearables | 0.713 / **0.767** / 0.641 | **0.816** / – / 0.798 | ours |
 | Centralized, LSTM (our re-run) | 0.640 ± 0.119 | | ours |
 | Centralized, ssl-wearables pretrained (not private) | 0.833 ± 0.097 | | ours |
 
-¹ one draw so far, ² draws 1–2; the missing draws are running (`all_final2.cmd`).
+The spread over the three draws is ± 0.08–0.16 for every federated row (see the report).
 
 - Our best federated model beats FedAIoT's best published result under both label skews:
   ssl-wearables V3 0.767 vs 0.685 (α = 0.1) and V0 0.816 vs 0.715 (α = 0.5). The gain comes from
@@ -248,8 +247,9 @@ those subjects):
 - The test-subject draw matters more than the method: on draw 2 every model drops by 0.15–0.35
   (centralized ssl-wearables 0.706 vs 0.942 on draw 1), so single-draw comparisons are unreliable.
 - As on UCI HAR, this protocol only scores brand-new subjects, so V5's per-user parts cannot help.
-  For ssl-wearables at α = 0.5, V5 is close to V0 (draws 1–2: 0.798 vs 0.806) at 52× less uplink.
-  For LIMU-BERT, V5 is 0.02–0.05 below V0 at 6× less uplink.
+  At α = 0.5, V5 is close to V0 (ssl-wearables 0.798 vs 0.816 at 52× less uplink, LIMU-BERT
+  0.690 vs 0.713 at 6× less). Under the strong skew α = 0.1 the gap grows (ssl-wearables 0.641 vs
+  0.713), and V3, with LoRA and a shared classifier, is the better choice for brand-new subjects.
 
 ## UCI HAR (fourth dataset, HTML report only)
 

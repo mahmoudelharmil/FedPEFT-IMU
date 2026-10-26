@@ -1,6 +1,6 @@
 {
   "title": "FedPEFT-IMU \u2014 Experimental Results",
-  "generated": "26 October 2026, 22:52",
+  "generated": "27 October 2026, 01:20",
   "profile": "wisdm",
   "host": {
     "python": "3.13.7",
@@ -41392,9 +41392,9 @@
         "slot": 2,
         "model": "ssl-wearables",
         "encoder": "ssl_wearables",
-        "accuracy": 0.7145816072908037,
-        "accuracy_std": null,
-        "n_seeds": 1,
+        "accuracy": 0.6406099052832531,
+        "accuracy_std": 0.08334691195108182,
+        "n_seeds": 3,
         "worst10_acc": 0.5814570393374741,
         "macro_f1": 0.9424723246224925,
         "accuracy_ft": null,
@@ -41490,9 +41490,9 @@
         "slot": 7,
         "model": "LIMU-BERT",
         "encoder": "limu_bert",
-        "accuracy": 0.7365368682684341,
-        "accuracy_std": null,
-        "n_seeds": 1,
+        "accuracy": 0.6860683415991996,
+        "accuracy_std": 0.13591762212380545,
+        "n_seeds": 3,
         "worst10_acc": 0.6123667913561921,
         "macro_f1": 0.7954527994494064,
         "accuracy_ft": null,
@@ -41580,14 +41580,14 @@
         "slot": 2,
         "model": "ssl-wearables",
         "encoder": "ssl_wearables",
-        "accuracy": 0.7975742266430562,
-        "accuracy_std": 0.11004797716804571,
-        "n_seeds": 2,
-        "worst10_acc": 0.7538573999100315,
-        "macro_f1": 0.9111448594218073,
+        "accuracy": 0.7984932844839374,
+        "accuracy_std": 0.08986319706725836,
+        "n_seeds": 3,
+        "worst10_acc": 0.7333744596615365,
+        "macro_f1": 0.9199032783639325,
         "accuracy_ft": null,
         "personal": true,
-        "uplink_mb_client_round": 0.79620329,
+        "uplink_mb_client_round": 0.834546405,
         "source": "ours (wisdm_fedaiot05)"
       }
     ],
@@ -42237,7 +42237,7 @@
     "Highest worst-10 % client F1 per encoder: LIMU-BERT Ditto-FT 0.762 (V5 0.754); ssl-wearables V5 0.876; UniMTS V5 0.647; HALO V5 0.703; LSTM Ditto 0.662.",
     "New users, zero-shot (V5 = nearest global prototype; BatchNorm encoders first estimate their norm statistics from the new user's unlabelled windows): LIMU-BERT V5 0.653 vs V3 0.699; ssl-wearables V5 0.694 vs V3 0.742; UniMTS V5 0.580 vs V3 0.705; HALO V5 0.583 vs V3 0.614. On average the shared classifier of V3 transfers better to brand-new users than V5's prototype rule (-0.063); V5's advantage is on the devices that trained with it.",
     "Transductive zero-shot (V5's prototypes first refined on the new user's unlabelled windows, no labels and no communication): LIMU-BERT 0.653 -> 0.666; ssl-wearables 0.694 -> 0.722; UniMTS 0.580 -> 0.655; HALO 0.583 -> 0.584.",
-    "Budget note: ssl-wearables, HALO, UniMTS ran with a reduced compute budget (see the callouts), so compare its methods with each other.",
+    "Budget note: UniMTS, HALO, ssl-wearables ran with a reduced compute budget (see the callouts), so compare its methods with each other.",
     "All numbers come from one user split (seed 0). Differences of a few F1 points should be confirmed with the 'full' profile (3 held-out lists) before they are claimed."
   ]
 }
