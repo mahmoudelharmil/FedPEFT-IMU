@@ -141,13 +141,16 @@ def _ablation_from(cfg, profile: str) -> list[dict]:
     pts = []
     for p in sorted(base.glob("*__v3_lora_exact*__seed*.json")):
         r = load_json(p)
+        tag = r.get("tag", "")
+        if tag and not (tag.startswith("__r") and tag[3:].isdigit()):
+            continue                                   # other V3 variants (e.g. LoRA placement) are not rank points
         pts.append({"encoder": r["encoder"], "encoder_display": r["encoder_display"], "tag": r.get("tag", ""),
                     "rank": r["config"]["r_max"], "macro_f1": r["final"]["macro_f1"],
                     "accuracy": r["final"]["accuracy"], "worst10_f1": r["final"]["worst10_f1"],
                     "uplink_mb_client_round": r["comm"]["uplink_mb_per_client_round"],
                     "client_mem_mb": r["resources"]["client_train_mem_mb_mean"]})
     tagged = {p["encoder"] for p in pts if p["tag"]}
-    return sorted([p for p in pts if p["encoder"] in tagged], key=lambda p: p["rank"])
+    return sorted([p for p in pts if p["encoder"] in tagged], key=lambda p: (p["encoder"], p["rank"]))
 
 
 def collect_window_ablation(cfg) -> list[dict]:
@@ -454,14 +457,14 @@ def collect(cfg) -> dict:
         else:
             (ablation if tag else federated).append(entry)
 
-    # Rank ablation: add the main V3 run as the default-rank point.
+    # Rank ablation: add every swept encoder's main V3 run as its default-rank point.
     if ablation:
-        enc = ablation[0]["encoder"]
-        main = next((f for f in federated if f["encoder"] == enc and f["method"] == "v3_lora_exact"), None)
         points = [dict(a, rank=a["config"]["r_max"]) for a in ablation]
-        if main:
-            points.append(dict(main, rank=main["config"]["r_max"]))
-        ablation = sorted(points, key=lambda a: a["rank"])
+        for enc in sorted({a["encoder"] for a in ablation}):
+            main = next((f for f in federated if f["encoder"] == enc and f["method"] == "v3_lora_exact"), None)
+            if main:
+                points.append(dict(main, rank=main["config"]["r_max"]))
+        ablation = sorted(points, key=lambda a: (a["encoder"], a["rank"]))
 
     # Rank sweep not re-run in this profile: show the most recent earlier one, labelled.
     ablation_source = cfg.profile if ablation else None
@@ -697,11 +700,11 @@ def findings(rep: dict) -> list[str]:
         out.append(txt)
 
     # 6. Rank ablation.
-    if rep["ablation"]:
-        A = rep["ablation"]
+    src = rep.get("ablation_source")
+    src_txt = f" — from the “{src}” run" if src and src != rep["profile"] else ""
+    for enc in dict.fromkeys(a["encoder"] for a in rep["ablation"]):
+        A = [a for a in rep["ablation"] if a["encoder"] == enc]
         best = max(A, key=lambda a: a["macro_f1"])
-        src = rep.get("ablation_source")
-        src_txt = f" — from the “{src}” run" if src and src != rep["profile"] else ""
         out.append(f"LoRA rank ({A[0]['encoder_display']}, V3{src_txt}): "
                    + ", ".join(f"r={a['rank']} {a['macro_f1']:.3f}" for a in A)
                    + f". The best rank is r={best['rank']} at {best['uplink_mb_client_round']:.2f} MB per client-round"

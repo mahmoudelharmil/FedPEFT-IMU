@@ -21,7 +21,7 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Rounds to target, client memory, time | round loop (`federated/simulation.py`), peak GPU memory, wall-clock |
 | Zero-/few-shot F1 on held-out users | 0, 1 and 5 minutes of labels (`training/heldout.py`) |
 
-## Current status (25 October 2026)
+## Current status (7 November 2026)
 
 | Dataset | Role | Experiments | Results |
 |---|---|---|---|
@@ -32,18 +32,28 @@ This project implements, runs and measures the complete *Idea 1* research plan
 
 The online reports are private links; share them from the page's Share menu.
 
-**Queue status.** `scripts/tools/queues/all_final.cmd` (one job at a time; finished runs are
-skipped, so a queue can be restarted at any time; the file must keep CRLF line endings, see below)
-is **done**:
-1. ~~UCI HAR, our protocol B, all encoders~~;
-2. ~~UCI HAR, the published protocol (FedMultimodal, α = 0.1 and 5.0)~~;
-3. ~~WISDM, our protocol B: UniMTS~~ (every FedAvg / V0–V5 grid of all four datasets is complete);
-4. ~~WISDM, the published protocol (FedAIoT, 400 rounds), three draws of the test subjects~~;
-5. ~~two more user splits of UCI HAR~~.
+**Done:** every FedAvg / V0–V5 grid of the four datasets (all four encoders), the published
+protocols of HARBox, WISDM (3 test-subject draws) and UCI HAR, and 3 user splits of LIMU-BERT and
+the published baselines on HARBox, WISDM and UCI HAR.
 
-`scripts/tools/queues/all_final2.cmd` then filled the last WISDM published-protocol rows that had
-fewer than three draws (ssl-wearables V5, LIMU-BERT FedAvg at α = 0.5); it is **done** too. **No
-runs are pending**; every report is built from the complete results.
+**Running now** (started 7 November 2026 with the pipeline manager, `python manage.py`, see
+[Pipeline manager](#pipeline-manager-ui)): the **full ablation study on all four datasets** and the
+**trials** (two more user splits) for LIMU-BERT, ssl-wearables and each dataset's baseline:
+122 jobs, about 29 hours on the GTX 1660 Ti, in the order UCI HAR → WISDM → HARBox → Capture-24.
+Each dataset's report is rebuilt after its last job.
+
+| Ablation (V5 on LIMU-BERT and ssl-wearables, user split 0) | What it removes or changes |
+|---|---|
+| LoRA rank r ∈ {2, 4, 16} (V3, exact aggregation; r = 8 is the main V3) | capacity vs. bytes sent |
+| V5 − local norm / input adapter (`v5_abl_no_local_norm`) | the per-device normalisation |
+| V5 − personal head (`v5_abl_shared_head`) | the personal classifier (a shared one instead) |
+| V5 − device tiers (`v5_abl_fixed_rank`) | ranks 2/4/8: every device trains rank 8 |
+| V5 − prototype alignment (tag `noproto`) | the prototype loss (λ = 0) |
+| V5 − training augmentation (tag `noaug`) | the 3-D rotations and gains |
+| LoRA placement, LIMU-BERT only (tag `loraqv` or `loraall`) | W_q/W_v only vs. every linear layer (the opposite of the dataset default) |
+| From the main grid: V2 vs V3, V0 vs FedAvg, V4 vs V5 | naive vs exact aggregation, pretraining, local parts + prototypes |
+
+The earlier `.cmd` queues in `scripts/tools/queues/` are kept for reference; they are finished.
 
 **Paper** (`paper/`, IEEE format, HARBox only): methodology, dataset and results sections are
 written; the abstract, introduction, related work and conclusion are still placeholders.
@@ -56,6 +66,48 @@ with CRLF line endings and never edit one while it runs: with LF-only lines, `cm
 a whole step once (the WISDM UniMTS grid). Keep the machine from sleeping during a queue: on
 2026-10-26 it slept for 13 hours mid-run. The run resumed afterwards without harm, but the time
 was lost and the run's logged duration includes the sleep.
+
+## Pipeline manager (UI)
+
+One place to run, watch and steer the whole process (training, validation, testing, ablations,
+trials and reports) for the four datasets:
+
+```powershell
+.venv\Scripts\python manage.py                       # UI on http://localhost:8765 (opens the browser)
+.venv\Scripts\python manage.py run-all               # no UI: queue every missing job of the 4 datasets, run to the end
+.venv\Scripts\python manage.py run-all --datasets ucihar,wisdm --from-stage ablation
+.venv\Scripts\python manage.py status                # what is done, queued and running
+```
+
+**What "the full process" is** is defined in `configs/manager.yaml`: for every dataset the
+stages *prepare data → pretrained weights → HALO pretraining → centralized → federated grid →
+published protocol → ablation study → trials (extra user splits) → report*, which profile each
+stage uses, the ablation study and the trials. Each stage is split into jobs: one script call
+that writes one result file. A job counts as done when its file exists, so nothing is run twice.
+A report counts as done when it is newer than every result it shows.
+
+| Tab | What you can do |
+|---|---|
+| Overview | the running job, live: its phase (*load data → train → personalise + test → +FT and new users → saved*; centralized: *train + validate → test → new users*), round or epoch, time left, the training-loss and evaluation curves, the log. **Run the full process**: pick datasets, stages and the stage to start from; every job without a result is queued and run to the end |
+| Queue | the jobs in run order: move, skip, remove, retry failed ones, re-run finished ones, **Start from here** (skips the queued jobs above) |
+| Pipeline | each dataset's nine stages with done / total and time left: queue a stage, **Start from this stage** (this and every later stage), queue or re-run single jobs |
+| Encoders × datasets | every encoder and method across the four datasets: macro-F1, +FT, client accuracy, worst-10 %, new users, uplink, run time; click a cell to queue or re-run it |
+| Ablations | each dataset's ablation table per encoder with the difference to V5; queue the missing ablations of one dataset or of all |
+| Settings | each dataset's profiles: the key training settings as a form (the value, which file it comes from, the help text of `default.yaml`), the profile and dataset YAML files, the per-encoder budgets, the effective configuration, and the study definition; every save is checked (the configuration must load), comments are kept and a backup goes to `logs/manager/backups/` |
+| Logs | the runner's log and every job's log |
+
+**Controls** (top bar): *Start / Continue* · *Pause after this job* · *Pause now*: the job's
+process is frozen. It keeps its GPU memory, and *Continue* resumes it exactly where it stopped ·
+*Stop*: the job is ended and put back in the queue; it restarts from its beginning, and finished
+jobs are kept · *Skip this job*.
+
+How it runs: the jobs run in a **detached background runner** (`fedpeft/manager/runner.py`),
+**one at a time**. It is started through WMI, so it keeps running when the browser, the UI server
+or the terminal is closed; reopen the UI to see where it is. It waits while another training
+script uses the GPU and keeps Windows from idle-sleeping while a job runs (closing the lid or
+choosing Sleep still sleeps). The queue lives in `logs/manager/queue.json` and each job's log in
+`logs/manager/jobs/`. After a reboot, open the UI and press *Start*: an interrupted job restarts
+from its beginning. A frozen job (*Pause now*) does not survive a reboot.
 
 ## HARBox (second dataset, the paper's main benchmark)
 
@@ -594,7 +646,10 @@ python -m venv .venv
 .venv\Scripts\python -m pip install torch --index-url https://download.pytorch.org/whl/cu128
 .venv\Scripts\python -m pip install -r requirements.txt
 
-# everything: data -> weights -> HALO pretraining -> phase 1 -> phase 2 -> ablation -> report
+# the pipeline manager: run and watch everything of the four datasets in the browser
+.venv\Scripts\python manage.py
+
+# or one profile from the command line: data -> weights -> HALO -> phase 1 -> phase 2 -> ablation -> report
 .venv\Scripts\python run_all.py --profile standard
 
 # a 10-minute smoke test of the whole pipeline (numbers are not meaningful)
@@ -627,6 +682,7 @@ config override as `key.sub=value` (for example `fl.rounds=100`).
 idea1/
 ├── configs/
 │   ├── default.yaml            every setting, commented (the single source of truth)
+│   ├── manager.yaml            the full process: stages per dataset, published protocols, ablation study, trials
 │   ├── datasets/               per-dataset settings, merged right after default.yaml
 │   │   ├── harbox.yaml           2-s windows, 9 axes, encoder inputs, published FedCHAR numbers
 │   │   ├── wisdm.yaml            10-s smartwatch windows, 12 classes, published FedAIoT numbers
@@ -671,8 +727,17 @@ idea1/
 │   │   ├── comm.py             byte accounting of every message
 │   │   └── simulation.py       the FL round loop: client sampling, rank tiers, personalisation,
 │   │                           all KPIs; saves the new-user model of every run
-│   └── report/                 collect.py (KPIs, published comparison, user splits) -> build.py
-│                               -> template.html (Plotly; standalone + web version)
+│   ├── report/                 collect.py (KPIs, published comparison, user splits) -> build.py
+│   │                           -> template.html (Plotly; standalone + web version)
+│   └── manager/                the pipeline manager (python manage.py)
+│       ├── plan.py             every job of the full process (manager.yaml + profiles), done = result exists
+│       ├── state.py            the persistent queue + control flags (logs/manager/queue.json, file lock)
+│       ├── runner.py           detached worker: one job at a time, pause / freeze / continue / stop, keep-awake
+│       ├── progress.py         a job's phase, round / epoch, curves and final scores from its log
+│       ├── results.py          one-line summaries of the result files, run-time estimates
+│       ├── profiles.py         read / edit / validate the settings (comments kept, backups)
+│       ├── server.py           HTTP API (standard library)
+│       └── static/             the single-page UI (index.html, app.js, app.css)
 ├── scripts/                    numbered entry points 00-07 (see the table above)
 │   └── tools/
 │       ├── reeval_heldout.py         re-run the new-user tests of a saved model (no re-training)
@@ -682,6 +747,7 @@ idea1/
 ├── paper/                      IEEE manuscript (HARBox): methodology, dataset, results;
 │                               generated/ tables and macros; build with python paper/build.py
 ├── tests/test_core.py          LoRA/aggregation maths, splits, loaders, augmentation (21 tests)
+├── tests/test_manager.py       plan, queue, log parsing of the pipeline manager (9 tests)
 ├── data/
 │   ├── raw/                    downloaded archives (capture24, harbox, wisdm, ucihar)
 │   └── processed*/             one .npz per user + meta.json, per dataset
@@ -689,7 +755,9 @@ idea1/
 ├── results/<profile>/          centralized/ federated/ (one JSON per run) models/ logits/ splits/
 ├── reports/                    FedPEFT-IMU_report_<profile>.html (+ web/ version, report_data_*.json)
 ├── logs/<dataset>/             logs of the run queues
-└── run_all.py
+├── logs/manager/               the manager's queue.json, runner log, one log per job, settings backups
+├── manage.py                   the pipeline manager: UI, run-all, status
+└── run_all.py                  all steps of one profile from the command line
 ```
 
 ### How the pieces fit (one FL round)

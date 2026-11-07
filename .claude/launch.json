@@ -6,6 +6,12 @@
       "runtimeExecutable": "E:\\Masters\\Thesis2\\idea1\\.venv\\Scripts\\python.exe",
       "runtimeArgs": ["-m", "http.server", "8766", "--bind", "127.0.0.1", "--directory", "E:\\Masters\\Thesis2\\idea1\\reports"],
       "port": 8766
+    },
+    {
+      "name": "manager",
+      "runtimeExecutable": "E:\\Masters\\Thesis2\\idea1\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["E:\\Masters\\Thesis2\\idea1\\manage.py", "--no-browser", "--port", "8765"],
+      "port": 8765
     }
   ]
 }

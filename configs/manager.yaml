@@ -1,0 +1,134 @@
+# ---------------------------------------------------------------------
+#  Pipeline manager (python manage.py): what "the full process" is.
+#
+#  Every dataset runs these stages, in this order; a job is skipped when its
+#  result file exists, so the plan can be (re)started at any time:
+#    prepare      raw data -> windows                       scripts/01
+#    weights      official pretrained weights               scripts/02
+#    pretrain     HALO self-supervised pretraining          scripts/03
+#    centralized  every encoder x {scratch, pretrained}     scripts/04
+#    federated    every encoder x FedAvg / V0-V5 (+ extra)  scripts/05
+#    published    the published protocol(s) of the dataset  scripts/04 + 05
+#    ablation     the full ablation study of V5             scripts/05 + 06
+#    trials       extra user splits (seeds)                 scripts/04 + 05
+#    report       the HTML report                           scripts/07
+#  The training settings themselves live in the profiles (configs/profiles/).
+# ---------------------------------------------------------------------
+
+# Order in which "Run everything" works through the datasets (fastest first, so
+# complete results arrive early).
+order: [ucihar, wisdm, harbox, capture24]
+
+datasets:
+  ucihar:
+    name: UCI HAR
+    profile: ucihar                  # our protocol B: every stage runs with this profile
+    baseline: convgru                # the dataset's published baseline model (from-scratch methods only)
+    extra:                           # runs beyond the FedAvg / V0-V5 grid
+      - {encoder: limu_bert, method: ditto_ft}
+    published:                       # FedMultimodal protocol (alpha 0.1 and 5.0)
+      - profile: ucihar_fedmm
+        centralized: {convgru: [scratch], limu_bert: [scratch, pretrained_ft], ssl_wearables: [scratch, pretrained_ft]}
+        federated: {convgru: [fedavg_scratch], limu_bert: [fedavg_scratch, v0_full_ft, v5_proposed],
+                    ssl_wearables: [fedavg_scratch, v0_full_ft, v5_proposed]}
+        seeds: [0]
+      - profile: ucihar_fedmm5
+        federated: {convgru: [fedavg_scratch], limu_bert: [fedavg_scratch, v0_full_ft, v5_proposed],
+                    ssl_wearables: [fedavg_scratch, v0_full_ft, v5_proposed]}
+        seeds: [0]
+
+  wisdm:
+    name: WISDM
+    profile: wisdm
+    baseline: lstm
+    extra:
+      - {encoder: limu_bert, method: ditto_ft}
+    published:                       # FedAIoT protocol (alpha 0.1 and 0.5), 3 draws of the test subjects
+      - profile: wisdm_fedaiot
+        centralized: {lstm: [scratch], limu_bert: [scratch, pretrained_ft], ssl_wearables: [scratch, pretrained_ft]}
+        federated: {lstm: [fedavg_scratch], limu_bert: [fedavg_scratch, v0_full_ft, v5_proposed],
+                    ssl_wearables: [v0_full_ft, v3_lora_exact, v5_proposed]}
+        seeds: [0, 1, 2]
+      - profile: wisdm_fedaiot05
+        federated: {lstm: [fedavg_scratch], limu_bert: [fedavg_scratch, v0_full_ft, v5_proposed],
+                    ssl_wearables: [v0_full_ft, v5_proposed]}
+        seeds: [0, 1, 2]
+
+  harbox:
+    name: HARBox
+    profile: harbox
+    baseline: mlp
+    extra:
+      - {encoder: limu_bert, method: ditto_ft}
+      - {encoder: limu_bert, method: v3_lora_exact, tag: loraall, overrides: [encoders.limu_bert.lora_scope=all]}
+      - {encoder: limu_bert, method: v5_proposed, tag: loraall, overrides: [encoders.limu_bert.lora_scope=all],
+         seeds: [0, 1, 2]}           # the paper's headline V5 (LoRA on all layers), 3 user splits
+    published:                       # FedCHAR protocol (random 72/8/20 window split)
+      - profile: harbox_fedchar
+        centralized: {limu_bert: [scratch, pretrained_ft], mlp: [scratch]}
+        federated: {limu_bert: [fedavg_scratch, v0_full_ft, v5_proposed, ditto_ft],
+                    mlp: [fedavg_scratch, local_scratch, ditto_scratch]}
+        tagged:
+          - {encoder: limu_bert, method: v5_proposed, tag: loraall, overrides: [encoders.limu_bert.lora_scope=all]}
+        seeds: [0]
+
+  capture24:
+    name: Capture-24
+    profile: enhanced                # the best Capture-24 pipeline (reports/FedPEFT-IMU_report_enhanced.html)
+    baseline: null
+    extra: []
+    published: []
+
+# ---------------------------------------------------------------------
+#  Ablation study of V5 (run on every dataset, for each encoder below).
+#  The main grid already answers three ablations: naive vs exact LoRA
+#  aggregation (V2 vs V3), pretrained vs random start (V0 vs FedAvg) and
+#  the local parts + prototypes (V4 vs V5).
+# ---------------------------------------------------------------------
+ablation:
+  encoders: [limu_bert, ssl_wearables]
+  seeds: [0]
+  rank_sweep: [2, 4, 16]             # V3 with other LoRA ranks; r = 8 is the main V3 run
+  components:                        # V5 with one component removed (fedpeft/federated/methods.py)
+    - v5_abl_no_local_norm           # - local norm and input adapter
+    - v5_abl_shared_head             # - personal classifier (a shared one instead)
+    - v5_abl_fixed_rank              # - device tiers (rank 8 on every device)
+  tags:                              # V5 with a config switch; the tag names the result file
+    noproto:
+      label: "V5 − prototype alignment"
+      method: v5_proposed
+      overrides: [model.proto_weight=0.0]
+    noaug:
+      label: "V5 − training augmentation"
+      method: v5_proposed
+      overrides: [augment.enabled=false]
+    loraall:                         # LoRA placement (LIMU-BERT only): the opposite of the dataset default
+      label: "V5, LoRA on all linear layers"
+      method: v5_proposed
+      encoders: [limu_bert]
+      when: {encoders.limu_bert.lora_scope: qv}
+      overrides: [encoders.limu_bert.lora_scope=all]
+    loraqv:
+      label: "V5, LoRA on W_q and W_v only"
+      method: v5_proposed
+      encoders: [limu_bert]
+      when: {encoders.limu_bert.lora_scope: all}
+      overrides: [encoders.limu_bert.lora_scope=qv]
+
+# ---------------------------------------------------------------------
+#  Trials: extra user splits, so the main comparisons carry a mean +- std.
+#  The dataset's baseline model (above) runs all of its methods.
+# ---------------------------------------------------------------------
+trials:
+  seeds: [1, 2]
+  centralized: [scratch, pretrained_ft]
+  encoders:
+    limu_bert: [fedavg_scratch, v0_full_ft, v3_lora_exact, v5_proposed, ditto_ft]
+    ssl_wearables: [fedavg_scratch, v0_full_ft, v3_lora_exact, v5_proposed]
+  baseline: true
+
+# Runner behaviour.
+runner:
+  keep_awake: true                   # stop Windows from idle-sleeping while a job runs
+  stop_on_error: false               # false: a failed job is marked and the queue goes on
+  wait_for_other_gpu_jobs: true      # do not start while another training script uses the GPU

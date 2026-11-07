@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FedPEFT-IMU Pipeline</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='4' fill='%232f6fdf'/%3E%3Cpath d='M3 11l3-4 3 2 4-5' stroke='white' stroke-width='1.8' fill='none'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"></span>
+    <div>
+      <div class="title">FedPEFT-IMU pipeline</div>
+      <div class="subtitle" id="subtitle">Capture-24 · HARBox · WISDM · UCI HAR</div>
+    </div>
+  </div>
+  <div class="runner" id="runnerBox">
+    <span class="pill" id="runnerPill">…</span>
+    <span class="runner-note" id="runnerNote"></span>
+  </div>
+  <div class="controls" id="controls"></div>
+</header>
+
+<nav class="tabs" id="tabs" role="tablist">
+  <button data-tab="overview" class="active">Overview</button>
+  <button data-tab="queue">Queue <span class="count" id="qCount"></span></button>
+  <button data-tab="pipeline">Pipeline</button>
+  <button data-tab="matrix">Encoders × datasets</button>
+  <button data-tab="ablations">Ablations</button>
+  <button data-tab="settings">Settings</button>
+  <button data-tab="logs">Logs</button>
+</nav>
+
+<main>
+  <!-- ============================ OVERVIEW ============================ -->
+  <section id="tab-overview" class="tab active">
+    <div id="otherGpu"></div>
+    <div class="grid2">
+      <div class="card" id="nowCard">
+        <div class="card-head"><h2>Now running</h2><span class="muted" id="nowMeta"></span></div>
+        <div id="nowBody" class="now-body"><p class="muted">Nothing is running.</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Run the full process</h2></div>
+        <p class="muted small">Queues every job that has no result yet and runs the queue to the end, one job at a time.
+          Finished runs are never repeated. The order is dataset by dataset, stage by stage.</p>
+        <div class="form-row"><label>Datasets</label><div id="raDatasets" class="checks"></div></div>
+        <div class="form-row"><label>Stages</label><div id="raStages" class="checks"></div></div>
+        <div class="form-row"><label for="raFrom">Start from stage</label>
+          <select id="raFrom"></select></div>
+        <div class="run-all-foot">
+          <div><div class="big" id="raEstimate">–</div><div class="muted small" id="raJobs"></div></div>
+          <button class="btn primary" id="raGo">Queue and run to the end</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Progress by dataset</h2>
+        <span class="muted small" id="missingTotal"></span></div>
+      <div class="table-wrap"><table class="stages-table" id="stagesTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============================ QUEUE ============================ -->
+  <section id="tab-queue" class="tab">
+    <div class="card">
+      <div class="card-head">
+        <h2>Queue</h2>
+        <div class="toolbar">
+          <select id="qFilter">
+            <option value="">All</option><option value="pending">Queued</option><option value="running">Running</option>
+            <option value="done">Done</option><option value="failed">Failed</option><option value="skipped">Skipped</option>
+          </select>
+          <button class="btn" data-clear="finished">Clear finished</button>
+          <button class="btn" data-clear="pending">Clear queued</button>
+        </div>
+      </div>
+      <p class="muted small" id="qSummary"></p>
+      <div class="table-wrap"><table class="list" id="queueTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============================ PIPELINE ============================ -->
+  <section id="tab-pipeline" class="tab">
+    <div class="seg" id="plDatasets"></div>
+    <div id="plStages"></div>
+  </section>
+
+  <!-- ============================ MATRIX ============================ -->
+  <section id="tab-matrix" class="tab">
+    <div class="card">
+      <div class="card-head"><h2>Encoders across the datasets</h2>
+        <div class="toolbar"><label class="small muted" for="mxMetric">Metric</label><select id="mxMetric">
+          <option value="macro_f1">Macro-F1</option>
+          <option value="ft_macro_f1">Macro-F1, shared classifiers after +FT</option>
+          <option value="client_acc">Mean client accuracy</option>
+          <option value="worst10_f1">Worst-10 % client F1</option>
+          <option value="zero_shot_f1">New users, zero-shot F1</option>
+          <option value="uplink_mb">Uplink MB / client / round</option>
+          <option value="minutes">Run time (min)</option>
+        </select></div></div>
+      <p class="muted small">Main protocol of each dataset (user split 0, or the mean of the splits that ran; the
+        superscript is the number of splits). Click a cell to queue or re-run it.</p>
+      <div class="table-wrap"><table class="matrix" id="matrixTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ============================ ABLATIONS ============================ -->
+  <section id="tab-ablations" class="tab">
+    <div class="seg" id="abDatasets"></div>
+    <div class="card">
+      <div class="card-head"><h2 id="abTitle">Ablation study</h2>
+        <div class="toolbar">
+          <button class="btn" id="abQueueDs">Queue missing (this dataset)</button>
+          <button class="btn primary" id="abQueueAll">Run the full ablation study (all datasets)</button>
+        </div></div>
+      <p class="muted small" id="abLede"></p>
+      <div id="abTables"></div>
+    </div>
+  </section>
+
+  <!-- ============================ SETTINGS ============================ -->
+  <section id="tab-settings" class="tab">
+    <div class="settings">
+      <aside class="card plist" id="profileList"></aside>
+      <div id="profileDetail" class="pdetail"><div class="card"><p class="muted">Choose a profile.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============================ LOGS ============================ -->
+  <section id="tab-logs" class="tab">
+    <div class="card">
+      <div class="card-head"><h2>Logs</h2>
+        <div class="toolbar"><select id="logSelect"></select>
+          <label class="small"><input type="checkbox" id="logFollow" checked> follow</label></div></div>
+      <pre class="log" id="logText"></pre>
+    </div>
+  </section>
+</main>
+
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-panel">
+    <div class="card-head"><h2 id="drawerTitle"></h2><button class="btn" id="drawerClose">Close</button></div>
+    <div id="drawerBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

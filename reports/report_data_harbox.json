@@ -1,6 +1,6 @@
 {
   "title": "FedPEFT-IMU \u2014 Experimental Results",
-  "generated": "25 October 2026, 20:05",
+  "generated": "07 November 2026, 23:25",
   "profile": "harbox",
   "host": {
     "python": "3.13.7",
@@ -54333,7 +54333,9 @@
       "batch_size": 64,
       "dirichlet_alpha": null,
       "dirichlet_clients": null,
-      "heldout_users": null
+      "heldout_users": null,
+      "n_clients": 120,
+      "n_test": null
     },
     "protocols": [
       {
@@ -54355,7 +54357,9 @@
         "batch_size": 64,
         "dirichlet_alpha": null,
         "dirichlet_clients": null,
-        "heldout_users": null
+        "heldout_users": null,
+        "n_clients": 120,
+        "n_test": null
       }
     ],
     "rows": [

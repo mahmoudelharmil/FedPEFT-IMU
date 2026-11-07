@@ -148,6 +148,7 @@
   }
   .card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 2px; }
   .card .desc { font-size: 13px; color: var(--ink-2); margin: 2px 0 6px; }
+  .card .sub-head { font-size: 13px; font-weight: 600; margin: 16px 0 6px; }
   .card .tag { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
   .plot { width: 100%; min-height: 300px; }
   details.data { margin: 4px 0 4px; font-size: 13px; }
@@ -1208,39 +1209,58 @@ function heldoutAll() {
 /* ============================= ABLATIONS ============================= */
 function ablations() {
   const A = D.ablation;
-  const enc = A.length ? A[0].encoder_display : "—";
+  const encName = (e) => (ENC[e] ? ENC[e].display : e);
+  const rankEncs = [...new Set(A.map((a) => a.encoder))];
+  const encTxt = rankEncs.map(encName).join(", ") || "—";
+  const ranks = [...new Set(A.map((a) => a.rank))].sort((a, b) => a - b);
   const src = D.ablation_source && D.ablation_source !== D.profile ? ` (taken from the “${D.ablation_source}” run; it was not repeated here)` : "";
   $("ablLede").textContent = A.length
-    ? `LoRA rank sweep with exact aggregation (V3) on ${enc}${src}: capacity versus bytes sent (PDF RQ2, “r ∈ {2, 4, 8, 16}”). Other ablations of the PDF are read directly from the main grid: naive vs exact (V2 vs V3), pretrained vs random initialisation (V0 vs FedAvg from scratch), with vs without personal head + prototypes (V4 vs V5).`
-    : "Run scripts/06_run_ablations.py to add the LoRA rank sweep.";
-  $("ablTag1").textContent = enc; $("ablTag2").textContent = enc;
-  chart("c_rank_f1", (t) => A.length ? { data: [lineTrace(t, 3, "macro-F1", A.map((a) => a.rank), A.map((a) => a.macro_f1), { hovertemplate: "r = %{x}: <b>%{y:.3f}</b><extra></extra>" }),
-    lineTrace(t, 1, "worst-10 %", A.map((a) => a.rank), A.map((a) => a.worst10_f1), { hovertemplate: "r = %{x}: <b>%{y:.3f}</b> worst-10 %<extra></extra>" })],
-    layout: baseLayout(t, { height: 320, xaxis: { type: "log", tickvals: A.map((a) => a.rank), ticktext: A.map((a) => String(a.rank)), title: { text: "LoRA rank r" } }, yaxis: { title: { text: "F1" } } }) } : null);
-  chart("c_rank_up", (t) => A.length ? { data: [{ type: "bar", x: A.map((a) => "r = " + a.rank), y: A.map((a) => a.uplink_mb_client_round), marker: { color: t.slot(3) },
-    text: A.map((a) => mb(a.uplink_mb_client_round)), textposition: "outside", cliponaxis: false, textfont: { color: t.ink2, size: 11.5 }, hovertemplate: "<b>%{text}</b> per client·round<extra></extra>" }],
-    layout: baseLayout(t, { height: 320, margin: { l: 8, r: 8, t: 26, b: 8 }, bargap: 0.5, yaxis: { title: { text: "MB per client per round" }, rangemode: "tozero" } }) } : null);
-  table("t_rank_f1", [{ label: "Rank", key: "rank" }, { label: "Macro-F1", key: "macro_f1", fmt: f3 }, { label: "Worst-10 %", key: "worst10_f1", fmt: f3 }, { label: "Accuracy", key: "accuracy", fmt: f3 }], A.map((a) => Object.assign({}, a)));
-  table("t_rank_up", [{ label: "Rank", key: "rank" }, { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb }, { label: "Client mem (MB)", key: "client_mem_mb", fmt: int }], A.map((a) => Object.assign({}, a)));
+    ? `LoRA rank sweep with exact aggregation (V3) on ${encTxt}${src}: capacity versus bytes sent (PDF RQ2, “r ∈ {2, 4, 8, 16}”). Other ablations of the PDF are read directly from the main grid: naive vs exact (V2 vs V3), pretrained vs random initialisation (V0 vs FedAvg from scratch), with vs without personal head + prototypes (V4 vs V5).`
+    : "Run scripts/06_run_ablations.py (or the ablation stage of python manage.py) to add the LoRA rank sweep.";
+  $("ablTag1").textContent = encTxt; $("ablTag2").textContent = encTxt;
+  const slotOf = (e, i) => ENC_SLOT[e] || i + 1;
+  chart("c_rank_f1", (t) => A.length ? { data: rankEncs.flatMap((e, i) => {
+      const P = A.filter((a) => a.encoder === e);
+      return [lineTrace(t, slotOf(e, i), `${encName(e)} · macro-F1`, P.map((a) => a.rank), P.map((a) => a.macro_f1), { hovertemplate: `${encName(e)} r = %{x}: <b>%{y:.3f}</b><extra></extra>` }),
+        lineTrace(t, slotOf(e, i), `${encName(e)} · worst-10 %`, P.map((a) => a.rank), P.map((a) => a.worst10_f1),
+          { line: { color: t.slot(slotOf(e, i)), width: 2, dash: "dot" }, hovertemplate: `${encName(e)} r = %{x}: <b>%{y:.3f}</b> worst-10 %<extra></extra>` })];
+    }),
+    layout: baseLayout(t, { height: 320, xaxis: { type: "log", tickvals: ranks, ticktext: ranks.map(String), title: { text: "LoRA rank r" } }, yaxis: { title: { text: "F1" } } }) } : null);
+  chart("c_rank_up", (t) => A.length ? { data: rankEncs.map((e, i) => {
+      const P = A.filter((a) => a.encoder === e);
+      return { type: "bar", name: encName(e), x: P.map((a) => "r = " + a.rank), y: P.map((a) => a.uplink_mb_client_round), marker: { color: t.slot(slotOf(e, i)) },
+        text: P.map((a) => mb(a.uplink_mb_client_round)), textposition: "outside", cliponaxis: false, textfont: { color: t.ink2, size: 11.5 }, hovertemplate: `${encName(e)}: <b>%{text}</b> per client·round<extra></extra>` };
+    }),
+    layout: baseLayout(t, { height: 320, margin: { l: 8, r: 8, t: 26, b: 8 }, bargap: 0.35, barmode: "group", yaxis: { title: { text: "MB per client per round" }, rangemode: "tozero" } }) } : null);
+  table("t_rank_f1", [{ label: "Encoder", key: "encoder_display", align: "l" }, { label: "Rank", key: "rank" }, { label: "Macro-F1", key: "macro_f1", fmt: f3 }, { label: "Worst-10 %", key: "worst10_f1", fmt: f3 }, { label: "Accuracy", key: "accuracy", fmt: f3 }], A.map((a) => Object.assign({}, a)));
+  table("t_rank_up", [{ label: "Encoder", key: "encoder_display", align: "l" }, { label: "Rank", key: "rank" }, { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb }, { label: "Client mem (MB)", key: "client_mem_mb", fmt: int }], A.map((a) => Object.assign({}, a)));
 
+  // V5 with one part removed (one table per encoder that has component runs)
   const Cp = D.components || [];
   if (Cp.length) {
-    const enc = Cp[0].encoder;
-    const full = D.federated.find((f) => f.encoder === enc && f.method === "v5_proposed");
-    const v4 = D.federated.find((f) => f.encoder === enc && f.method === "v4_hetero_rank");
     const TAGS = { noproto: "− prototype alignment", noaug: "− training augmentation", loraqv: "LoRA on W_q, W_v only",
       loraall: "+ LoRA on all linear layers", pretrainedinit: "− averaged local parts for new users",
       avghead: "+ average personal classifier for new users", dualhead: "+ federated global classifier",
       persnoaug: "− augmentation in the last personal update", plora: "+ private LoRA copy", plora60: "+ private LoRA copy, 60 steps" };
     const name = (c) => c.tag ? `V5 ${TAGS[c.tag.replace(/^__/, "")] || c.tag.replace(/^__/, "")}${c.method === "v5_proposed" ? "" : " (" + c.short + ")"}` : c.label;
-    const rows = [full && Object.assign({ name: "V5 (complete)" }, full)].concat(Cp.map((c) => Object.assign({ name: name(c) }, c)))
-      .concat(v4 ? [Object.assign({ name: "V4 (no local parts, no prototypes)" }, v4)] : []).filter(Boolean)
-      .map((r) => Object.assign({ d: full ? r.macro_f1 - full.macro_f1 : null, h0: (r.heldout["0"] || {}).mean_user_f1 }, r));
-    $("compCard").hidden = false; $("compTag").textContent = ENC[enc] ? ENC[enc].display : enc;
-    table("t_components", [{ label: "Variant", key: "name", align: "l" }, { label: "Client acc", key: "client_acc_mean", fmt: f3 },
-      { label: "Macro-F1", key: "macro_f1", fmt: f3 }, { label: "Δ F1 vs V5", key: "d", fmt: (x) => (isNum(x) ? (x >= 0 ? "+" : "") + f3(x) : "—") },
-      { label: "Worst-10 % acc", key: "worst10_acc", fmt: f3 }, { label: "New users zero-shot", key: "h0", fmt: f3 },
-      { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb }], rows);
+    const compEncs = [...new Set(Cp.map((c) => c.encoder))];
+    const box = $("t_components");
+    box.innerHTML = "";
+    compEncs.forEach((enc, i) => {
+      const full = D.federated.find((f) => f.encoder === enc && f.method === "v5_proposed");
+      const v4 = D.federated.find((f) => f.encoder === enc && f.method === "v4_hetero_rank");
+      const rows = [full && Object.assign({ name: "V5 (complete)" }, full)].concat(Cp.filter((c) => c.encoder === enc).map((c) => Object.assign({ name: name(c) }, c)))
+        .concat(v4 ? [Object.assign({ name: "V4 (no local parts, no prototypes)" }, v4)] : []).filter(Boolean)
+        .map((r) => Object.assign({ d: full ? r.macro_f1 - full.macro_f1 : null, h0: (r.heldout["0"] || {}).mean_user_f1 }, r));
+      if (compEncs.length > 1) box.append(el("h4", { class: "sub-head" }, encName(enc)));
+      const holder = el("div", { id: `t_components_${i}` });
+      box.append(holder);
+      table(holder.id, [{ label: "Variant", key: "name", align: "l" }, { label: "Client acc", key: "client_acc_mean", fmt: f3 },
+        { label: "Macro-F1", key: "macro_f1", fmt: f3 }, { label: "Δ F1 vs V5", key: "d", fmt: (x) => (isNum(x) ? (x >= 0 ? "+" : "") + f3(x) : "—") },
+        { label: "Worst-10 % acc", key: "worst10_acc", fmt: f3 }, { label: "New users zero-shot", key: "h0", fmt: f3 },
+        { label: "Uplink / client·round", key: "uplink_mb_client_round", fmt: mb }], rows);
+    });
+    $("compCard").hidden = false; $("compTag").textContent = compEncs.map(encName).join(", ");
   }
   const W = D.window_ablation || [];
   if (W.length) {
