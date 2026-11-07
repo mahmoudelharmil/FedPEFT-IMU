@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import statistics
 import os
 import subprocess
 import sys
@@ -126,10 +127,25 @@ def job_view(job: Job, qi: dict | None, summaries: dict) -> dict:
     return d
 
 
+def calibration(s: dict) -> tuple[float, int]:
+    """Wall time / estimate of the jobs this queue finished.
+
+    The estimates come from the run times stored in the result files, which leave out
+    starting Python, loading the data and the new-user tests; the factor corrects for that.
+    """
+    ratios = [(it["ended"] - it["started"]) / 60 / it["job"]["est_min"] for it in s["items"]
+              if it["status"] == "done" and it.get("started") and it.get("ended") and it["job"].get("est_min")
+              and it.get("note") != "result already existed" and it["job"]["stage"] != "report"]
+    if len(ratios) < 3:
+        return 1.0, len(ratios)
+    return min(3.0, max(1.0, statistics.median(ratios))), len(ratios)
+
+
 def overview() -> dict:
     plan = PLANS.get()
     s = state.load()
     qi = queue_index(s)
+    factor, n_cal = calibration(s)
     mcfg = plan.mcfg
     datasets = []
     missing_min = 0.0
@@ -141,7 +157,7 @@ def overview() -> dict:
             if not jobs:
                 continue
             stat = [job_status(j, qi.get(j.id)) for j in jobs]
-            miss = sum((j.est_min or 10.0) for j, x in zip(jobs, stat) if x != "done")
+            miss = factor * sum((j.est_min or 10.0) for j, x in zip(jobs, stat) if x != "done")
             missing_min += miss
             stages.append({"stage": st, "label": STAGE_LABELS[st], "total": len(jobs),
                            "done": stat.count("done"), "queued": stat.count("queued"), "running": stat.count("running"),
@@ -152,13 +168,13 @@ def overview() -> dict:
     if info["alive"] and info.get("current"):
         it = state.find(s, info["current"])
         if it:
-            current = current_view(it)
+            current = current_view(it, factor)
     pending = [it for it in s["items"] if it["status"] == "pending"]
-    queued_min = sum((it["job"].get("est_min") or 10.0) for it in pending)
+    queued_min = factor * sum((it["job"].get("est_min") or 10.0) for it in pending)
     others = [] if info.get("state") == "running" else _other_gpu(info)
     return {"time": time.time(), "runner": info, "control": s["control"], "counts": state.counts(s),
             "current": current, "datasets": datasets, "missing_min": missing_min, "queued_min": queued_min,
-            "other_gpu": others, "order": plan.datasets()}
+            "estimate_factor": factor, "estimate_jobs": n_cal, "other_gpu": others, "order": plan.datasets()}
 
 
 _OTHER = {"t": 0.0, "v": []}
@@ -172,15 +188,17 @@ def _other_gpu(info: dict) -> list:
     return _OTHER["v"]
 
 
-def current_view(it: dict) -> dict:
+def current_view(it: dict, factor: float = 1.0) -> dict:
     job = it["job"]
     prog = progress.parse(state.job_log_path(it), job["script"], job.get("total_steps"))
     elapsed = time.time() - it["started"] if it.get("started") else None
     eta = None
+    if job.get("est_min") and elapsed:
+        eta = max(0.0, factor * job["est_min"] * 60 - elapsed)
     if prog["total"] and prog["step"] and elapsed and prog["phase"] == "train":
-        eta = elapsed / prog["step"] * (prog["total"] - prog["step"])
-    elif job.get("est_min") and elapsed:
-        eta = max(0.0, job["est_min"] * 60 - elapsed)
+        # time per round so far, plus what comes after training (personalisation, new-user tests)
+        after = max(0.0, (factor - 1.0) * job["est_min"] * 60) if job.get("est_min") else 0.0
+        eta = elapsed / prog["step"] * (prog["total"] - prog["step"]) + after
     return {"item": it, "progress": prog, "elapsed_s": elapsed, "eta_s": eta}
 
 
