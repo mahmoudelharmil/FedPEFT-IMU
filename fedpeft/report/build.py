@@ -61,7 +61,8 @@ def build_report(cfg) -> Path:
     # 1) Stand-alone file: a complete HTML document you can open from disk or e-mail.
     out = reports_dir / f"FedPEFT-IMU_report_{cfg.profile}.html"
     out.write_text(template.render(plotly_js=plotly_js, data_json=data_json, standalone=True, page_title=page_title), encoding="utf-8")
-    # 2) Web version: page content only (a hosting page supplies <html>/<head>/<body>).
+    # 2) Web version (published as an artifact): the same document without the PNG-download buttons,
+    #    which the artifact viewer's sandbox does not allow.
     web = reports_dir / "web" / f"FedPEFT-IMU_report_{cfg.profile}.html"
     web.parent.mkdir(parents=True, exist_ok=True)
     web.write_text(template.render(plotly_js=plotly_js, data_json=data_json, standalone=False, page_title=page_title), encoding="utf-8")

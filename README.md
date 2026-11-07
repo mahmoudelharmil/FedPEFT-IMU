@@ -28,7 +28,7 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
 | WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); protocol A (published FedAIoT protocol) complete on 3 test-subject draws | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
-| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; 3 user splits for LIMU-BERT and Conv-GRU | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
+| UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and Conv-GRU | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
 The online reports are private links; share them from the page's Share menu.
 
@@ -367,18 +367,42 @@ new users = macro-F1 on the held-out users without labels):
 
 | Model, method | Accuracy | Worst-10 % | New users, zero-shot | Uplink (MB/client/round) |
 |---|---|---|---|---|
-| LIMU-BERT, **V5 FedPEFT-IMU** | 0.908 ± 0.017 | **0.802** | 0.874 | **0.037** |
+| ssl-wearables, **V5 FedPEFT-IMU** | **0.938 ± 0.011** | **0.843** | 0.860 | 0.759 |
+| ssl-wearables, V3 LoRA exact | 0.895 ± 0.018 | 0.716 | 0.924 | 1.227 |
+| ssl-wearables, V0 full fine-tuning | 0.917 ± 0.008 | 0.744 | 0.943 | 42.15 |
+| ssl-wearables, FedAvg (scratch) | 0.902 ± 0.007 | 0.724 | **0.953** | 42.15 |
+| LIMU-BERT, V5 FedPEFT-IMU | 0.908 ± 0.017 | 0.802 | 0.874 | **0.037** |
 | LIMU-BERT, Ditto (pretrained) | 0.896 ± 0.002 | 0.755 | 0.891 | 0.207 |
+| LIMU-BERT, V3 LoRA exact | 0.867 ± 0.020 | 0.661 | 0.883 | 0.053 |
 | LIMU-BERT, V0 full fine-tuning | 0.870 ± 0.011 | 0.692 | 0.874 | 0.207 |
 | LIMU-BERT, FedAvg (scratch) | 0.839 ± 0.010 | 0.587 | 0.816 | 0.207 |
-| Conv-GRU, Ditto (scratch) | **0.916 ± 0.004** | 0.777 | 0.939 | 1.003 |
+| Conv-GRU, Ditto (scratch) | 0.916 ± 0.004 | 0.777 | 0.939 | 1.003 |
 | Conv-GRU, Local training | 0.907 ± 0.008 | 0.789 | – | 0 |
-| Conv-GRU, FedAvg (scratch) | 0.890 ± 0.005 | 0.679 | **0.947** | 1.003 |
+| Conv-GRU, FedAvg (scratch) | 0.890 ± 0.005 | 0.679 | 0.947 | 1.003 |
 
-V5 stays the best LIMU-BERT method over three splits (+0.012 over Ditto, +0.038 over V0) and has
-the best worst-10 % of all models. The small Conv-GRU trained from scratch is level with it on this
-easy six-class dataset: with Ditto 0.916 vs 0.908, within V5's spread, at 27× more uplink; it also
-transfers best to new users. The strongest V5 (ssl-wearables, 0.949) was run on split 0 only.
+Over three user splits **V5 on ssl-wearables is the best model** (0.938, worst-10 % 0.843), ahead of
+full fine-tuning (0.917) at 56× less uplink and of the strongest baseline, Conv-GRU with Ditto
+(0.916). On LIMU-BERT, V5 is again the best method (+0.012 over Ditto, +0.038 over V0). Brand-new
+users are the exception, as on every dataset: a shared classifier (FedAvg, V0) transfers better
+there than V5's prototype rule.
+
+**Ablation study** (user split 0, macro-F1; Δ to the complete V5):
+
+| V5 variant | LIMU-BERT | Δ | ssl-wearables | Δ |
+|---|---|---|---|---|
+| V5 (complete) | 0.928 | | 0.954 | |
+| − local norm and input adapter | 0.900 | −0.029 | 0.912 | −0.041 |
+| − personal classifier (shared instead) | 0.927 | −0.001 | 0.952 | −0.002 |
+| − device tiers (rank 8 everywhere) | 0.934 | +0.006 | 0.951 | −0.003 |
+| − prototype alignment | 0.907 | −0.021 | 0.948 | −0.006 |
+| − training augmentation | 0.966 | +0.038 | 0.967 | +0.013 |
+| LoRA on W_q, W_v only (default: all layers) | 0.915 | −0.014 | – | |
+| V4 (no local parts, no prototypes) | 0.823 | −0.105 | 0.893 | −0.060 |
+
+The local normalisation and input adapter carry most of V5's personalisation, then the prototype
+loss; the personal classifier adds almost nothing (as on HARBox). The device tiers cost little.
+Augmentation *hurts* V5 on UCI HAR for both encoders (+0.038, +0.013 without it; on WISDM +0.015),
+so it is a candidate to switch off for these datasets. This is one split; the LoRA rank sweep is in the report.
 
 **Published protocol** (FedMultimodal: 105 Dirichlet clients from the 21 training subjects, macro-F1
 of the global model on the 9 official test subjects; one run each):
