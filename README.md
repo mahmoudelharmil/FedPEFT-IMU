@@ -25,7 +25,7 @@ This project implements, runs and measures the complete *Idea 1* research plan
 
 | Dataset | Role | Experiments | Results |
 |---|---|---|---|
-| Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
+| Capture-24 | first dataset (PDF plan) | complete; **ablation study complete**; 3 user splits for LIMU-BERT and ssl-wearables | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete; **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and the MLP | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
 | WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and the LSTM; protocol A (published FedAIoT protocol) complete on 3 test-subject draws | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
 | UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and Conv-GRU | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
@@ -36,11 +36,11 @@ The online reports are private links; share them from the page's Share menu.
 protocols of HARBox, WISDM (3 test-subject draws) and UCI HAR, and 3 user splits of LIMU-BERT and
 the published baselines on HARBox, WISDM and UCI HAR.
 
-**Running now** (started 7 November 2026 with the pipeline manager, `python manage.py`, see
+**Also done** (7–8 November 2026, run with the pipeline manager, `python manage.py`, see
 [Pipeline manager](#pipeline-manager-ui)): the **full ablation study on all four datasets** and the
 **trials** (two more user splits) for LIMU-BERT, ssl-wearables and each dataset's baseline:
-122 jobs, about 29 hours on the GTX 1660 Ti, in the order UCI HAR → WISDM → HARBox → Capture-24.
-Each dataset's report is rebuilt after its last job.
+125 jobs in 42 hours on the GTX 1660 Ti, none failed. Every report was rebuilt and republished.
+Nothing is queued; the results of each dataset are in its section below.
 
 | Ablation (V5 on LIMU-BERT and ssl-wearables, user split 0) | What it removes or changes |
 |---|---|
@@ -666,6 +666,35 @@ Main observations (all from one user split; confirm with the `full` profile):
 - Small LoRA ranks suffice: r = 2 is as good as r = 16 on ssl-wearables.
 - A 10-s window for LIMU-BERT (stretched position embeddings) is worse than its native 6 s; the
   rejected runs are kept in `results/enhanced_limu10s`.
+
+**Three user splits** (added by the pipeline manager, 8 November 2026; macro-F1 per window, mean ±
+std; mean user accuracy and worst-10 % in brackets):
+
+| Method | ssl-wearables | LIMU-BERT |
+|---|---|---|
+| **V5 FedPEFT-IMU** | **0.709 ± 0.011** (0.831, 0.525) | **0.443 ± 0.011** (0.621, 0.253) |
+| V0 full fine-tuning | 0.704 ± 0.011 (0.842, 0.634) | 0.404 ± 0.007 (0.602, 0.239) |
+| V3 LoRA exact | 0.692 ± 0.024 (0.828, 0.592) | 0.396 ± 0.016 (0.604, 0.274) |
+| FedAvg (scratch) | 0.524 ± 0.032 (0.784, 0.540) | 0.394 ± 0.012 (0.619, 0.249) |
+
+On Capture-24, V5 matches full fine-tuning on ssl-wearables (macro-F1 +0.005, accuracy −0.011,
+worst-10 % lower) at 50× less uplink, and is clearly ahead on LIMU-BERT (+0.039 over V0).
+
+**Ablation study** (user split 0, macro-F1, Δ to the complete V5; augmentation is off on Capture-24,
+so there is no augmentation ablation):
+
+| V5 variant | LIMU-BERT (V5 0.449) | ssl-wearables (V5 0.697) |
+|---|---|---|
+| − local norm and input adapter | −0.010 | −0.013 |
+| − personal classifier (shared instead) | **−0.089** | −0.010 |
+| − device tiers (rank 8 everywhere) | +0.001 | −0.008 |
+| − prototype alignment | −0.011 | −0.012 |
+| LoRA on all linear layers (LIMU-BERT only) | +0.001 | – |
+| V4 (no local parts, no prototypes) | −0.120 | −0.013 |
+
+Unlike on the three HAR benchmarks, the personal classifier matters most here for LIMU-BERT: the
+free-living Capture-24 users differ strongly in how much of each activity they do, which a
+per-user classifier absorbs. On ssl-wearables every part contributes about 0.01.
 
 ---
 
