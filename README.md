@@ -27,7 +27,7 @@ This project implements, runs and measures the complete *Idea 1* research plan
 |---|---|---|---|
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
 | HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
-| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); protocol A (published FedAIoT protocol) complete on 3 test-subject draws | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
+| WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and the LSTM; protocol A (published FedAIoT protocol) complete on 3 test-subject draws | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
 | UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and Conv-GRU | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
 The online reports are private links; share them from the page's Share menu.
@@ -266,14 +266,37 @@ data. Repeated rows are removed and both sensors are interpolated onto one 20-Hz
 | Centralized, pretrained (not private) | 0.875 | 0.941 | 0.888 | 0.886 | – |
 | V5 uplink saving vs V0 | 6× | 51× | 38× | 93× | |
 
-- **Three user splits (LIMU-BERT):** V5 0.911 ± 0.002 (worst-10 % 0.787) vs Ditto (pretrained)
-  0.908 ± 0.006 (0.759) vs V0 0.820 ± 0.018 (0.471), at 6× less uplink than Ditto.
+- **Three user splits** (mean user accuracy ± std, worst-10 % in brackets):
+
+  | Method | ssl-wearables | LIMU-BERT | LSTM (baseline) |
+  |---|---|---|---|
+  | **V5 FedPEFT-IMU** | **0.960 ± 0.002** (0.891) | **0.911 ± 0.002** (0.787) | – |
+  | Ditto (pretrained / LSTM from scratch) | – | 0.908 ± 0.006 (0.759) | 0.841 ± 0.006 (0.681) |
+  | V0 full fine-tuning | 0.868 ± 0.015 (0.449) | 0.820 ± 0.018 (0.471) | – |
+  | V3 LoRA exact | 0.859 ± 0.019 (0.456) | 0.817 ± 0.014 (0.507) | – |
+  | FedAvg (scratch) | 0.705 ± 0.071 (0.317) | 0.757 ± 0.021 (0.360) | 0.696 ± 0.029 (0.304) |
+
+  V5 on ssl-wearables is the best model on every split, +0.092 over V0 at 51× less uplink, and it
+  roughly doubles the worst-10 % accuracy.
 - **New users:** zero-shot, a shared classifier transfers better (V0 0.705 vs V5 0.653 macro-F1 on
   LIMU-BERT); with one labelled window per activity V5 is ahead (0.852 vs 0.829), with ten it is the
   best model (0.910 LIMU-BERT, 0.922 ssl-wearables).
-- **Ablation (LIMU-BERT):** LoRA on all linear layers 0.908 vs W_q/W_v only 0.885; without local
-  norm and adapter 0.894; a shared classifier fine-tuned by each client 0.916 (as on HARBox, the
-  local norms carry most of the personalisation).
+- **Ablation study** (user split 0, macro-F1, Δ to the complete V5; LIMU-BERT 0.908, ssl-wearables 0.958):
+
+  | V5 variant | LIMU-BERT Δ | ssl-wearables Δ |
+  |---|---|---|
+  | − local norm and input adapter | −0.014 | −0.018 |
+  | − personal classifier (shared instead) | −0.005 | −0.000 |
+  | − device tiers (rank 8 everywhere) | +0.005 | +0.006 |
+  | − prototype alignment | +0.003 | −0.002 |
+  | − training augmentation | +0.015 | −0.002 |
+  | LoRA on W_q, W_v only (default: all layers) | −0.024 | – |
+  | V4 (no local parts, no prototypes) | −0.128 | −0.097 |
+
+  As on UCI HAR, the local norm and input adapter matter most; the personal classifier, the
+  prototype loss and the device tiers each change V5 by less than 0.01. The LoRA rank sweep (V3)
+  favours r = 16 for LIMU-BERT (+0.019 over r = 8) but r = 2 for ssl-wearables (+0.016): the rank is
+  not where the accuracy comes from.
 
 **Published protocol** (FedAIoT: 80 Dirichlet clients from 45 subjects, 400 rounds; accuracy of the
 global model on all windows of the 6 unseen test subjects, mean ± std over 3 random draws of
