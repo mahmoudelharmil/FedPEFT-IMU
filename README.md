@@ -39,7 +39,7 @@ the published baselines on HARBox, WISDM and UCI HAR.
 **Also done** (7–8 November 2026, run with the pipeline manager, `python manage.py`, see
 [Pipeline manager](#pipeline-manager-ui)): the **full ablation study on all four datasets** and the
 **trials** (two more user splits) for LIMU-BERT, ssl-wearables and each dataset's baseline:
-125 jobs in 42 hours on the GTX 1660 Ti, none failed. Every report was rebuilt and republished.
+125 jobs in 18.5 hours on the GTX 1660 Ti (including 14 minutes stopped by the full disk), none failed. Every report was rebuilt and republished.
 Nothing is queued; the results of each dataset are in its section below.
 
 | Ablation (V5 on LIMU-BERT and ssl-wearables, user split 0) | What it removes or changes |
