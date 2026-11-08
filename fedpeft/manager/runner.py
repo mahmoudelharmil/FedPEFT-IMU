@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -135,8 +136,14 @@ class Runner:
         now = time.time()
         if force or kw or now - self.last_beat > 2:
             self.status["heartbeat"] = now
-            state.write_runner_status(self.status)
+            try:
+                state.write_runner_status(self.status)
+            except OSError as exc:                         # e.g. a full disk: the job itself goes on
+                log.warning(f"cannot write the runner status: {exc}")
             self.last_beat = now
+
+    def free_gb(self) -> float:
+        return shutil.disk_usage(PROJECT_ROOT).free / 1e9
 
     def set_control(self, **kw) -> None:
         state.update(lambda s: s["control"].update(kw))
@@ -163,7 +170,16 @@ class Runner:
                 ctl["mode"], ctl["after_current"] = ctl["after_current"], None
             if kw.get("status") == "failed" and self.rcfg.get("stop_on_error"):
                 ctl["mode"] = "pause"
-        state.update(fn)
+        # The queue file must record the outcome; if the disk is full, wait for space instead of dying.
+        for attempt in range(2880):                        # up to a day
+            try:
+                state.update(fn)
+                return
+            except OSError as exc:
+                if attempt == 0:
+                    log.warning(f"cannot write the queue ({exc}); retrying every 30 s")
+                time.sleep(30)
+        raise RuntimeError("the queue file could not be written for a day")
 
     def run_item(self, item: dict) -> None:
         job = Job(**item["job"])
@@ -261,6 +277,12 @@ class Runner:
                     self.beat(state="waiting", note=f"another training process is running (pid {others[0]['pid']})")
                     time.sleep(5.0)
                     continue
+            free = self.free_gb()
+            if free < float(self.rcfg.get("min_free_gb", 5)):
+                self.beat(force=True, state="waiting", current=None, current_id=None,
+                          note=f"only {free:.1f} GB free on the results disk; free some space to continue")
+                time.sleep(30.0)
+                continue
             item = self.next_item()
             if item is None:
                 if any(x["status"] == "pending" for x in state.load()["items"]):

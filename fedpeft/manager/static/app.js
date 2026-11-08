@@ -124,8 +124,10 @@ $("controls").addEventListener("click", (e) => {
 /* ---------------------------------------------------------------- overview */
 function renderOverview() {
   const ov = S.ov;
-  $("otherGpu").innerHTML = ov.other_gpu && ov.other_gpu.length
-    ? `<div class="alert">Another training process is using the GPU (pid ${ov.other_gpu.map((p) => p.pid).join(", ")}). The runner waits until it ends (one GPU job at a time).<br><span class="mono">${esc(ov.other_gpu[0].cmd)}</span></div>` : "";
+  const disk = isNum(ov.disk_free_gb) && ov.disk_free_gb < 15
+    ? `<div class="alert ${ov.disk_free_gb < 5 ? "bad" : ""}">Only <b>${ov.disk_free_gb.toFixed(1)} GB</b> free on the disk of the results. Every ssl-wearables run saves a 43 MB model; below 5 GB the runner waits.</div>` : "";
+  $("otherGpu").innerHTML = disk + (ov.other_gpu && ov.other_gpu.length
+    ? `<div class="alert">Another training process is using the GPU (pid ${ov.other_gpu.map((p) => p.pid).join(", ")}). The runner waits until it ends (one GPU job at a time).<br><span class="mono">${esc(ov.other_gpu[0].cmd)}</span></div>` : "");
   renderNow(ov.current);
   renderRunAll();
   renderStagesTable();

@@ -65,7 +65,11 @@ detached (`Invoke-CimMethod Win32_Process Create`), so they survive closing the 
 with CRLF line endings and never edit one while it runs: with LF-only lines, `cmd` silently skipped
 a whole step once (the WISDM UniMTS grid). Keep the machine from sleeping during a queue: on
 2026-10-26 it slept for 13 hours mid-run. The run resumed afterwards without harm, but the time
-was lost and the run's logged duration includes the sleep.
+was lost and the run's logged duration includes the sleep. Keep the saved models out of git: on
+2026-11-08 a background git tool kept trying to hash every new 43 MB ssl-wearables model while it
+was being written and left 31 GB of half-written temp objects in `.git/objects`, which filled the
+disk and stopped the queue. `results/*/models/` is now ignored, and the runner waits when less than
+`runner.min_free_gb` (5 GB) is free instead of failing.
 
 ## Pipeline manager (UI)
 

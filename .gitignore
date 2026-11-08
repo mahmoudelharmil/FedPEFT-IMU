@@ -14,3 +14,9 @@ logs/
 # Results and reports ARE small and worth keeping under version control:
 #   results/   one JSON per experiment + the published user splits
 #   reports/   the HTML report and the numbers behind it
+
+# ...except the saved models (40 MB each for ssl-wearables): kept on disk for re-evaluation
+# (scripts/tools/reeval_heldout.py) but no longer committed. Background git tools kept trying
+# to hash every new model while it was written and left ~31 GB of half-written temp objects
+# in .git/objects (2026-11-08). Models committed before that date stay tracked.
+results/*/models/

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import shutil
 import statistics
 import os
 import subprocess
@@ -174,7 +175,8 @@ def overview() -> dict:
     others = [] if info.get("state") == "running" else _other_gpu(info)
     return {"time": time.time(), "runner": info, "control": s["control"], "counts": state.counts(s),
             "current": current, "datasets": datasets, "missing_min": missing_min, "queued_min": queued_min,
-            "estimate_factor": factor, "estimate_jobs": n_cal, "other_gpu": others, "order": plan.datasets()}
+            "estimate_factor": factor, "estimate_jobs": n_cal, "other_gpu": others, "order": plan.datasets(),
+            "disk_free_gb": shutil.disk_usage(PROJECT_ROOT).free / 1e9}
 
 
 _OTHER = {"t": 0.0, "v": []}

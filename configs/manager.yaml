@@ -132,3 +132,4 @@ runner:
   keep_awake: true                   # stop Windows from idle-sleeping while a job runs
   stop_on_error: false               # false: a failed job is marked and the queue goes on
   wait_for_other_gpu_jobs: true      # do not start while another training script uses the GPU
+  min_free_gb: 5                     # do not start a job with less free space on the results disk
