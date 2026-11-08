@@ -26,7 +26,7 @@ This project implements, runs and measures the complete *Idea 1* research plan
 | Dataset | Role | Experiments | Results |
 |---|---|---|---|
 | Capture-24 | first dataset (PDF plan) | complete | `reports/FedPEFT-IMU_report_enhanced.html` ([online](https://claude.ai/artifact/5sYgeLBh2ZNHXquDguZDbG)) |
-| HARBox | main benchmark of the paper | complete (3 user splits for LIMU-BERT and the MLP) | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
+| HARBox | main benchmark of the paper | complete; **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and the MLP | `reports/FedPEFT-IMU_report_harbox.html` ([online](https://claude.ai/artifact/3y3fpSBYLe8QZE9XLyjRLm)), `paper/main.pdf` |
 | WISDM-2019 (smartwatch) | third dataset, **HTML report only** (not in the paper) | protocol B complete (all four encoders); **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and the LSTM; protocol A (published FedAIoT protocol) complete on 3 test-subject draws | `reports/FedPEFT-IMU_report_wisdm.html` ([online](https://claude.ai/artifact/D3jfVwYYDEgfd2oMJSb4tB)) |
 | UCI HAR (waist smartphone) | fourth dataset, **HTML report only** | protocol B complete (all four encoders, FedAvg and V0–V5, + Conv-GRU baselines); published protocol (FedMultimodal) complete; **ablation study complete**; 3 user splits for LIMU-BERT, ssl-wearables and Conv-GRU | `reports/FedPEFT-IMU_report_ucihar.html` ([online](https://claude.ai/artifact/JDMqhZKwrgoqpBQmoFyUro)) |
 
@@ -196,6 +196,27 @@ On the MLP: Local 0.824, FedAvg 0.766, Ditto 0.868.
 **Three user splits** (LIMU-BERT, mean ± std): V5 with all-layer LoRA reaches 0.877 ± 0.015 user
 accuracy (worst-10 % 0.581), level with Ditto on the pretrained encoder (0.875 ± 0.008, worst-10 %
 0.569) at 5.2× less uplink, against 0.784 ± 0.013 for V0 and 0.769 ± 0.012 for FedAvg.
+**ssl-wearables** (added by the pipeline manager, 8 November 2026): V5 0.869 ± 0.021 (worst-10 %
+0.521) against V3 0.806 ± 0.012, V0 0.799 ± 0.015 and FedAvg 0.765 ± 0.022, at 52× less uplink
+than V0; level with the MLP's Ditto (0.868 ± 0.005), the published FedCHAR baseline.
+
+**Ablation study** (user split 0, macro-F1, Δ to the complete V5; LIMU-BERT here has LoRA on W_q/W_v):
+
+| V5 variant | LIMU-BERT (V5 0.863) | ssl-wearables (V5 0.879) |
+|---|---|---|
+| − local norm and input adapter | −0.025 | −0.030 |
+| − personal classifier (shared instead) | −0.002 | −0.005 |
+| − device tiers (rank 8 everywhere) | +0.003 | +0.002 |
+| − prototype alignment | −0.001 | −0.000 |
+| − training augmentation | +0.011 | +0.009 |
+| LoRA on all linear layers (LIMU-BERT only) | +0.011 | – |
+| V4 (no local parts, no prototypes) | −0.115 | −0.060 |
+
+The same picture on all three datasets that finished (HARBox, WISDM, UCI HAR): the local
+normalisation and input adapter are V5's most important part (−0.014 to −0.041), the personal
+classifier, the device tiers and the prototype loss each change it by less than 0.01 (UCI HAR
+LIMU-BERT: prototypes −0.021), and V5 is 0.01–0.04 *better* without the training augmentation in
+5 of 6 cases.
 
 **New users** (24 held-out users, mean per-user macro-F1). With 10 labelled windows per activity, V5
 is the best federated model on LIMU-BERT and HALO. Zero-shot, a shared classifier transfers better.
