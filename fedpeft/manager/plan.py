@@ -121,6 +121,17 @@ def _dig(cfg, dotted: str, default=None):
     return node
 
 
+def _no_op(cfg, overrides: list) -> bool:
+    """True when every key=value override already holds in cfg (the variant would repeat the main run)."""
+    if not overrides:
+        return False
+    for text in overrides:
+        key, _, raw = text.partition("=")
+        if _dig(cfg, key.strip(), object()) != yaml.safe_load(raw):
+            return False
+    return True
+
+
 class PlanBuilder:
     def __init__(self, summaries: dict | None = None):
         self.mcfg = load_manager_config()
@@ -301,6 +312,8 @@ class PlanBuilder:
                     if any(str(_dig(cfg, k, "qv" if k.endswith("lora_scope") else None)) != str(v)
                            for k, v in (t.get("when") or {}).items()):
                         continue
+                    if _no_op(cfg, t.get("overrides") or []):
+                        continue                      # e.g. "- augmentation" where augmentation is already off
                     out.append({"encoder": enc, "group": "switches", "label": t.get("label", tag),
                                 "method": t.get("method", "v5_proposed"), "tag": tag, "seed": s,
                                 "overrides": list(t.get("overrides") or [])})
