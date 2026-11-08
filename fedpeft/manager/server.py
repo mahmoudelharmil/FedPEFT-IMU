@@ -128,25 +128,30 @@ def job_view(job: Job, qi: dict | None, summaries: dict) -> dict:
     return d
 
 
-def calibration(s: dict) -> tuple[float, int]:
-    """Wall time / estimate of the jobs this queue finished.
+def calibration(s: dict) -> tuple[dict, int]:
+    """Wall time / estimate of the jobs this queue finished, per dataset.
 
-    The estimates come from the run times stored in the result files, which leave out
-    starting Python, loading the data and the new-user tests; the factor corrects for that.
+    The estimates come from the run times stored in the result files. Those leave out starting
+    Python, loading the data and the new-user tests (short UCI HAR jobs took 1.75x their
+    estimate), and older runs that shared the GPU recorded longer times (HARBox jobs took 0.46x).
+    Neither carries over between datasets, so each dataset is calibrated on its own finished
+    jobs (at least 3); until then its estimates are used as they are.
     """
-    ratios = [(it["ended"] - it["started"]) / 60 / it["job"]["est_min"] for it in s["items"]
-              if it["status"] == "done" and it.get("started") and it.get("ended") and it["job"].get("est_min")
-              and it.get("note") != "result already existed" and it["job"]["stage"] != "report"]
-    if len(ratios) < 3:
-        return 1.0, len(ratios)
-    return min(3.0, max(1.0, statistics.median(ratios))), len(ratios)
+    ratios: dict = {}
+    for it in s["items"]:
+        j = it["job"]
+        if (it["status"] == "done" and it.get("started") and it.get("ended") and j.get("est_min")
+                and not it.get("note") and j["stage"] != "report"):
+            ratios.setdefault(j["dataset"], []).append((it["ended"] - it["started"]) / 60 / j["est_min"])
+    factors = {ds: min(3.0, max(0.3, statistics.median(r))) for ds, r in ratios.items() if len(r) >= 3}
+    return factors, sum(len(r) for r in ratios.values())
 
 
 def overview() -> dict:
     plan = PLANS.get()
     s = state.load()
     qi = queue_index(s)
-    factor, n_cal = calibration(s)
+    factors, n_cal = calibration(s)
     mcfg = plan.mcfg
     datasets = []
     missing_min = 0.0
@@ -158,7 +163,7 @@ def overview() -> dict:
             if not jobs:
                 continue
             stat = [job_status(j, qi.get(j.id)) for j in jobs]
-            miss = factor * sum((j.est_min or 10.0) for j, x in zip(jobs, stat) if x != "done")
+            miss = factors.get(ds, 1.0) * sum((j.est_min or 10.0) for j, x in zip(jobs, stat) if x != "done")
             missing_min += miss
             stages.append({"stage": st, "label": STAGE_LABELS[st], "total": len(jobs),
                            "done": stat.count("done"), "queued": stat.count("queued"), "running": stat.count("running"),
@@ -169,13 +174,13 @@ def overview() -> dict:
     if info["alive"] and info.get("current"):
         it = state.find(s, info["current"])
         if it:
-            current = current_view(it, factor)
+            current = current_view(it, factors.get(it["job"]["dataset"], 1.0))
     pending = [it for it in s["items"] if it["status"] == "pending"]
-    queued_min = factor * sum((it["job"].get("est_min") or 10.0) for it in pending)
+    queued_min = sum(factors.get(it["job"]["dataset"], 1.0) * (it["job"].get("est_min") or 10.0) for it in pending)
     others = [] if info.get("state") == "running" else _other_gpu(info)
     return {"time": time.time(), "runner": info, "control": s["control"], "counts": state.counts(s),
             "current": current, "datasets": datasets, "missing_min": missing_min, "queued_min": queued_min,
-            "estimate_factor": factor, "estimate_jobs": n_cal, "other_gpu": others, "order": plan.datasets(),
+            "estimate_factors": factors, "estimate_jobs": n_cal, "other_gpu": others, "order": plan.datasets(),
             "disk_free_gb": shutil.disk_usage(PROJECT_ROOT).free / 1e9}
 
 

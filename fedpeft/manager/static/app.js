@@ -246,7 +246,8 @@ function renderRunAll() {
     }
   }
   $("raEstimate").textContent = jobs ? `~${fmtMin(mins)}` : "Nothing to run";
-  const cal = ov.estimate_factor > 1 ? `, ×${ov.estimate_factor.toFixed(1)} as measured on ${ov.estimate_jobs} finished jobs` : "";
+  const nCal = Object.keys(ov.estimate_factors || {}).length;
+  const cal = nCal ? `, corrected per dataset on ${ov.estimate_jobs} finished jobs` : "";
   $("raJobs").textContent = jobs ? `${jobs} job${jobs > 1 ? "s" : ""} without a result (estimate from earlier runs of the same kind${cal})` : "every selected job has a result";
   $("raGo").disabled = !jobs;
 }
@@ -300,7 +301,7 @@ async function loadQueue() {
       if (it.status === "done") acts.push(`<button class="btn sm" data-i="rerun" title="Run again and overwrite the result">Re-run</button>`, `<button class="btn sm danger" data-i="remove">✕</button>`);
       return `<tr data-key="${esc(it.key)}"><td class="muted">${pos}</td><td>${chip(it.status)}</td>
         <td class="label"><a href="#" data-detail>${esc(it.label)}</a>${it.rerun ? ` <span class="muted small">(re-run)</span>` : ""}${it.note ? `<div class="muted small">${esc(it.note)}</div>` : ""}</td>
-        <td>${esc(it.dataset)}</td><td class="small">${esc(STAGE_LABEL[it.stage] || it.stage)}</td><td class="num">${fmtMin(isNum(it.est_min) ? it.est_min * ((S.ov && S.ov.estimate_factor) || 1) : null)}</td>
+        <td>${esc(it.dataset)}</td><td class="small">${esc(STAGE_LABEL[it.stage] || it.stage)}</td><td class="num">${fmtMin(isNum(it.est_min) ? it.est_min * ((S.ov && (S.ov.estimate_factors || {})[it.dataset]) || 1) : null)}</td>
         <td class="small">${fmtTime(it.started)}</td><td class="num">${took}</td><td class="acts">${acts.join(" ")}</td></tr>`;
     }).join("");
 }
